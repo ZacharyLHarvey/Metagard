@@ -1,6 +1,6 @@
 import Link from "next/link";
 import SaveBuildButton from "@/components/SaveBuildButton";
-import { createClient } from "@/utils/supabase/server";
+import { createClient } from "@/lib/server/supabaseServer";
 
 type Build = {
     id: number;
@@ -14,23 +14,25 @@ type Build = {
   
 
 export default async function BuildsPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data: builds, error } = await supabase
-  .from("builds")
-  .select("*")
-  .order("id", { ascending: true }) as { data: Build[] | null; error: any };
-
+    .from("builds")
+    .select("*")
+    .order("id", { ascending: true });
 
   if (error) {
-    console.error("Error loading builds:", error);
+    console.error("Error loading builds:", error.message, error);
     return (
       <main className="p-10 text-white">
         <h1 className="text-2xl font-bold mb-6">All Builds</h1>
         <p>Failed to load builds.</p>
+        <p className="mt-2 text-sm text-neutral-500">{error.message}</p>
       </main>
     );
   }
+
+  const rows = (builds ?? []) as Build[];
 
   return (
     <main className="p-10 text-white">
@@ -61,7 +63,22 @@ export default async function BuildsPage() {
           </thead>
 
           <tbody>
-            {builds?.map((b: Build) => (
+            {rows.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={6}
+                  className="px-4 py-8 text-center text-neutral-400 border-b border-neutral-800"
+                >
+                  No builds in the database yet. If you expected rows here, check
+                  Row Level Security (see{" "}
+                  <code className="text-neutral-300">
+                    supabase/policies/builds_public_select.sql
+                  </code>
+                  ).
+                </td>
+              </tr>
+            ) : null}
+            {rows.map((b: Build) => (
               <tr key={b.id} className="hover:bg-neutral-900/40 transition">
                 <td className="col-name px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
                   {b.name}
