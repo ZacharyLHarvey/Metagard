@@ -18,6 +18,10 @@ export default async function Navbar() {
           Builds
         </Link>
 
+        <Link href="/create-build" className="hover:text-blue-400 transition">
+          Create Build
+        </Link>
+
         <Link href="/profile" className="hover:text-blue-400 transition">
           Profile
         </Link>
