@@ -1,6 +1,7 @@
 import Link from "next/link";
 import SaveBuildButton from "@/components/SaveBuildButton";
 import { createClient } from "@/lib/server/supabaseServer";
+import { getProfile } from "@/lib/queries/getProfile";
 
 type Build = {
     id: number;
@@ -9,12 +10,14 @@ type Build = {
     level: number;
     average_rating: number;
     look_the_part: boolean;
+    owner_id: string | null;
     created_at: string;
   };
   
 
 export default async function BuildsPage() {
   const supabase = await createClient();
+  const profile = await getProfile();
 
   const { data: builds, error } = await supabase
     .from("builds")
@@ -108,6 +111,15 @@ export default async function BuildsPage() {
                     >
                       View
                     </Link>
+
+                    {profile?.id && b.owner_id === profile.id ? (
+                      <Link
+                        href={`/builds/${b.id}/edit`}
+                        className="px-3 py-1 bg-amber-600 hover:bg-amber-700 rounded text-sm"
+                      >
+                        Edit
+                      </Link>
+                    ) : null}
 
                     <SaveBuildButton buildId={b.id} />
                   </div>

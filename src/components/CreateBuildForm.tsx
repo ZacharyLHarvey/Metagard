@@ -1,30 +1,42 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
-export default function CreateBuildForm() {
+export default function CreateBuildForm({ classes }: { classes: string[] }) {
+  const router = useRouter();
   const [name, setName] = useState("");
   const [className, setClassName] = useState("");
   const [level, setLevel] = useState(1);
+  const [lookThePart, setLookThePart] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
-  const classes = [
-    "Anti‑Paladin",
-    "Archer",
-    "Assassin",
-    "Barbarian",
-    "Bard",
-    "Druid",
-    "Healer",
-    "Monk",
-    "Paladin",
-    "Scout",
-    "Warrior",
-    "Wizard",
-  ];
-
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    console.log("Creating build:", { name, className, level });
+    setError("");
+    setSubmitting(true);
+
+    const response = await fetch("/api/builds", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name,
+        className,
+        level,
+        lookThePart,
+      }),
+    });
+
+    if (!response.ok) {
+      const payload = (await response.json().catch(() => ({}))) as { error?: string };
+      setError(payload.error ?? "Failed to create build");
+      setSubmitting(false);
+      return;
+    }
+
+    router.push("/");
+    router.refresh();
   }
 
   return (
@@ -68,12 +80,24 @@ export default function CreateBuildForm() {
         />
       </div>
 
+      <label className="flex items-center gap-3 text-neutral-300">
+        <input
+          type="checkbox"
+          checked={lookThePart}
+          onChange={(e) => setLookThePart(e.target.checked)}
+        />
+        Look The Part
+      </label>
+
       <button
         type="submit"
+        disabled={submitting}
         className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded text-white"
       >
-        Create Build
+        {submitting ? "Creating..." : "Create Build"}
       </button>
+
+      {error ? <p className="text-sm text-red-400">{error}</p> : null}
     </form>
   );
 }

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getProfile } from "@/lib/queries/getProfile";
 import LogoutButton from "@/components/LogoutButton";
+import TipsToggleButton from "@/components/TipsToggleButton";
 
 export default async function Navbar() {
   const profile = await getProfile();
@@ -25,10 +26,17 @@ export default async function Navbar() {
         <Link href="/profile" className="hover:text-blue-400 transition">
           Profile
         </Link>
+        <Link href="/patch-notes" className="hover:text-blue-400 transition">
+          Patch Notes
+        </Link>
+        <Link href="/bugs-and-features" className="hover:text-blue-400 transition">
+          Bugs/Features
+        </Link>
       </div>
 
       {/* Right side: display_name + Logout */}
       <div className="flex items-center gap-4">
+        <TipsToggleButton />
         <span className="text-neutral-300">
           {profile?.display_name}
         </span>
