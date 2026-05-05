@@ -27,10 +27,16 @@ export default async function BuildDetailsPage({ params }: Params) {
           <p className="text-neutral-400">
             {build.class} level {build.level} {build.look_the_part ? "- Look The Part" : ""}
           </p>
+          {build.notes ? <p className="text-sm text-neutral-500 mt-2 whitespace-pre-wrap">{build.notes}</p> : null}
         </div>
-        <Link href={`/builds/${build.id}/edit`} className="px-3 py-2 bg-amber-600 rounded">
-          Edit
-        </Link>
+        <div className="flex gap-2">
+          <Link href={`/builds/${build.id}/settings`} className="px-3 py-2 bg-neutral-700 rounded">
+            Settings
+          </Link>
+          <Link href={`/builds/${build.id}/edit`} className="px-3 py-2 bg-amber-600 rounded">
+            Edit Spells
+          </Link>
+        </div>
       </div>
 
       <BuildSpellDetails selections={selections} spells={spells} />
