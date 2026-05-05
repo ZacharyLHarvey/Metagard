@@ -5,7 +5,7 @@ export default function BugsAndFeaturesPage() {
       <p className="text-neutral-300">
         If you find an issue or want to request a feature, email{" "}
         <a className="text-blue-400 underline" href="mailto:swiftgardapp@gmail.com">
-          swiftgardapp@gmail.com
+          zacharylharvey@gmail.com
         </a>
         .
       </p>

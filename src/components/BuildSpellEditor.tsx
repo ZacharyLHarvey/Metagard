@@ -5,6 +5,11 @@ import { useRouter } from "next/navigation";
 import type { BuildSpellSelectionRow, SpellRow } from "@/lib/spellbook/types";
 import SpellDetailModal from "@/components/spellbook/SpellDetailModal";
 import TipsAlert from "@/components/spellbook/TipsAlert";
+import {
+  buildSelectedSpellNameSet,
+  computeDisplayRuleOverrides,
+  evaluateSpellRules,
+} from "@/lib/spellbook/rules";
 
 type Props = {
   buildId: number;
@@ -34,6 +39,7 @@ export default function BuildSpellEditor({ buildId, maxLevel, spells, initialSel
   const [showTypeSchool, setShowTypeSchool] = useState(false);
   const [showIncantation, setShowIncantation] = useState(false);
   const [showMaterials, setShowMaterials] = useState(false);
+  const [ruleWarning, setRuleWarning] = useState<string>("");
 
   const [selectionMap, setSelectionMap] = useState<Record<string, Selection>>(() => {
     const base: Record<string, Selection> = {};
@@ -71,15 +77,32 @@ export default function BuildSpellEditor({ buildId, maxLevel, spells, initialSel
     }, 0);
   }, [selectionMap, spells]);
   const pointsRemaining = Math.max(totalBudget - pointsSpent, 0);
+  const purchasedBySpellId = useMemo(() => {
+    const map: Record<number, number> = {};
+    for (const selection of Object.values(selectionMap)) {
+      map[selection.spell_id] = (map[selection.spell_id] ?? 0) + selection.purchased;
+    }
+    return map;
+  }, [selectionMap]);
+  const selectedSpellNames = useMemo(
+    () => buildSelectedSpellNameSet(purchasedBySpellId, spells),
+    [purchasedBySpellId, spells]
+  );
 
   function increment(spell: SpellRow, level: number) {
+    const evaluated = evaluateSpellRules(spell, selectedSpellNames);
+    if (evaluated.restricted) {
+      setRuleWarning(evaluated.reason ?? "Spell restricted by active archetype limitations.");
+      return;
+    }
+
     const key = keyFor(spell.id, level);
     const max = spell.max ?? 99;
     setSelectionMap((prev) => {
       const existing = prev[key];
       const purchased = Math.min((existing?.purchased ?? 0) + 1, max);
-      const currentCost = (spell.cost ?? 0) * (existing?.purchased ?? 0);
-      const nextCost = (spell.cost ?? 0) * purchased;
+      const currentCost = evaluated.adjustedCost * (existing?.purchased ?? 0);
+      const nextCost = evaluated.adjustedCost * purchased;
       const delta = nextCost - currentCost;
       if (pointsSpent + delta > totalBudget) return prev;
       return {
@@ -146,6 +169,16 @@ export default function BuildSpellEditor({ buildId, maxLevel, spells, initialSel
     <div className="space-y-6">
       <TipsAlert message="Long press a spell row to view detailed spell text, restrictions, and notes." />
       <SpellDetailModal spell={selectedSpell} onClose={() => setSelectedSpell(null)} />
+      {ruleWarning ? (
+        <div className="rounded border border-amber-800 bg-amber-950/30 p-3 text-sm text-amber-200">
+          <div className="flex items-start justify-between gap-3">
+            <p>{ruleWarning}</p>
+            <button className="px-2 py-1 bg-amber-800 rounded" onClick={() => setRuleWarning("")}>
+              Dismiss
+            </button>
+          </div>
+        </div>
+      ) : null}
       <div className="rounded border border-neutral-800 p-3 bg-neutral-900/40">
         <p className="text-sm text-neutral-300">
           Points: <span className="font-semibold">{pointsSpent}</span> spent /{" "}
@@ -175,11 +208,15 @@ export default function BuildSpellEditor({ buildId, maxLevel, spells, initialSel
             {(grouped[level] ?? []).map((spell) => {
               const key = keyFor(spell.id, level);
               const purchased = selectionMap[key]?.purchased ?? 0;
+              const evaluated = evaluateSpellRules(spell, selectedSpellNames);
+              const display = computeDisplayRuleOverrides(spell, selectedSpellNames, purchased);
               let longPressTimeout: ReturnType<typeof setTimeout> | null = null;
               return (
                 <div
                   key={spell.id}
-                  className="flex items-center justify-between rounded border border-neutral-800 p-2"
+                  className={`flex items-center justify-between rounded border p-2 ${
+                    evaluated.restricted ? "border-red-800 bg-red-950/20" : "border-neutral-800"
+                  }`}
                   onMouseDown={() => {
                     longPressTimeout = startLongPress(spell);
                   }}
@@ -199,10 +236,14 @@ export default function BuildSpellEditor({ buildId, maxLevel, spells, initialSel
                   <div>
                     <p className="font-medium">{spell.name}</p>
                     <p className="text-xs text-neutral-400">
-                      cost {spell.cost ?? 0}
+                      cost {evaluated.adjustedCost}
                       {showTypeSchool && spell.type ? ` - ${spell.type}` : ""}
                       {showTypeSchool && spell.school ? ` (${spell.school})` : ""}
                     </p>
+                    {display.frequency ? <p className="text-xs text-neutral-500 mt-1">{display.frequency}</p> : null}
+                    {evaluated.restricted && evaluated.reason ? (
+                      <p className="text-xs text-red-300 mt-1">{evaluated.reason}</p>
+                    ) : null}
                     {showIncantation && spell.incantation ? (
                       <p className="text-xs text-neutral-500 whitespace-pre-wrap mt-1">{spell.incantation}</p>
                     ) : null}
@@ -220,6 +261,7 @@ export default function BuildSpellEditor({ buildId, maxLevel, spells, initialSel
                     <span className="w-8 text-center">{purchased}</span>
                     <button
                       onClick={() => increment(spell, level)}
+                      disabled={evaluated.restricted}
                       className="px-2 py-1 bg-blue-600 rounded"
                     >
                       +
