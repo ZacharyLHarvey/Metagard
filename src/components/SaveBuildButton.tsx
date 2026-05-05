@@ -1,17 +1,23 @@
 "use client";
 
+import { useState } from "react";
+
 export default function SaveBuildButton({ buildId }: { buildId: number }) {
-  function handleSave() {
-    console.log("Saving build:", buildId);
-    // Later: call Supabase to save the build
+  const [saving, setSaving] = useState(false);
+
+  async function handleSave() {
+    setSaving(true);
+    await fetch(`/api/builds/${buildId}/save`, { method: "POST" });
+    setSaving(false);
   }
 
   return (
     <button
       onClick={handleSave}
+      disabled={saving}
       className="px-3 py-1 bg-green-600 hover:bg-green-700 rounded text-sm"
     >
-      Save
+      {saving ? "Saving..." : "Save"}
     </button>
   );
 }

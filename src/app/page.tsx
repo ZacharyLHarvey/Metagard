@@ -1,19 +1,10 @@
 import { getProfile } from "@/lib/queries/getProfile";
 import Link from "next/link";
+import { getMyBuilds, getSavedBuilds } from "@/lib/queries/spellbook";
 
 export default async function Home() {
   const profile = await getProfile();
-
-  // Placeholder data until real queries exist
-  const myBuilds = [
-    { id: 1, name: "Firestorm Adept", class: "Wizard", level: 6 },
-    { id: 2, name: "Shadowblade", class: "Assassin", level: 3 },
-  ];
-
-  const savedBuilds = [
-    { id: 3, name: "Stoneheart Guardian", class: "Warrior", level: 5 },
-    { id: 4, name: "Stormcaller", class: "Druid", level: 4 },
-  ];
+  const [myBuilds, savedBuilds] = await Promise.all([getMyBuilds(), getSavedBuilds()]);
 
   return (
     <main className="p-10 text-white">
