@@ -111,6 +111,69 @@ export async function getCatalogClasses() {
 
 export async function getCatalogSpellsForClass(className: string, maxLevel: number) {
   const supabase = await createClient();
+
+  // Preferred source: class-specific level/cost rules table.
+  const rules = await supabase
+    .from("class_spell_rules")
+    .select("spell_id, spell_level, cost, max_count, frequency, restricted")
+    .eq("class_name", className)
+    .lte("spell_level", maxLevel)
+    .order("spell_level")
+    .order("spell_id");
+
+  if (!rules.error && (rules.data?.length ?? 0) > 0) {
+    const ruleRows = rules.data as Array<Record<string, unknown>>;
+    const ids = Array.from(
+      new Set(
+        ruleRows
+          .map((r) => toNumberOrNull(r.spell_id))
+          .filter((id): id is number => id !== null)
+      )
+    );
+
+    if (ids.length > 0) {
+      const spellRows = await supabase.from("spells").select("*").in("id", ids);
+      if (!spellRows.error && spellRows.data) {
+        const spellMap = new Map<number, SpellRow>();
+        for (const row of spellRows.data as Array<Record<string, unknown>>) {
+          const normalized = normalizeSpellRow(row);
+          if (normalized) spellMap.set(normalized.id, normalized);
+        }
+
+        const merged: SpellRow[] = [];
+        for (const ruleRow of ruleRows) {
+          const spellId = toNumberOrNull(ruleRow.spell_id);
+          if (spellId === null) continue;
+          const base = spellMap.get(spellId);
+          if (!base) continue;
+
+          const frequencyRaw = ruleRow.frequency;
+          const frequency =
+            typeof frequencyRaw === "string"
+              ? frequencyRaw
+              : frequencyRaw == null
+              ? null
+              : JSON.stringify(frequencyRaw);
+
+          merged.push({
+            ...base,
+            level: toNumberOrNull(ruleRow.spell_level) ?? base.level,
+            cost: toNumberOrNull(ruleRow.cost) ?? base.cost,
+            max: toNumberOrNull(ruleRow.max_count) ?? base.max,
+            frequency: frequency ?? base.frequency,
+          });
+        }
+
+        return merged.sort((a, b) => {
+          const levelA = a.level ?? 0;
+          const levelB = b.level ?? 0;
+          if (levelA !== levelB) return levelA - levelB;
+          return a.name.localeCompare(b.name);
+        });
+      }
+    }
+  }
+
   const raw = await supabase.from("spells").select("*");
   if (raw.error || !raw.data) return [];
 
