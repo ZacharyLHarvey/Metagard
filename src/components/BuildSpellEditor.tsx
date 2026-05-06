@@ -27,6 +27,8 @@ type Props = {
   buildId: number;
   className: string;
   maxLevel: number;
+  /** Look the Part: casters get +1 point at the build’s highest spell circle. */
+  lookThePart: boolean;
   spells: SpellRow[];
   initialSelections: BuildSpellSelectionRow[];
 };
@@ -73,7 +75,14 @@ function pointsSpentAtSpellLevel(map: Record<string, Selection>, spells: SpellRo
   return sum;
 }
 
-export default function BuildSpellEditor({ buildId, className, maxLevel, spells, initialSelections }: Props) {
+export default function BuildSpellEditor({
+  buildId,
+  className,
+  maxLevel,
+  lookThePart,
+  spells,
+  initialSelections,
+}: Props) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -112,7 +121,11 @@ export default function BuildSpellEditor({ buildId, className, maxLevel, spells,
   }, [maxLevel, spells]);
 
   const caster = isCasterClass(className);
-  const totalBudget = useMemo(() => maxLevel * POINTS_PER_SPELL_LEVEL, [maxLevel]);
+  const casterLtpBonus = caster && lookThePart ? 1 : 0;
+  const totalBudget = useMemo(
+    () => maxLevel * POINTS_PER_SPELL_LEVEL + casterLtpBonus,
+    [maxLevel, casterLtpBonus]
+  );
   const pointsSpentBySpellLevel = useMemo(() => {
     const out: Record<number, number> = {};
     for (let L = 1; L <= maxLevel; L += 1) {
@@ -160,7 +173,7 @@ export default function BuildSpellEditor({ buildId, className, maxLevel, spells,
       const spentAfter = pointsSpentForMap(nextMap, spells);
       if (spentAfter > totalBudget) return prev;
       if (caster) {
-        if (!casterCascadeBudgetHolds(nextMap, spells, maxLevel)) return prev;
+        if (!casterCascadeBudgetHolds(nextMap, spells, maxLevel, casterLtpBonus)) return prev;
       } else {
         const spentThisLevelAfter = pointsSpentAtSpellLevel(nextMap, spells, level);
         if (spentThisLevelAfter > POINTS_PER_SPELL_LEVEL) return prev;
@@ -239,6 +252,12 @@ export default function BuildSpellEditor({ buildId, className, maxLevel, spells,
           <p className="mt-2 text-xs text-neutral-500">
             Caster: unused points from higher circles can be spent on lower-circle spells (up to {POINTS_PER_SPELL_LEVEL}{" "}
             pts per circle into the shared pool).
+            {lookThePart ? (
+              <>
+                {" "}
+                Look the Part adds +1 pt at circle {maxLevel} (total {totalBudget}).
+              </>
+            ) : null}
           </p>
         ) : null}
         <div className="mt-3 flex flex-wrap gap-4 text-sm">
@@ -260,7 +279,13 @@ export default function BuildSpellEditor({ buildId, className, maxLevel, spells,
       {Array.from({ length: maxLevel }, (_, idx) => idx + 1).map((level) => {
         const spentHere = pointsSpentBySpellLevel[level] ?? 0;
         const remainingHere = caster
-          ? remainingPointsForCircleAndAbove(selectionMap, spells, maxLevel, level)
+          ? remainingPointsForCircleAndAbove(
+              selectionMap,
+              spells,
+              maxLevel,
+              level,
+              casterLtpBonus
+            )
           : Math.max(POINTS_PER_SPELL_LEVEL - spentHere, 0);
         const collapsed = collapsedLevels.has(level);
         return (

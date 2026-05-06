@@ -355,3 +355,106 @@ export async function getPatchNotes() {
   if (error) return [];
   return data ?? [];
 }
+
+export type SpellListRow = {
+  id: number;
+  name: string;
+  level: number | null;
+  school: string | null;
+  type: string | null;
+  average_rating: number | null;
+};
+
+export async function getSpellById(id: number) {
+  const supabase = await createClient();
+  const { data } = await supabase.from("spells").select("*").eq("id", id).maybeSingle();
+  return data as Record<string, unknown> | null;
+}
+
+export async function getAllSpellsList(): Promise<SpellListRow[]> {
+  const supabase = await createClient();
+  const primary = await supabase
+    .from("spells")
+    .select("id,name,level,school,type,average_rating")
+    .order("name");
+  if (!primary.error && (primary.data?.length ?? 0) > 0) {
+    return (primary.data ?? []) as SpellListRow[];
+  }
+
+  // Fallback for alternate spell schemas (e.g. spell_level / spell_name).
+  const fallback = await supabase.from("spells").select("*");
+  if (fallback.error || !fallback.data?.length) return [];
+
+  const normalized = (fallback.data as Array<Record<string, unknown>>)
+    .map((raw) => {
+      const base = normalizeSpellRow(raw);
+      if (!base) return null;
+      return {
+        id: base.id,
+        name: base.name,
+        level: base.level ?? null,
+        school: base.school ?? null,
+        type: base.type ?? null,
+        average_rating: toNumberOrNull(raw.average_rating),
+      } satisfies SpellListRow;
+    })
+    .filter((row): row is SpellListRow => row !== null);
+
+  return normalized.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export async function getLeaderboardBuilds(limit = 150): Promise<BuildRow[]> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("builds").select("*").order("average_rating", { ascending: false }).limit(limit);
+  return (data ?? []) as BuildRow[];
+}
+
+export async function cloneBuild(sourceBuildId: number) {
+  const userId = await getCurrentUserId();
+  if (!userId) throw new Error("Unauthorized");
+
+  const supabase = await createClient();
+  const source = await getBuildById(sourceBuildId);
+  if (!source) throw new Error("Not found");
+
+  const { data: inserted, error: insErr } = await supabase
+    .from("builds")
+    .insert({
+      name: `${source.name} (copy)`,
+      class: source.class,
+      level: source.level,
+      look_the_part: source.look_the_part,
+      owner_id: userId,
+      average_rating: 0,
+      ruleset_version: source.ruleset_version ?? "V8.7",
+      notes: source.notes ?? null,
+      play_style: source.play_style ?? null,
+      build_priority: source.build_priority ?? null,
+      synergy: source.synergy ?? null,
+      enemies: source.enemies ?? null,
+      recommended_gear: source.recommended_gear ?? null,
+    })
+    .select("id")
+    .single();
+
+  if (insErr) throw insErr;
+  const newId = inserted.id as number;
+
+  const selections = await getBuildSpellSelections(sourceBuildId);
+  if (selections.length > 0) {
+    const payload = selections.map((s) => ({
+      build_id: newId,
+      spell_id: s.spell_id,
+      spell_level: s.spell_level,
+      purchased: s.purchased,
+      experienced: s.experienced,
+      selection_group: s.selection_group,
+      chosen: s.chosen,
+      metadata: s.metadata ?? {},
+    }));
+    const { error: selErr } = await supabase.from("build_spell_selections").insert(payload);
+    if (selErr) throw selErr;
+  }
+
+  return newId;
+}

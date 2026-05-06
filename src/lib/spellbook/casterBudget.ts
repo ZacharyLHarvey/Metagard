@@ -47,15 +47,18 @@ export function pointsSpentAtOrAboveCircle(
 /**
  * Caster rule: points from circle k..max can pay for spells on circles k..max.
  * Equivalent check: for every cutoff k, spending on circles ≥ k is at most 5 × (# of circles from k to max).
+ *
+ * **Look the Part (casters only):** +1 point at the build’s max circle — add `lookThePartBonus` (0 or 1) to every cutoff cap so total budget becomes `5 * maxLevel + 1`.
  */
 export function casterCascadeBudgetHolds(
   map: Record<string, BudgetSelection>,
   spells: SpellRow[],
-  maxLevel: number
+  maxLevel: number,
+  lookThePartBonus = 0
 ): boolean {
   for (let k = 1; k <= maxLevel; k += 1) {
     const sum = pointsSpentAtOrAboveCircle(map, spells, k);
-    const cap = POINTS_PER_SPELL_LEVEL * (maxLevel - k + 1);
+    const cap = POINTS_PER_SPELL_LEVEL * (maxLevel - k + 1) + lookThePartBonus;
     if (sum > cap) return false;
   }
   return true;
@@ -66,9 +69,10 @@ export function remainingPointsForCircleAndAbove(
   map: Record<string, BudgetSelection>,
   spells: SpellRow[],
   maxLevel: number,
-  level: number
+  level: number,
+  lookThePartBonus = 0
 ): number {
-  const cap = POINTS_PER_SPELL_LEVEL * (maxLevel - level + 1);
+  const cap = POINTS_PER_SPELL_LEVEL * (maxLevel - level + 1) + lookThePartBonus;
   const spent = pointsSpentAtOrAboveCircle(map, spells, level);
   return Math.max(cap - spent, 0);
 }

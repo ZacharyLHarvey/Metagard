@@ -27,11 +27,13 @@ export default async function EditBuildPage({ params }: Params) {
       <h1 className="text-2xl font-bold">Edit Build: {build.name}</h1>
       <p className="text-neutral-400">
         {build.class} level {build.level}
+        {build.look_the_part ? " · Look the Part" : ""}
       </p>
       <BuildSpellEditor
         buildId={buildId}
         className={build.class}
         maxLevel={build.level}
+        lookThePart={build.look_the_part}
         spells={spells}
         initialSelections={selections}
       />
