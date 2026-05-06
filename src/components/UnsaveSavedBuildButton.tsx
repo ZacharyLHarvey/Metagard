@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-/** POST /api/builds/[id]/save toggles; use on profile saved list to remove from saved. */
+/** POST /api/builds/[id]/save toggles; use on profile/home saved list to remove from saved. */
 export default function UnsaveSavedBuildButton({ buildId }: { buildId: number }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -31,7 +31,7 @@ export default function UnsaveSavedBuildButton({ buildId }: { buildId: number })
       disabled={busy}
       className="px-3 py-1 bg-neutral-700 hover:bg-neutral-600 rounded text-sm"
     >
-      {busy ? "…" : "Remove from saved"}
+      {busy ? "…" : "Remove"}
     </button>
   );
 }

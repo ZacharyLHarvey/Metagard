@@ -57,3 +57,15 @@ export async function getMySpellRating(spellId: number, userId: string): Promise
   if (!data || typeof data.rating !== "number") return null;
   return data.rating;
 }
+
+export async function getMyClassRating(className: string, userId: string): Promise<number | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("class_ratings")
+    .select("rating")
+    .eq("class_name", className)
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (!data || typeof data.rating !== "number") return null;
+  return data.rating;
+}

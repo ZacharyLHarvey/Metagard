@@ -506,6 +506,40 @@ create policy "Users update own profile"
   with check (auth.uid() = id);
 
 -- ---------------------------------------------------------------------------
+-- Core classes ratings (rate once per user/class_name)
+-- ---------------------------------------------------------------------------
+create unique index if not exists classes_name_unique_idx on public.classes(name);
+
+create table if not exists public.class_ratings (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  class_name text not null references public.classes(name) on delete cascade,
+  rating smallint not null check (rating between 1 and 5),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  primary key (user_id, class_name)
+);
+
+create index if not exists idx_class_ratings_class_name on public.class_ratings(class_name);
+
+alter table public.class_ratings enable row level security;
+
+drop policy if exists "Anyone can read class_ratings" on public.class_ratings;
+create policy "Anyone can read class_ratings"
+  on public.class_ratings for select to anon, authenticated using (true);
+
+drop policy if exists "Users insert own class_rating" on public.class_ratings;
+create policy "Users insert own class_rating"
+  on public.class_ratings for insert to authenticated with check (auth.uid() = user_id);
+
+drop policy if exists "Users update own class_rating" on public.class_ratings;
+create policy "Users update own class_rating"
+  on public.class_ratings for update to authenticated using (auth.uid() = user_id);
+
+drop policy if exists "Users delete own class_rating" on public.class_ratings;
+create policy "Users delete own class_rating"
+  on public.class_ratings for delete to authenticated using (auth.uid() = user_id);
+
+-- ---------------------------------------------------------------------------
 -- Favorites stats (RPC) for charts
 -- Uses SECURITY DEFINER + row_security=off so we can read aggregate counts
 -- without exposing profile rows directly.

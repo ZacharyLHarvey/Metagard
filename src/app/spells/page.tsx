@@ -1,4 +1,5 @@
 import Link from "next/link";
+import TierBadge from "@/components/TierBadge";
 import { getAllSpellsList } from "@/lib/queries/spellbook";
 
 type Search = { group?: string };
@@ -71,7 +72,7 @@ export default async function SpellsPage({ searchParams }: { searchParams: Promi
                   {s.name}
                 </Link>
                 <span className="text-xs text-neutral-500 shrink-0">
-                  {s.type ?? "—"} · {s.school ?? "—"} · ★ {Number(s.average_rating ?? 0).toFixed(2)}
+                  <TierBadge tier={(s.tier as "S+" | "S" | "A" | "B" | "C" | "D" | "F") ?? "C"} /> · WR {Number(s.weighted_rating ?? 0).toFixed(2)} · {Number(s.ratings_count ?? 0)} votes
                 </span>
               </li>
             ))}

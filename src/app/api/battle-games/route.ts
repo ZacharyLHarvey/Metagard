@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
+import { getGlobalAverageRating, getNumericEntityVoteStats } from "@/lib/queries/ratingStats";
 import { createClient } from "@/lib/server/supabaseServer";
+import { computeTierResult } from "@/lib/tier";
 
 export async function GET() {
   const supabase = await createClient();
@@ -8,7 +10,17 @@ export async function GET() {
     .select("*")
     .order("average_rating", { ascending: false });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ items: data ?? [] });
+  const rows = (data ?? []) as Array<{ id: number; average_rating: number | null } & Record<string, unknown>>;
+  const [globalAverage, voteStats] = await Promise.all([
+    getGlobalAverageRating("battle_game_ratings"),
+    getNumericEntityVoteStats("battle_game_ratings", "battle_game_id", rows.map((r) => r.id)),
+  ]);
+  const items = rows.map((r) => {
+    const stat = voteStats.get(r.id) ?? { votes: 0, rawAverage: Number(r.average_rating ?? 0) };
+    const tierData = computeTierResult(stat.rawAverage, stat.votes, globalAverage);
+    return { ...r, weighted_rating: tierData.weightedRating, ratings_count: stat.votes, tier: tierData.tier };
+  });
+  return NextResponse.json({ items });
 }
 
 export async function POST(request: Request) {

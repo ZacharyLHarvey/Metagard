@@ -1,3 +1,4 @@
+import UnsaveSavedBuildButton from "@/components/UnsaveSavedBuildButton";
 import { getProfile } from "@/lib/queries/getProfile";
 import Link from "next/link";
 import { getMyBuilds, getSavedBuilds } from "@/lib/queries/spellbook";
@@ -8,10 +9,10 @@ export default async function Home() {
 
   return (
     <main className="p-10 text-white">
-      <h1 className="text-2xl font-bold">Metagard</h1>
-      <p className="mt-4 text-neutral-400">
-        Welcome back, {profile?.display_name}.
-      </p>
+      <header className="text-center">
+        <h1 className="text-2xl font-bold">Metagard</h1>
+        <p className="mt-4 text-neutral-400">Welcome back, {profile?.display_name}.</p>
+      </header>
 
       {/* Shared column layout */}
       <style>
@@ -120,12 +121,15 @@ export default async function Home() {
                   </td>
 
                   <td className="col-actions px-4 py-2 border-b border-neutral-800 text-right">
-                    <Link
-                      href={`/builds/${b.id}`}
-                      className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm"
-                    >
-                      View
-                    </Link>
+                    <div className="flex justify-end gap-3">
+                      <Link
+                        href={`/builds/${b.id}`}
+                        className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm"
+                      >
+                        View
+                      </Link>
+                      <UnsaveSavedBuildButton buildId={b.id} />
+                    </div>
                   </td>
                 </tr>
               ))}

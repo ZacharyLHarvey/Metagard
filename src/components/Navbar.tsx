@@ -33,6 +33,9 @@ export default async function Navbar() {
         <Link href="/spells" className="hover:text-blue-400 transition">
           Spells
         </Link>
+        <Link href="/classes" className="hover:text-blue-400 transition">
+          Classes
+        </Link>
 
         <Link href="/leaderboards" className="hover:text-blue-400 transition">
           Leaderboards
