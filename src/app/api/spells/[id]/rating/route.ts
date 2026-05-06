@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
+import { getGlobalAverageRating, getNumericEntityVoteStats } from "@/lib/queries/ratingStats";
 import { createClient } from "@/lib/server/supabaseServer";
+import { computeTierResult } from "@/lib/tier";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -25,7 +27,19 @@ export async function POST(request: Request, context: Params) {
     );
     if (error) throw error;
 
-    return NextResponse.json({ ok: true });
+    const [globalAverage, voteStats] = await Promise.all([
+      getGlobalAverageRating("spell_ratings"),
+      getNumericEntityVoteStats("spell_ratings", "spell_id", [spellId]),
+    ]);
+    const stat = voteStats.get(spellId) ?? { votes: 0, rawAverage: 0 };
+    const tierData = computeTierResult(stat.rawAverage, stat.votes, globalAverage);
+    return NextResponse.json({
+      ok: true,
+      weighted_rating: tierData.weightedRating,
+      tier: tierData.tier,
+      ratings_count: stat.votes,
+      raw_average: stat.rawAverage,
+    });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Failed to save rating";
     return NextResponse.json({ error: message }, { status: 500 });

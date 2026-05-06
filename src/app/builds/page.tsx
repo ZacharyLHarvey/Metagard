@@ -1,7 +1,10 @@
 import Link from "next/link";
 import SaveBuildButton from "@/components/SaveBuildButton";
+import TierBadge from "@/components/TierBadge";
+import { getGlobalAverageRating, getNumericEntityVoteStats } from "@/lib/queries/ratingStats";
 import { createClient } from "@/lib/server/supabaseServer";
 import { getProfile } from "@/lib/queries/getProfile";
+import { computeTierResult } from "@/lib/tier";
 
 type Build = {
   id: number;
@@ -14,7 +17,37 @@ type Build = {
   created_at: string;
 };
 
-export default async function BuildsPage() {
+function normalizeClassKey(value: string | null | undefined): string {
+  const raw = (value ?? "").normalize("NFKC");
+  const unifiedDashes = raw.replace(/[‐‑‒–—―−]/g, "-");
+  const collapsedWhitespace = unifiedDashes.replace(/\s+/g, " ").trim();
+  return collapsedWhitespace ? collapsedWhitespace.toLocaleLowerCase() : "—";
+}
+
+function normalizeClassLabel(value: string | null | undefined): string {
+  const raw = (value ?? "").normalize("NFKC");
+  const unifiedDashes = raw.replace(/[‐‑‒–—―−]/g, "-");
+  const collapsedWhitespace = unifiedDashes.replace(/\s+/g, " ").trim();
+  return collapsedWhitespace || "—";
+}
+
+const MARTIAL_CLASSES = new Set([
+  "warrior",
+  "paladin",
+  "anti-paladin",
+  "monk",
+  "scout",
+  "assassin",
+  "barbarian",
+  "archer",
+]);
+
+const CASTER_CLASSES = new Set(["bard", "druid", "healer", "wizard"]);
+
+type Search = { group?: string };
+
+export default async function BuildsPage({ searchParams }: { searchParams: Promise<Search> }) {
+  const { group = "all" } = await searchParams;
   const supabase = await createClient();
   const profile = await getProfile();
 
@@ -37,17 +70,77 @@ export default async function BuildsPage() {
   }
 
   const rows = (builds ?? []) as Build[];
+  const voteStats = await getNumericEntityVoteStats(
+    "build_ratings",
+    "build_id",
+    rows.map((r) => r.id)
+  );
+  const globalAverage = await getGlobalAverageRating("build_ratings");
   const byClass = new Map<string, Build[]>();
+  const labelByClassKey = new Map<string, string>();
   for (const b of rows) {
-    const key = b.class || "—";
+    const key = normalizeClassKey(b.class);
+    const label = normalizeClassLabel(b.class);
     if (!byClass.has(key)) byClass.set(key, []);
+    if (!labelByClassKey.has(key)) labelByClassKey.set(key, label);
     byClass.get(key)!.push(b);
   }
-  const classNames = [...byClass.keys()].sort((a, b) => a.localeCompare(b));
+  const classKeys = [...byClass.keys()].sort((a, b) => {
+    const aLabel = labelByClassKey.get(a) ?? a;
+    const bLabel = labelByClassKey.get(b) ?? b;
+    return aLabel.localeCompare(bLabel);
+  });
+
+  const filterOptions: { value: string; label: string }[] = [
+    { value: "all", label: "All builds" },
+    ...classKeys.map((k) => ({ value: `class:${k}`, label: labelByClassKey.get(k) ?? k })),
+    { value: "caster", label: "Caster" },
+    { value: "martial", label: "Martial" },
+  ];
+
+  function includeClass(classKey: string) {
+    if (group === "all") return true;
+    if (group === "caster") return CASTER_CLASSES.has(classKey);
+    if (group === "martial") return MARTIAL_CLASSES.has(classKey);
+    if (group.startsWith("class:")) return classKey === group.slice("class:".length);
+    return true;
+  }
+
+  const visibleClassKeys = classKeys.filter(includeClass);
+  const pageTitle =
+    group === "caster"
+      ? "Caster builds"
+      : group === "martial"
+        ? "Martial builds"
+        : group.startsWith("class:")
+          ? `${labelByClassKey.get(group.slice("class:".length)) ?? "Class"} builds`
+          : "All builds";
 
   return (
     <main className="p-10 text-white space-y-10">
-      <h1 className="text-2xl font-bold">All builds</h1>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <h1 className="text-2xl font-bold">{pageTitle}</h1>
+        <form method="get" className="flex items-center gap-2">
+          <label htmlFor="group" className="text-sm text-neutral-400">
+            Tierlist group
+          </label>
+          <select
+            id="group"
+            name="group"
+            defaultValue={group}
+            className="px-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-sm"
+          >
+            {filterOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+          <button type="submit" className="px-3 py-2 bg-blue-600 rounded text-sm">
+            Apply
+          </button>
+        </form>
+      </div>
       <p className="text-sm text-neutral-400 max-w-2xl">
         Grouped by class; within each group, sorted by level then name.
       </p>
@@ -63,18 +156,18 @@ export default async function BuildsPage() {
         `}
       </style>
 
-      {classNames.length === 0 ? (
+      {visibleClassKeys.length === 0 ? (
         <p className="text-neutral-400">
-          No builds yet. Check Row Level Security if you expected data (
+          No builds in this group. Check Row Level Security if you expected data (
           <code className="text-neutral-300">supabase/policies/builds_public_select.sql</code>
           ).
         </p>
       ) : null}
 
-      {classNames.map((className) => (
-        <section key={className} className="space-y-3">
+      {visibleClassKeys.map((classKey) => (
+        <section key={classKey} className="space-y-3">
           <h2 className="text-lg font-semibold text-neutral-200 border-b border-neutral-800 pb-2">
-            {className}
+            {labelByClassKey.get(classKey) ?? classKey}
           </h2>
           <div className="border border-neutral-800 rounded-lg overflow-hidden">
             <table className="w-full text-left border-collapse">
@@ -99,7 +192,10 @@ export default async function BuildsPage() {
                 </tr>
               </thead>
               <tbody>
-                {byClass.get(className)!.map((b) => (
+                {byClass.get(classKey)!.map((b) => {
+                  const stat = voteStats.get(b.id) ?? { votes: 0, rawAverage: Number(b.average_rating ?? 0) };
+                  const tierData = computeTierResult(stat.rawAverage, stat.votes, globalAverage);
+                  return (
                   <tr key={b.id} className="hover:bg-neutral-900/40 transition">
                     <td className="col-name px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
                       {b.name}
@@ -111,7 +207,10 @@ export default async function BuildsPage() {
                       {b.level}
                     </td>
                     <td className="col-rating px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
-                      {Number(b.average_rating ?? 0).toFixed(1)} ⭐
+                      <div className="flex items-center gap-2">
+                        <TierBadge tier={tierData.tier} />
+                        <span>WR {tierData.weightedRating.toFixed(2)}</span>
+                      </div>
                     </td>
                     <td className="col-look px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
                       {b.look_the_part ? "✔️" : "—"}
@@ -136,7 +235,8 @@ export default async function BuildsPage() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>

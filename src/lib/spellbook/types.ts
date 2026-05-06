@@ -14,6 +14,10 @@ export type BuildRow = {
   synergy?: string | null;
   enemies?: string | null;
   recommended_gear?: string | null;
+  weighted_rating?: number | null;
+  ratings_count?: number | null;
+  tier?: string | null;
+  tier_rank?: number | null;
   created_at: string;
 };
 

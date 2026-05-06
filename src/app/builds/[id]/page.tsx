@@ -4,9 +4,12 @@ import BuildCommentsSection from "@/components/BuildCommentsSection";
 import BuildRatingSection from "@/components/BuildRatingSection";
 import BuildSpellDetails from "@/components/BuildSpellDetails";
 import CloneBuildButton from "@/components/CloneBuildButton";
+import TierBadge from "@/components/TierBadge";
+import { getGlobalAverageRating, getNumericEntityVoteStats } from "@/lib/queries/ratingStats";
 import { getProfile } from "@/lib/queries/getProfile";
 import { getBuildById, getBuildSpellSelections, getCatalogSpellsForClass } from "@/lib/queries/spellbook";
 import { getMyBuildRating } from "@/lib/queries/social";
+import { computeTierResult } from "@/lib/tier";
 
 type Params = {
   params: Promise<{ id: string }>;
@@ -27,6 +30,12 @@ export default async function BuildDetailsPage({ params }: Params) {
 
   const profileId = profile && "id" in profile && profile.id != null ? String(profile.id) : null;
   const myRating = profileId ? await getMyBuildRating(buildId, profileId) : null;
+  const [globalAverage, voteStats] = await Promise.all([
+    getGlobalAverageRating("build_ratings"),
+    getNumericEntityVoteStats("build_ratings", "build_id", [buildId]),
+  ]);
+  const stat = voteStats.get(buildId) ?? { votes: 0, rawAverage: Number(build.average_rating ?? 0) };
+  const tierData = computeTierResult(stat.rawAverage, stat.votes, globalAverage);
 
   const canAct = Boolean(profile);
 
@@ -84,7 +93,10 @@ export default async function BuildDetailsPage({ params }: Params) {
 
       <section className="rounded-lg border border-neutral-800 p-4 space-y-3">
         <p className="text-sm text-neutral-400">
-          Average rating: <span className="text-neutral-200 font-semibold">{Number(build.average_rating ?? 0).toFixed(2)}</span> ★
+          <TierBadge tier={tierData.tier} /> · Weighted:{" "}
+          <span className="text-neutral-200 font-semibold">{tierData.weightedRating.toFixed(2)}</span> · Raw:{" "}
+          <span className="text-neutral-200 font-semibold">{stat.rawAverage.toFixed(2)}</span> ★ · {stat.votes} vote
+          {stat.votes === 1 ? "" : "s"}
         </p>
         <BuildRatingSection buildId={buildId} canRate={canAct} initialMyRating={myRating} />
         <CloneBuildButton buildId={buildId} canClone={canAct} />

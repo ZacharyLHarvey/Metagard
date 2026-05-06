@@ -1,6 +1,8 @@
 import "server-only";
 import { formatSpellFrequency } from "@/lib/spellbook/formatFrequency";
+import { getGlobalAverageRating, getNumericEntityVoteStats, getStringEntityVoteStats } from "@/lib/queries/ratingStats";
 import { createClient } from "@/lib/server/supabaseServer";
+import { computeTierResult } from "@/lib/tier";
 import type {
   BuildRow,
   BuildSpellSelectionInput,
@@ -95,6 +97,53 @@ export async function getCatalogClasses() {
   // No spells-table class derivation: class names must match public.classes and
   // class_spell_rules.class_name (run `npm run db:swiftgard-sql` and apply generated SQL).
   return [];
+}
+
+export async function getClassById(id: number): Promise<ClassRow | null> {
+  const classes = await getCatalogClasses();
+  return classes.find((c) => c.id === id) ?? null;
+}
+
+export type ClassLeaderboardRow = {
+  id: number;
+  name: string;
+  average_rating: number;
+  weighted_rating: number;
+  tier: string;
+  tier_rank: number;
+  ratings_count: number;
+};
+
+export async function getClassLeaderboard(): Promise<ClassLeaderboardRow[]> {
+  const classes = await getCatalogClasses();
+  if (classes.length === 0) return [];
+  const names = classes.map((c) => c.name);
+  const globalAverage = await getGlobalAverageRating("class_ratings");
+  const statsByName = await getStringEntityVoteStats("class_ratings", "class_name", names);
+
+  return classes
+    .map((c) => {
+      const stat = statsByName.get(c.name);
+      const average = stat?.rawAverage ?? 0;
+      const votes = stat?.votes ?? 0;
+      const tierData = computeTierResult(average, votes, globalAverage);
+      return {
+        id: c.id,
+        name: c.name,
+        average_rating: average,
+        weighted_rating: tierData.weightedRating,
+        tier: tierData.tier,
+        tier_rank: tierData.tierRank,
+        ratings_count: votes,
+      };
+    })
+    .sort(
+      (a, b) =>
+        a.tier_rank - b.tier_rank ||
+        b.weighted_rating - a.weighted_rating ||
+        b.ratings_count - a.ratings_count ||
+        a.name.localeCompare(b.name)
+    );
 }
 
 function mergeRuleWithSpell(ruleRow: Record<string, unknown>, base: SpellRow): SpellRow {
@@ -363,6 +412,10 @@ export type SpellListRow = {
   school: string | null;
   type: string | null;
   average_rating: number | null;
+  weighted_rating?: number | null;
+  ratings_count?: number | null;
+  tier?: string | null;
+  tier_rank?: number | null;
 };
 
 export async function getSpellById(id: number) {
@@ -378,7 +431,24 @@ export async function getAllSpellsList(): Promise<SpellListRow[]> {
     .select("id,name,level,school,type,average_rating")
     .order("name");
   if (!primary.error && (primary.data?.length ?? 0) > 0) {
-    return (primary.data ?? []) as SpellListRow[];
+    const rows = (primary.data ?? []) as SpellListRow[];
+    const ids = rows.map((r) => r.id);
+    const [globalAverage, voteStats] = await Promise.all([
+      getGlobalAverageRating("spell_ratings"),
+      getNumericEntityVoteStats("spell_ratings", "spell_id", ids),
+    ]);
+    return rows.map((r) => {
+      const stat = voteStats.get(r.id) ?? { votes: 0, rawAverage: Number(r.average_rating ?? 0) };
+      const tierData = computeTierResult(stat.rawAverage, stat.votes, globalAverage);
+      return {
+        ...r,
+        average_rating: stat.rawAverage,
+        weighted_rating: tierData.weightedRating,
+        ratings_count: stat.votes,
+        tier: tierData.tier,
+        tier_rank: tierData.tierRank,
+      };
+    });
   }
 
   // Fallback for alternate spell schemas (e.g. spell_level / spell_name).
@@ -400,13 +470,56 @@ export async function getAllSpellsList(): Promise<SpellListRow[]> {
     })
     .filter((row): row is SpellListRow => row !== null);
 
-  return normalized.sort((a, b) => a.name.localeCompare(b.name));
+  const ids = normalized.map((r) => r.id);
+  const [globalAverage, voteStats] = await Promise.all([
+    getGlobalAverageRating("spell_ratings"),
+    getNumericEntityVoteStats("spell_ratings", "spell_id", ids),
+  ]);
+  return normalized
+    .map((r) => {
+      const stat = voteStats.get(r.id) ?? { votes: 0, rawAverage: Number(r.average_rating ?? 0) };
+      const tierData = computeTierResult(stat.rawAverage, stat.votes, globalAverage);
+      return {
+        ...r,
+        average_rating: stat.rawAverage,
+        weighted_rating: tierData.weightedRating,
+        ratings_count: stat.votes,
+        tier: tierData.tier,
+        tier_rank: tierData.tierRank,
+      } satisfies SpellListRow;
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export async function getLeaderboardBuilds(limit = 150): Promise<BuildRow[]> {
   const supabase = await createClient();
-  const { data } = await supabase.from("builds").select("*").order("average_rating", { ascending: false }).limit(limit);
-  return (data ?? []) as BuildRow[];
+  const { data } = await supabase.from("builds").select("*").limit(limit);
+  const rows = (data ?? []) as BuildRow[];
+  const ids = rows.map((r) => r.id);
+  const globalAverage = await getGlobalAverageRating("build_ratings");
+  const voteStats = await getNumericEntityVoteStats("build_ratings", "build_id", ids);
+  return rows
+    .map((r) => {
+      const stat = voteStats.get(r.id) ?? { votes: 0, rawAverage: Number(r.average_rating ?? 0) };
+      const tierData = computeTierResult(stat.rawAverage, stat.votes, globalAverage);
+      return {
+        ...r,
+        average_rating: stat.rawAverage,
+        weighted_rating: tierData.weightedRating,
+        tier: tierData.tier,
+        tier_rank: tierData.tierRank,
+        ratings_count: stat.votes,
+      };
+    })
+    .sort(
+      (a, b) =>
+        (a as BuildRow & { tier_rank: number }).tier_rank - (b as BuildRow & { tier_rank: number }).tier_rank ||
+        (b as BuildRow & { weighted_rating: number }).weighted_rating -
+          (a as BuildRow & { weighted_rating: number }).weighted_rating ||
+        (b as BuildRow & { ratings_count: number }).ratings_count -
+          (a as BuildRow & { ratings_count: number }).ratings_count ||
+        String(b.created_at ?? "").localeCompare(String(a.created_at ?? ""))
+    );
 }
 
 export async function cloneBuild(sourceBuildId: number) {

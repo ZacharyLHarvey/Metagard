@@ -81,3 +81,36 @@ Run new SQL in Supabase SQL Editor after review: `supabase/policies/metagard_ext
 | Navigation | `Navbar.tsx` (Spells, Leaderboards, UGC, optional `NEXT_PUBLIC_DISCORD_URL`) |
 
 **Still deferred:** profile achievement badges, favorite graphs (charting), DB-backed bug/feature tickets (email flow remains), “custom grouping” for spells beyond type/school (would need a `spell_groups` table + admin UI).
+
+## 3. Unified Bayesian tier system (new)
+
+### What was missing
+
+- No shared tier model across entities.
+- All UIs and leaderboards used raw averages (`average_rating`) directly.
+- APIs returned raw averages or simple `{ ok: true }` responses after rating writes.
+
+### What was added
+
+- Shared tier engine in `src/lib/tier.ts`:
+  - Bayesian weighted rating with smoothing `m = 10`
+  - Tier mapping: `S+`, `S`, `A`, `B`, `C`, `D`, `F`
+- Shared rating aggregation helpers in `src/lib/queries/ratingStats.ts`:
+  - global average `C` by rating table
+  - vote + raw-average rollups by numeric/string entity keys
+- Tier badge component in `src/components/TierBadge.tsx`
+- Tier data surfaced for rated entities:
+  - Builds, Spells, Monsters, Custom classes, Battle games, Custom spells, and Classes
+  - List pages, detail pages, and leaderboards now show weighted rating + tier (+ vote counts)
+  - Rating APIs now return weighted/tier payload in response
+- Leaderboards updated to sort by:
+  1. Tier rank (`S+` → `F`)
+  2. Weighted rating (desc)
+  3. Vote count (desc)
+  4. Newest/name fallback depending on available fields
+
+### Why Bayesian weighting
+
+- Prevents low-vote entities from jumping to extreme tiers on a single 5-star vote.
+- Keeps `S+`/`S`/`F` rare without requiring hard minimum-vote rules.
+- Still allows well-rated, high-vote entities to rise predictably.

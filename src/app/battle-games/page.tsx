@@ -1,4 +1,7 @@
 import Link from "next/link";
+import TierBadge from "@/components/TierBadge";
+import { getGlobalAverageRating, getNumericEntityVoteStats } from "@/lib/queries/ratingStats";
+import { computeTierResult } from "@/lib/tier";
 import { createClient } from "@/lib/server/supabaseServer";
 
 export default async function BattleGamesPage() {
@@ -7,6 +10,11 @@ export default async function BattleGamesPage() {
     .from("battle_games")
     .select("*")
     .order("average_rating", { ascending: false });
+  const rows = (items ?? []) as Array<{ id: number; name: string; average_rating: number | null }>;
+  const [globalAverage, voteStats] = await Promise.all([
+    getGlobalAverageRating("battle_game_ratings"),
+    getNumericEntityVoteStats("battle_game_ratings", "battle_game_id", rows.map((r) => r.id)),
+  ]);
 
   return (
     <main className="p-10 text-white space-y-6">
@@ -20,14 +28,20 @@ export default async function BattleGamesPage() {
         {(items ?? []).length === 0 ? (
           <li className="px-4 py-8 text-neutral-500 text-center">No battle games yet.</li>
         ) : null}
-        {(items ?? []).map((m: { id: number; name: string; average_rating: number | null }) => (
+        {rows.map((m) => {
+          const stat = voteStats.get(m.id) ?? { votes: 0, rawAverage: Number(m.average_rating ?? 0) };
+          const tierData = computeTierResult(stat.rawAverage, stat.votes, globalAverage);
+          return (
           <li key={m.id} className="px-4 py-3 flex justify-between gap-4">
             <Link href={`/battle-games/${m.id}`} className="text-blue-400 hover:underline">
               {m.name}
             </Link>
-            <span className="text-sm text-neutral-500">★ {Number(m.average_rating ?? 0).toFixed(2)}</span>
+            <span className="text-sm text-neutral-500">
+              <TierBadge tier={tierData.tier} /> · WR {tierData.weightedRating.toFixed(2)}
+            </span>
           </li>
-        ))}
+          );
+        })}
       </ul>
     </main>
   );
