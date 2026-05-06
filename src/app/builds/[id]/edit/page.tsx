@@ -30,6 +30,7 @@ export default async function EditBuildPage({ params }: Params) {
       </p>
       <BuildSpellEditor
         buildId={buildId}
+        className={build.class}
         maxLevel={build.level}
         spells={spells}
         initialSelections={selections}
