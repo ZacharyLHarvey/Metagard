@@ -1,4 +1,5 @@
 import "server-only";
+import { formatSpellFrequency } from "@/lib/spellbook/formatFrequency";
 import { createClient } from "@/lib/server/supabaseServer";
 import type {
   BuildRow,
@@ -47,7 +48,7 @@ function normalizeSpellRow(row: Record<string, unknown>): SpellRow | null {
     note: toStringOrNull(row.note),
     cost: toNumberOrNull(row.cost),
     max: toNumberOrNull(row.max) ?? toNumberOrNull(row.max_count),
-    frequency: toStringOrNull(row.frequency),
+    frequency: formatSpellFrequency(row.frequency) ?? toStringOrNull(row.frequency),
   };
 }
 
@@ -91,111 +92,111 @@ export async function getCatalogClasses() {
     }
   }
 
-  // Last-resort fallback: derive class names from spells catalog.
-  const spellsFallback = await supabase.from("spells").select("class");
-  if (!spellsFallback.error && (spellsFallback.data?.length ?? 0) > 0) {
-    const classSet = new Set<string>();
-    for (const row of spellsFallback.data as Array<Record<string, unknown>>) {
-      const value = row.class;
-      if (typeof value === "string" && value.trim().length > 0) {
-        classSet.add(value.trim());
-      }
-    }
-    return Array.from(classSet)
-      .sort((a, b) => a.localeCompare(b))
-      .map((name, index) => ({ id: index + 1, name }));
-  }
-
+  // No spells-table class derivation: class names must match public.classes and
+  // class_spell_rules.class_name (run `npm run db:swiftgard-sql` and apply generated SQL).
   return [];
 }
 
+function mergeRuleWithSpell(ruleRow: Record<string, unknown>, base: SpellRow): SpellRow {
+  const frequencyRaw = ruleRow.frequency;
+  const frequency =
+    frequencyRaw == null ? null : formatSpellFrequency(frequencyRaw) ?? null;
+
+  const ruleId = toNumberOrNull(ruleRow.id);
+
+  return {
+    ...base,
+    level: toNumberOrNull(ruleRow.spell_level) ?? base.level,
+    cost: toNumberOrNull(ruleRow.cost) ?? base.cost,
+    max: toNumberOrNull(ruleRow.max_count) ?? base.max,
+    frequency: frequency ?? base.frequency,
+    catalog_rule_id: ruleId,
+    source_type: toStringOrNull(ruleRow.source_type),
+    option_group: toStringOrNull(ruleRow.option_group),
+    is_look_the_part:
+      typeof ruleRow.is_look_the_part === "boolean" ? ruleRow.is_look_the_part : null,
+  };
+}
+
+/**
+ * Spells shown on the edit-build page must come only from:
+ * `class_spell_rules` (class, level, cost, max, frequency) joined to `spells` (canonical spell row).
+ * We do not fall back to scanning `spells` by a loose class column — that produced wrong lists
+ * (e.g. every spell with no `class` matched every build).
+ */
 export async function getCatalogSpellsForClass(className: string, maxLevel: number) {
   const supabase = await createClient();
 
-  // Preferred source: class-specific level/cost rules table.
-  const rules = await supabase
+  // Single round-trip when FK spell_id -> spells.id exists (recommended).
+  const embedded = await supabase
     .from("class_spell_rules")
-    .select("spell_id, spell_level, cost, max_count, frequency, restricted")
+    .select(
+      "id, spell_id, spell_level, cost, max_count, frequency, restricted, source_type, option_group, is_look_the_part, spells (*)"
+    )
     .eq("class_name", className)
     .lte("spell_level", maxLevel)
     .order("spell_level")
     .order("spell_id");
 
-  if (!rules.error && (rules.data?.length ?? 0) > 0) {
-    const ruleRows = rules.data as Array<Record<string, unknown>>;
-    const ids = Array.from(
-      new Set(
-        ruleRows
-          .map((r) => toNumberOrNull(r.spell_id))
-          .filter((id): id is number => id !== null)
-      )
-    );
-
-    if (ids.length > 0) {
-      const spellRows = await supabase.from("spells").select("*").in("id", ids);
-      if (!spellRows.error && spellRows.data) {
-        const spellMap = new Map<number, SpellRow>();
-        for (const row of spellRows.data as Array<Record<string, unknown>>) {
-          const normalized = normalizeSpellRow(row);
-          if (normalized) spellMap.set(normalized.id, normalized);
-        }
-
-        const merged: SpellRow[] = [];
-        for (const ruleRow of ruleRows) {
-          const spellId = toNumberOrNull(ruleRow.spell_id);
-          if (spellId === null) continue;
-          const base = spellMap.get(spellId);
-          if (!base) continue;
-
-          const frequencyRaw = ruleRow.frequency;
-          const frequency =
-            typeof frequencyRaw === "string"
-              ? frequencyRaw
-              : frequencyRaw == null
-              ? null
-              : JSON.stringify(frequencyRaw);
-
-          merged.push({
-            ...base,
-            level: toNumberOrNull(ruleRow.spell_level) ?? base.level,
-            cost: toNumberOrNull(ruleRow.cost) ?? base.cost,
-            max: toNumberOrNull(ruleRow.max_count) ?? base.max,
-            frequency: frequency ?? base.frequency,
-          });
-        }
-
-        return merged.sort((a, b) => {
-          const levelA = a.level ?? 0;
-          const levelB = b.level ?? 0;
-          if (levelA !== levelB) return levelA - levelB;
-          return a.name.localeCompare(b.name);
-        });
-      }
+  if (!embedded.error && embedded.data && embedded.data.length > 0) {
+    const merged: SpellRow[] = [];
+    for (const row of embedded.data as Array<Record<string, unknown>>) {
+      const nested = row.spells;
+      if (!nested || typeof nested !== "object" || Array.isArray(nested)) continue;
+      const base = normalizeSpellRow(nested as Record<string, unknown>);
+      if (!base) continue;
+      merged.push(mergeRuleWithSpell(row, base));
+    }
+    if (merged.length > 0) {
+      return merged.sort((a, b) => {
+        const levelA = a.level ?? 0;
+        const levelB = b.level ?? 0;
+        if (levelA !== levelB) return levelA - levelB;
+        return a.name.localeCompare(b.name);
+      });
     }
   }
 
-  const raw = await supabase.from("spells").select("*");
-  if (raw.error || !raw.data) return [];
+  // Two-query path: same data, no loose spells scan.
+  const rules = await supabase
+    .from("class_spell_rules")
+    .select(
+      "id, spell_id, spell_level, cost, max_count, frequency, restricted, source_type, option_group, is_look_the_part"
+    )
+    .eq("class_name", className)
+    .lte("spell_level", maxLevel)
+    .order("spell_level")
+    .order("spell_id");
 
-  const pairs = (raw.data as Array<Record<string, unknown>>)
-    .map((row) => ({ row, spell: normalizeSpellRow(row) }))
-    .filter((pair) => Boolean(pair.spell)) as Array<{ row: Record<string, unknown>; spell: SpellRow }>;
+  if (rules.error || !rules.data?.length) return [];
 
-  const classFiltered = pairs.filter(({ row }) => {
-    const mappedClass =
-      toStringOrNull(row.class) ??
-      toStringOrNull(row.class_name) ??
-      toStringOrNull(row.className);
-    if (!mappedClass) return true;
-    return mappedClass.trim().toLowerCase() === className.trim().toLowerCase();
-  });
+  const ruleRows = rules.data as Array<Record<string, unknown>>;
+  const ids = Array.from(
+    new Set(
+      ruleRows.map((r) => toNumberOrNull(r.spell_id)).filter((id): id is number => id !== null)
+    )
+  );
+  if (ids.length === 0) return [];
 
-  const levelFiltered = classFiltered.map((pair) => pair.spell).filter((spell) => {
-    if (spell.level === null) return true;
-    return spell.level <= maxLevel;
-  });
+  const spellRows = await supabase.from("spells").select("*").in("id", ids);
+  if (spellRows.error || !spellRows.data?.length) return [];
 
-  return levelFiltered.sort((a, b) => {
+  const spellMap = new Map<number, SpellRow>();
+  for (const row of spellRows.data as Array<Record<string, unknown>>) {
+    const normalized = normalizeSpellRow(row);
+    if (normalized) spellMap.set(normalized.id, normalized);
+  }
+
+  const merged: SpellRow[] = [];
+  for (const ruleRow of ruleRows) {
+    const spellId = toNumberOrNull(ruleRow.spell_id);
+    if (spellId === null) continue;
+    const base = spellMap.get(spellId);
+    if (!base) continue;
+    merged.push(mergeRuleWithSpell(ruleRow, base));
+  }
+
+  return merged.sort((a, b) => {
     const levelA = a.level ?? 0;
     const levelB = b.level ?? 0;
     if (levelA !== levelB) return levelA - levelB;
@@ -353,4 +354,107 @@ export async function getPatchNotes() {
 
   if (error) return [];
   return data ?? [];
+}
+
+export type SpellListRow = {
+  id: number;
+  name: string;
+  level: number | null;
+  school: string | null;
+  type: string | null;
+  average_rating: number | null;
+};
+
+export async function getSpellById(id: number) {
+  const supabase = await createClient();
+  const { data } = await supabase.from("spells").select("*").eq("id", id).maybeSingle();
+  return data as Record<string, unknown> | null;
+}
+
+export async function getAllSpellsList(): Promise<SpellListRow[]> {
+  const supabase = await createClient();
+  const primary = await supabase
+    .from("spells")
+    .select("id,name,level,school,type,average_rating")
+    .order("name");
+  if (!primary.error && (primary.data?.length ?? 0) > 0) {
+    return (primary.data ?? []) as SpellListRow[];
+  }
+
+  // Fallback for alternate spell schemas (e.g. spell_level / spell_name).
+  const fallback = await supabase.from("spells").select("*");
+  if (fallback.error || !fallback.data?.length) return [];
+
+  const normalized = (fallback.data as Array<Record<string, unknown>>)
+    .map((raw) => {
+      const base = normalizeSpellRow(raw);
+      if (!base) return null;
+      return {
+        id: base.id,
+        name: base.name,
+        level: base.level ?? null,
+        school: base.school ?? null,
+        type: base.type ?? null,
+        average_rating: toNumberOrNull(raw.average_rating),
+      } satisfies SpellListRow;
+    })
+    .filter((row): row is SpellListRow => row !== null);
+
+  return normalized.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export async function getLeaderboardBuilds(limit = 150): Promise<BuildRow[]> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("builds").select("*").order("average_rating", { ascending: false }).limit(limit);
+  return (data ?? []) as BuildRow[];
+}
+
+export async function cloneBuild(sourceBuildId: number) {
+  const userId = await getCurrentUserId();
+  if (!userId) throw new Error("Unauthorized");
+
+  const supabase = await createClient();
+  const source = await getBuildById(sourceBuildId);
+  if (!source) throw new Error("Not found");
+
+  const { data: inserted, error: insErr } = await supabase
+    .from("builds")
+    .insert({
+      name: `${source.name} (copy)`,
+      class: source.class,
+      level: source.level,
+      look_the_part: source.look_the_part,
+      owner_id: userId,
+      average_rating: 0,
+      ruleset_version: source.ruleset_version ?? "V8.7",
+      notes: source.notes ?? null,
+      play_style: source.play_style ?? null,
+      build_priority: source.build_priority ?? null,
+      synergy: source.synergy ?? null,
+      enemies: source.enemies ?? null,
+      recommended_gear: source.recommended_gear ?? null,
+    })
+    .select("id")
+    .single();
+
+  if (insErr) throw insErr;
+  const newId = inserted.id as number;
+
+  const selections = await getBuildSpellSelections(sourceBuildId);
+  if (selections.length > 0) {
+    const payload = selections.map((s) => ({
+      build_id: newId,
+      spell_id: s.spell_id,
+      spell_level: s.spell_level,
+      purchased: s.purchased,
+      experienced: s.experienced,
+      selection_group: s.selection_group,
+      chosen: s.chosen,
+      metadata: s.metadata ?? {},
+    }));
+    const { error: selErr } = await supabase.from("build_spell_selections").insert(payload);
+    if (selErr) throw selErr;
+  }
+
+  return newId;
 }

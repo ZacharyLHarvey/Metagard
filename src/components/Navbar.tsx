@@ -26,6 +26,45 @@ export default async function Navbar() {
         <Link href="/profile" className="hover:text-blue-400 transition">
           Profile
         </Link>
+        <Link href="/favorites" className="hover:text-blue-400 transition">
+          Favorites
+        </Link>
+
+        <Link href="/spells" className="hover:text-blue-400 transition">
+          Spells
+        </Link>
+
+        <Link href="/leaderboards" className="hover:text-blue-400 transition">
+          Leaderboards
+        </Link>
+
+        <Link href="/monsters" className="hover:text-blue-400 transition">
+          Monsters
+        </Link>
+
+        <Link href="/custom-classes" className="hover:text-blue-400 transition">
+          Custom classes
+        </Link>
+
+        <Link href="/battle-games" className="hover:text-blue-400 transition">
+          Battle games
+        </Link>
+
+        <Link href="/custom-spells" className="hover:text-blue-400 transition">
+          Custom spells
+        </Link>
+
+        {process.env.NEXT_PUBLIC_DISCORD_URL ? (
+          <a
+            href={process.env.NEXT_PUBLIC_DISCORD_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-blue-400 transition"
+          >
+            Discord
+          </a>
+        ) : null}
+
         <Link href="/patch-notes" className="hover:text-blue-400 transition">
           Patch Notes
         </Link>

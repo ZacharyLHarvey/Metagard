@@ -8,6 +8,12 @@ export type BuildRow = {
   owner_id: string | null;
   ruleset_version: string | null;
   notes: string | null;
+  play_style?: string | null;
+  /** DB column build_priority (display: Priority) */
+  build_priority?: string | null;
+  synergy?: string | null;
+  enemies?: string | null;
+  recommended_gear?: string | null;
   created_at: string;
 };
 
@@ -31,6 +37,12 @@ export type SpellRow = {
   cost: number | null;
   max: number | null;
   frequency: string | null;
+  average_rating?: number | null;
+  /** Row id from public.class_spell_rules when the catalog is DB-backed (disambiguates same spell_id + level). */
+  catalog_rule_id?: number | null;
+  source_type?: string | null;
+  option_group?: string | null;
+  is_look_the_part?: boolean | null;
 };
 
 export type BuildSpellSelectionRow = {

@@ -2,23 +2,25 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import type { BuildRow } from "@/lib/spellbook/types";
 
 type Props = {
-  build: {
-    id: number;
-    name: string;
-    level: number;
-    look_the_part: boolean;
-    notes: string | null;
-  };
+  build: BuildRow;
+  classNames: string[];
 };
 
-export default function BuildSettingsForm({ build }: Props) {
+export default function BuildSettingsForm({ build, classNames }: Props) {
   const router = useRouter();
   const [name, setName] = useState(build.name);
+  const [className, setClassName] = useState(build.class);
   const [level, setLevel] = useState(build.level);
   const [lookThePart, setLookThePart] = useState(build.look_the_part);
   const [notes, setNotes] = useState(build.notes ?? "");
+  const [playStyle, setPlayStyle] = useState(build.play_style ?? "");
+  const [priority, setPriority] = useState(build.build_priority ?? "");
+  const [synergy, setSynergy] = useState(build.synergy ?? "");
+  const [enemies, setEnemies] = useState(build.enemies ?? "");
+  const [recommendedGear, setRecommendedGear] = useState(build.recommended_gear ?? "");
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
@@ -29,7 +31,18 @@ export default function BuildSettingsForm({ build }: Props) {
     const response = await fetch(`/api/builds/${build.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, level, lookThePart, notes }),
+      body: JSON.stringify({
+        name,
+        className,
+        level,
+        lookThePart,
+        notes: notes || null,
+        playStyle: playStyle || null,
+        priority: priority || null,
+        synergy: synergy || null,
+        enemies: enemies || null,
+        recommendedGear: recommendedGear || null,
+      }),
     });
     if (!response.ok) {
       const body = (await response.json().catch(() => ({}))) as { error?: string };
@@ -52,7 +65,7 @@ export default function BuildSettingsForm({ build }: Props) {
       setError("Failed to delete build");
       return;
     }
-    router.push("/");
+    router.push("/builds");
     router.refresh();
   }
 
@@ -65,6 +78,24 @@ export default function BuildSettingsForm({ build }: Props) {
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
+      </div>
+
+      <div>
+        <label className="block mb-2 text-sm text-neutral-300">Class</label>
+        <select
+          className="w-full px-3 py-2 rounded bg-neutral-800 border border-neutral-700"
+          value={className}
+          onChange={(e) => setClassName(e.target.value)}
+        >
+          {classNames.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
+        <p className="text-xs text-amber-600/90 mt-1">
+          Changing class may invalidate spell choices; review your spell list after saving.
+        </p>
       </div>
 
       <div>
@@ -87,17 +118,62 @@ export default function BuildSettingsForm({ build }: Props) {
       <div>
         <label className="block mb-2 text-sm text-neutral-300">Notes</label>
         <textarea
-          className="w-full px-3 py-2 rounded bg-neutral-800 border border-neutral-700 min-h-28"
+          className="w-full px-3 py-2 rounded bg-neutral-800 border border-neutral-700 min-h-24"
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
         />
       </div>
 
+      <div>
+        <label className="block mb-2 text-sm text-neutral-300">Play style</label>
+        <textarea
+          className="w-full px-3 py-2 rounded bg-neutral-800 border border-neutral-700 min-h-20"
+          value={playStyle}
+          onChange={(e) => setPlayStyle(e.target.value)}
+        />
+      </div>
+
+      <div>
+        <label className="block mb-2 text-sm text-neutral-300">Priority</label>
+        <input
+          className="w-full px-3 py-2 rounded bg-neutral-800 border border-neutral-700"
+          value={priority}
+          onChange={(e) => setPriority(e.target.value)}
+        />
+      </div>
+
+      <div>
+        <label className="block mb-2 text-sm text-neutral-300">Synergy</label>
+        <textarea
+          className="w-full px-3 py-2 rounded bg-neutral-800 border border-neutral-700 min-h-20"
+          value={synergy}
+          onChange={(e) => setSynergy(e.target.value)}
+        />
+      </div>
+
+      <div>
+        <label className="block mb-2 text-sm text-neutral-300">Enemies / counters</label>
+        <textarea
+          className="w-full px-3 py-2 rounded bg-neutral-800 border border-neutral-700 min-h-20"
+          value={enemies}
+          onChange={(e) => setEnemies(e.target.value)}
+        />
+      </div>
+
+      <div>
+        <label className="block mb-2 text-sm text-neutral-300">Recommended gear</label>
+        <textarea
+          className="w-full px-3 py-2 rounded bg-neutral-800 border border-neutral-700 min-h-20"
+          value={recommendedGear}
+          onChange={(e) => setRecommendedGear(e.target.value)}
+        />
+      </div>
+
       <div className="flex items-center gap-3">
-        <button onClick={onSave} disabled={saving} className="px-4 py-2 bg-blue-600 rounded">
+        <button type="button" onClick={onSave} disabled={saving} className="px-4 py-2 bg-blue-600 rounded">
           {saving ? "Saving..." : "Save Settings"}
         </button>
-        <button onClick={onDelete} disabled={deleting} className="px-4 py-2 bg-red-700 rounded">
+        <button type="button" onClick={onDelete} disabled={deleting} className="px-4 py-2 bg-red-700 rounded">
           {deleting ? "Deleting..." : "Delete Build"}
         </button>
       </div>

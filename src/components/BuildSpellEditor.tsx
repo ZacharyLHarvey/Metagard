@@ -10,10 +10,25 @@ import {
   computeDisplayRuleOverrides,
   evaluateSpellRules,
 } from "@/lib/spellbook/rules";
+import {
+  casterCascadeBudgetHolds,
+  isCasterClass,
+  POINTS_PER_SPELL_LEVEL,
+  remainingPointsForCircleAndAbove,
+} from "@/lib/spellbook/casterBudget";
+import {
+  catalogRuleKey,
+  findSpellForSelection,
+  selectionKeyForCatalogSpell,
+  selectionKeyFromRow,
+} from "@/lib/spellbook/selection";
 
 type Props = {
   buildId: number;
+  className: string;
   maxLevel: number;
+  /** Look the Part: casters get +1 point at the build’s highest spell circle. */
+  lookThePart: boolean;
   spells: SpellRow[];
   initialSelections: BuildSpellSelectionRow[];
 };
@@ -27,11 +42,47 @@ type Selection = {
   chosen: boolean;
 };
 
-function keyFor(spellId: number, spellLevel: number) {
-  return `${spellLevel}:${spellId}`;
+function purchasedBySpellIdFromMap(map: Record<string, Selection>) {
+  const m: Record<number, number> = {};
+  for (const sel of Object.values(map)) {
+    m[sel.spell_id] = (m[sel.spell_id] ?? 0) + sel.purchased;
+  }
+  return m;
 }
 
-export default function BuildSpellEditor({ buildId, maxLevel, spells, initialSelections }: Props) {
+function pointsSpentForMap(map: Record<string, Selection>, spells: SpellRow[]) {
+  const names = buildSelectedSpellNameSet(purchasedBySpellIdFromMap(map), spells);
+  let sum = 0;
+  for (const sel of Object.values(map)) {
+    const spell = findSpellForSelection(spells, sel);
+    if (!spell) continue;
+    const ev = evaluateSpellRules(spell, names);
+    sum += ev.adjustedCost * sel.purchased;
+  }
+  return sum;
+}
+
+function pointsSpentAtSpellLevel(map: Record<string, Selection>, spells: SpellRow[], spellLevel: number) {
+  const names = buildSelectedSpellNameSet(purchasedBySpellIdFromMap(map), spells);
+  let sum = 0;
+  for (const sel of Object.values(map)) {
+    if (sel.spell_level !== spellLevel) continue;
+    const spell = findSpellForSelection(spells, sel);
+    if (!spell) continue;
+    const ev = evaluateSpellRules(spell, names);
+    sum += ev.adjustedCost * sel.purchased;
+  }
+  return sum;
+}
+
+export default function BuildSpellEditor({
+  buildId,
+  className,
+  maxLevel,
+  lookThePart,
+  spells,
+  initialSelections,
+}: Props) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -40,11 +91,12 @@ export default function BuildSpellEditor({ buildId, maxLevel, spells, initialSel
   const [showIncantation, setShowIncantation] = useState(false);
   const [showMaterials, setShowMaterials] = useState(false);
   const [ruleWarning, setRuleWarning] = useState<string>("");
+  const [collapsedLevels, setCollapsedLevels] = useState<Set<number>>(() => new Set());
 
   const [selectionMap, setSelectionMap] = useState<Record<string, Selection>>(() => {
     const base: Record<string, Selection> = {};
     for (const s of initialSelections) {
-      base[keyFor(s.spell_id, s.spell_level)] = {
+      base[selectionKeyFromRow(s)] = {
         spell_id: s.spell_id,
         spell_level: s.spell_level,
         purchased: s.purchased,
@@ -68,22 +120,25 @@ export default function BuildSpellEditor({ buildId, maxLevel, spells, initialSel
     return byLevel;
   }, [maxLevel, spells]);
 
-  const totalBudget = useMemo(() => maxLevel * 5, [maxLevel]);
-  const pointsSpent = useMemo(() => {
-    return Object.values(selectionMap).reduce((sum, selection) => {
-      const spell = spells.find((s) => s.id === selection.spell_id);
-      const cost = spell?.cost ?? 0;
-      return sum + cost * selection.purchased;
-    }, 0);
-  }, [selectionMap, spells]);
-  const pointsRemaining = Math.max(totalBudget - pointsSpent, 0);
-  const purchasedBySpellId = useMemo(() => {
-    const map: Record<number, number> = {};
-    for (const selection of Object.values(selectionMap)) {
-      map[selection.spell_id] = (map[selection.spell_id] ?? 0) + selection.purchased;
+  const caster = isCasterClass(className);
+  const casterLtpBonus = caster && lookThePart ? 1 : 0;
+  const totalBudget = useMemo(
+    () => maxLevel * POINTS_PER_SPELL_LEVEL + casterLtpBonus,
+    [maxLevel, casterLtpBonus]
+  );
+  const pointsSpentBySpellLevel = useMemo(() => {
+    const out: Record<number, number> = {};
+    for (let L = 1; L <= maxLevel; L += 1) {
+      out[L] = pointsSpentAtSpellLevel(selectionMap, spells, L);
     }
-    return map;
-  }, [selectionMap]);
+    return out;
+  }, [selectionMap, spells, maxLevel]);
+  const purchasedBySpellId = useMemo(() => purchasedBySpellIdFromMap(selectionMap), [selectionMap]);
+  const pointsSpent = useMemo(
+    () => pointsSpentForMap(selectionMap, spells),
+    [selectionMap, spells]
+  );
+  const pointsRemaining = Math.max(totalBudget - pointsSpent, 0);
   const selectedSpellNames = useMemo(
     () => buildSelectedSpellNameSet(purchasedBySpellId, spells),
     [purchasedBySpellId, spells]
@@ -96,31 +151,39 @@ export default function BuildSpellEditor({ buildId, maxLevel, spells, initialSel
       return;
     }
 
-    const key = keyFor(spell.id, level);
+    const key = selectionKeyForCatalogSpell(spell);
     const max = spell.max ?? 99;
+    const group =
+      spell.catalog_rule_id != null ? catalogRuleKey(spell.catalog_rule_id) : null;
+
     setSelectionMap((prev) => {
       const existing = prev[key];
       const purchased = Math.min((existing?.purchased ?? 0) + 1, max);
-      const currentCost = evaluated.adjustedCost * (existing?.purchased ?? 0);
-      const nextCost = evaluated.adjustedCost * purchased;
-      const delta = nextCost - currentCost;
-      if (pointsSpent + delta > totalBudget) return prev;
-      return {
+      const nextMap = {
         ...prev,
         [key]: {
           spell_id: spell.id,
           spell_level: level,
           purchased,
           experienced: existing?.experienced ?? 0,
-          selection_group: existing?.selection_group ?? null,
+          selection_group: existing?.selection_group ?? group,
           chosen: purchased > 0,
         },
       };
+      const spentAfter = pointsSpentForMap(nextMap, spells);
+      if (spentAfter > totalBudget) return prev;
+      if (caster) {
+        if (!casterCascadeBudgetHolds(nextMap, spells, maxLevel, casterLtpBonus)) return prev;
+      } else {
+        const spentThisLevelAfter = pointsSpentAtSpellLevel(nextMap, spells, level);
+        if (spentThisLevelAfter > POINTS_PER_SPELL_LEVEL) return prev;
+      }
+      return nextMap;
     });
   }
 
   function decrement(spell: SpellRow, level: number) {
-    const key = keyFor(spell.id, level);
+    const key = selectionKeyForCatalogSpell(spell);
     setSelectionMap((prev) => {
       const existing = prev[key];
       if (!existing) return prev;
@@ -185,6 +248,18 @@ export default function BuildSpellEditor({ buildId, maxLevel, spells, initialSel
           <span className="font-semibold">{totalBudget}</span> total /{" "}
           <span className="font-semibold">{pointsRemaining}</span> remaining
         </p>
+        {caster ? (
+          <p className="mt-2 text-xs text-neutral-500">
+            Caster: unused points from higher circles can be spent on lower-circle spells (up to {POINTS_PER_SPELL_LEVEL}{" "}
+            pts per circle into the shared pool).
+            {lookThePart ? (
+              <>
+                {" "}
+                Look the Part adds +1 pt at circle {maxLevel} (total {totalBudget}).
+              </>
+            ) : null}
+          </p>
+        ) : null}
         <div className="mt-3 flex flex-wrap gap-4 text-sm">
           <label className="flex items-center gap-2">
             <input type="checkbox" checked={showTypeSchool} onChange={(e) => setShowTypeSchool(e.target.checked)} />
@@ -201,19 +276,56 @@ export default function BuildSpellEditor({ buildId, maxLevel, spells, initialSel
         </div>
       </div>
 
-      {Array.from({ length: maxLevel }, (_, idx) => idx + 1).map((level) => (
+      {Array.from({ length: maxLevel }, (_, idx) => idx + 1).map((level) => {
+        const spentHere = pointsSpentBySpellLevel[level] ?? 0;
+        const remainingHere = caster
+          ? remainingPointsForCircleAndAbove(
+              selectionMap,
+              spells,
+              maxLevel,
+              level,
+              casterLtpBonus
+            )
+          : Math.max(POINTS_PER_SPELL_LEVEL - spentHere, 0);
+        const collapsed = collapsedLevels.has(level);
+        return (
         <section key={level} className="border border-neutral-800 rounded-lg p-4">
-          <h2 className="text-lg font-semibold mb-3">Level {level}</h2>
-          <div className="space-y-2">
+          <button
+            type="button"
+            className="flex w-full items-center justify-between gap-3 text-left rounded-md px-1 py-2 -mx-1 hover:bg-neutral-800/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            onClick={() =>
+              setCollapsedLevels((prev) => {
+                const next = new Set(prev);
+                if (next.has(level)) next.delete(level);
+                else next.add(level);
+                return next;
+              })
+            }
+            aria-expanded={!collapsed}
+          >
+            <h2 className="text-lg font-semibold">
+              Level {level}
+              <span className="ml-2 text-sm font-normal text-neutral-400 tabular-nums">
+                {caster
+                  ? `(${remainingHere} pt${remainingHere === 1 ? "" : "s"} left for circle ${level}+)`
+                  : `(${remainingHere} pt${remainingHere === 1 ? "" : "s"} left at this level)`}
+              </span>
+            </h2>
+            <span className="shrink-0 text-neutral-500 text-sm" aria-hidden>
+              {collapsed ? "▶" : "▼"}
+            </span>
+          </button>
+          {!collapsed ? (
+          <div className="space-y-2 mt-2">
             {(grouped[level] ?? []).map((spell) => {
-              const key = keyFor(spell.id, level);
+              const key = selectionKeyForCatalogSpell(spell);
               const purchased = selectionMap[key]?.purchased ?? 0;
               const evaluated = evaluateSpellRules(spell, selectedSpellNames);
               const display = computeDisplayRuleOverrides(spell, selectedSpellNames, purchased);
               let longPressTimeout: ReturnType<typeof setTimeout> | null = null;
               return (
                 <div
-                  key={spell.id}
+                  key={key}
                   className={`flex items-center justify-between rounded border p-2 ${
                     evaluated.restricted ? "border-red-800 bg-red-950/20" : "border-neutral-800"
                   }`}
@@ -271,8 +383,10 @@ export default function BuildSpellEditor({ buildId, maxLevel, spells, initialSel
               );
             })}
           </div>
+          ) : null}
         </section>
-      ))}
+        );
+      })}
 
       <div className="flex items-center gap-3">
         <button
