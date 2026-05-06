@@ -7,6 +7,7 @@ import {
   computeDisplayRuleOverrides,
   evaluateSpellRules,
 } from "@/lib/spellbook/rules";
+import { findSpellForSelection } from "@/lib/spellbook/selection";
 
 type Props = {
   selections: BuildSpellSelectionRow[];
@@ -19,7 +20,6 @@ export default function BuildSpellDetails({ selections, spells }: Props) {
   const [showMaterials, setShowMaterials] = useState(false);
   const [showRange, setShowRange] = useState(false);
 
-  const spellById = useMemo(() => new Map(spells.map((s) => [s.id, s])), [spells]);
   const purchasedBySpellId = useMemo(() => {
     const map: Record<number, number> = {};
     for (const s of selections) {
@@ -66,7 +66,7 @@ export default function BuildSpellDetails({ selections, spells }: Props) {
           </thead>
           <tbody>
             {selections.map((selection) => {
-              const spell = spellById.get(selection.spell_id);
+              const spell = findSpellForSelection(spells, selection);
               const evaluated = spell
                 ? evaluateSpellRules(spell, selectedSpellNames)
                 : { restricted: false, reason: null, adjustedCost: 0 };

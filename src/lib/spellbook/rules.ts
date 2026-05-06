@@ -1,3 +1,4 @@
+import { formatSpellFrequency } from "@/lib/spellbook/formatFrequency";
 import type { SpellRow } from "@/lib/spellbook/types";
 
 type RuleResult = {
@@ -180,7 +181,7 @@ export function computeDisplayRuleOverrides(
   selectedSpellNames: Set<string>,
   purchasedCount: number
 ): DisplayRuleResult {
-  let frequency = spell.frequency;
+  let frequency = formatSpellFrequency(spell.frequency) ?? spell.frequency;
   let range = spell.range;
 
   if (frequency && purchasedCount > 1 && frequency.includes("/")) {
@@ -208,7 +209,8 @@ export function computeDisplayRuleOverrides(
     range = "Self";
   }
   if (hasArchetype(selectedSpellNames, "Marauder") && spell.name === "Insult") {
-    frequency = `${frequency ?? ""} Charge x5`.trim();
+    // V8.7 Marauder: Insult becomes 1/Life Charge x5 (m) (Ambulant) — match swiftgard.com wording.
+    frequency = "1/Life Charge x5 (m) (Ambulant)";
   }
   if (hasArchetype(selectedSpellNames, "Spy") && ["Shadow Step", "Blink"].includes(spell.name)) {
     frequency = `${frequency ?? ""} Charge x3`.trim();

@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:swiftgard-sql": "node scripts/generate-swiftgard-parity-sql.mjs",
+    "db:swiftgard-sql:stdout": "node scripts/generate-swiftgard-parity-sql.mjs --stdout-only"
   },
   "dependencies": {
     "@supabase/auth-helpers-nextjs": "^0.15.0",

@@ -31,6 +31,11 @@ export type SpellRow = {
   cost: number | null;
   max: number | null;
   frequency: string | null;
+  /** Row id from public.class_spell_rules when the catalog is DB-backed (disambiguates same spell_id + level). */
+  catalog_rule_id?: number | null;
+  source_type?: string | null;
+  option_group?: string | null;
+  is_look_the_part?: boolean | null;
 };
 
 export type BuildSpellSelectionRow = {
