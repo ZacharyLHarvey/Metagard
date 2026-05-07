@@ -1,16 +1,23 @@
 import Link from "next/link";
 import TierBadge from "@/components/TierBadge";
+import AutoQuerySelect from "@/components/AutoQuerySelect";
 import { getGlobalAverageRating, getNumericEntityVoteStats } from "@/lib/queries/ratingStats";
 import { computeTierResult } from "@/lib/tier";
 import { createClient } from "@/lib/server/supabaseServer";
+import { BATTLEGAME_TYPES } from "@/lib/battlegames";
 
-export default async function BattleGamesPage() {
+type Search = { gameType?: string };
+
+export default async function BattlegamesPage({ searchParams }: { searchParams: Promise<Search> }) {
+  const { gameType = "All" } = await searchParams;
   const supabase = await createClient();
-  const { data: items } = await supabase
+  let query = supabase
     .from("battle_games")
     .select("*")
     .order("average_rating", { ascending: false });
-  const rows = (items ?? []) as Array<{ id: number; name: string; average_rating: number | null }>;
+  if (gameType !== "All") query = query.eq("game_type", gameType);
+  const { data: items } = await query;
+  const rows = (items ?? []) as Array<{ id: number; name: string; average_rating: number | null; game_type?: string | null }>;
   const [globalAverage, voteStats] = await Promise.all([
     getGlobalAverageRating("battle_game_ratings"),
     getNumericEntityVoteStats("battle_game_ratings", "battle_game_id", rows.map((r) => r.id)),
@@ -19,22 +26,29 @@ export default async function BattleGamesPage() {
   return (
     <main className="p-10 text-white space-y-6">
       <div className="flex justify-between items-center flex-wrap gap-4">
-        <h1 className="text-2xl font-bold">Battle games</h1>
-        <Link href="/battle-games/new" className="px-3 py-2 bg-blue-600 rounded text-sm">
-          Create battle game
+        <h1 className="text-2xl font-bold">Battlegames</h1>
+        <Link href="/battlegames/new" className="px-3 py-2 bg-blue-600 rounded text-sm">
+          Create battlegame
         </Link>
       </div>
+      <AutoQuerySelect
+        name="gameType"
+        label="Game Type"
+        value={gameType}
+        clearValue="All"
+        options={BATTLEGAME_TYPES.map((type) => ({ value: type, label: type }))}
+      />
       <ul className="border border-neutral-800 rounded-lg divide-y divide-neutral-800">
         {(items ?? []).length === 0 ? (
-          <li className="px-4 py-8 text-neutral-500 text-center">No battle games yet.</li>
+          <li className="px-4 py-8 text-neutral-500 text-center">No battlegames yet.</li>
         ) : null}
         {rows.map((m) => {
           const stat = voteStats.get(m.id) ?? { votes: 0, rawAverage: Number(m.average_rating ?? 0) };
           const tierData = computeTierResult(stat.rawAverage, stat.votes, globalAverage);
           return (
           <li key={m.id} className="px-4 py-3 flex justify-between gap-4">
-            <Link href={`/battle-games/${m.id}`} className="text-blue-400 hover:underline">
-              {m.name}
+            <Link href={`/battlegames/${m.id}`} className="text-blue-400 hover:underline">
+              {m.name} {m.game_type ? <span className="text-xs text-neutral-500">({m.game_type})</span> : null}
             </Link>
             <span className="text-sm text-neutral-500">
               <TierBadge tier={tierData.tier} /> · WR {tierData.weightedRating.toFixed(2)}

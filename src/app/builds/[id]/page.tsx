@@ -7,9 +7,15 @@ import CloneBuildButton from "@/components/CloneBuildButton";
 import TierBadge from "@/components/TierBadge";
 import { getGlobalAverageRating, getNumericEntityVoteStats } from "@/lib/queries/ratingStats";
 import { getProfile } from "@/lib/queries/getProfile";
-import { getBuildById, getBuildSpellSelections, getCatalogSpellsForClass } from "@/lib/queries/spellbook";
+import {
+  getBuildById,
+  getBuildSpellSelections,
+  getCatalogSpellsForClass,
+  getClassEquipment,
+} from "@/lib/queries/spellbook";
 import { getMyBuildRating } from "@/lib/queries/social";
 import { computeTierResult } from "@/lib/tier";
+import { isMartialClass } from "@/lib/spellbook/martial";
 
 type Params = {
   params: Promise<{ id: string }>;
@@ -38,6 +44,8 @@ export default async function BuildDetailsPage({ params }: Params) {
   const tierData = computeTierResult(stat.rawAverage, stat.votes, globalAverage);
 
   const canAct = Boolean(profile);
+  const martial = isMartialClass(build.class);
+  const equipment = martial ? await getClassEquipment(build.class) : null;
 
   return (
     <main className="p-10 text-white space-y-6">
@@ -98,11 +106,47 @@ export default async function BuildDetailsPage({ params }: Params) {
           <span className="text-neutral-200 font-semibold">{stat.rawAverage.toFixed(2)}</span> ★ · {stat.votes} vote
           {stat.votes === 1 ? "" : "s"}
         </p>
-        <BuildRatingSection buildId={buildId} canRate={canAct} initialMyRating={myRating} />
         <CloneBuildButton buildId={buildId} canClone={canAct} />
       </section>
 
-      <BuildSpellDetails selections={selections} spells={spells} />
+      {martial ? (
+        <section className="border border-neutral-800 rounded-lg overflow-hidden">
+          <h3 className="px-4 py-2 bg-neutral-900 border-b border-neutral-800 font-semibold">Equipment</h3>
+          <table className="w-full text-left border-collapse">
+            <tbody>
+              <tr>
+                <td className="px-4 py-2 border-b border-neutral-800 text-neutral-400">Armor</td>
+                <td className="px-4 py-2 border-b border-neutral-800">{equipment?.armor ?? "—"}</td>
+              </tr>
+              <tr>
+                <td className="px-4 py-2 border-b border-neutral-800 text-neutral-400">Shields</td>
+                <td className="px-4 py-2 border-b border-neutral-800">{equipment?.shields ?? "—"}</td>
+              </tr>
+              <tr>
+                <td className="px-4 py-2 border-b border-neutral-800 text-neutral-400">Weapons</td>
+                <td className="px-4 py-2 border-b border-neutral-800">{equipment?.weapons ?? "—"}</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+      ) : null}
+
+      <BuildSpellDetails
+        selections={selections}
+        spells={spells}
+        className={build.class}
+        lookThePart={build.look_the_part}
+      />
+      {martial ? (
+        <p className="text-xs text-neutral-400">
+          Martial class build: abilities are auto-assigned by class/level. Look The Part grants class-specific LTP ability only.
+        </p>
+      ) : null}
+
+      <section className="rounded-lg border border-neutral-800 p-4 space-y-3">
+        <p className="text-sm text-neutral-400">Rate this build</p>
+        <BuildRatingSection buildId={buildId} canRate={canAct} initialMyRating={myRating} />
+      </section>
 
       <BuildCommentsSection buildId={buildId} canComment={canAct} />
     </main>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { isMartialClass } from "@/lib/spellbook/martial";
 
 export default function CreateBuildForm({ classes }: { classes: string[] }) {
   const router = useRouter();
@@ -11,6 +12,7 @@ export default function CreateBuildForm({ classes }: { classes: string[] }) {
   const [lookThePart, setLookThePart] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const martial = isMartialClass(className);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -88,6 +90,16 @@ export default function CreateBuildForm({ classes }: { classes: string[] }) {
         />
         Look The Part
       </label>
+      {martial ? (
+        <p className="text-xs text-neutral-400">
+          Martial classes do not use spell points. Build abilities are auto-assigned from class rules up to selected level.
+          Look The Part adds the class-specific LTP ability (not bonus points).
+        </p>
+      ) : (
+        <p className="text-xs text-neutral-400">
+          Caster classes use spell point-buy. Look The Part grants +1 point at your highest circle.
+        </p>
+      )}
 
       <button
         type="submit"

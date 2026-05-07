@@ -132,7 +132,7 @@ after insert or update or delete on public.spell_ratings
 for each row execute function public.trg_spell_ratings_touch_avg();
 
 -- ---------------------------------------------------------------------------
--- User-generated: monsters, custom classes, battle games, custom spells
+-- User-generated: monsters, custom classes, battlegames, custom spells
 -- ---------------------------------------------------------------------------
 create table if not exists public.monsters (
   id bigint generated always as identity primary key,
@@ -596,3 +596,83 @@ $$;
 
 revoke all on function public.get_profile_favorites_stats() from public;
 grant execute on function public.get_profile_favorites_stats() to anon, authenticated;
+
+-- ---------------------------------------------------------------------------
+-- Rules-of-play mapping fields + image URLs
+-- ---------------------------------------------------------------------------
+alter table public.battle_games
+  add column if not exists game_type text check (game_type in ('Full-Class', 'Militia', 'Ditch', 'Tournament', 'Other', 'Quest')),
+  add column if not exists lives text,
+  add column if not exists respawn text,
+  add column if not exists base text,
+  add column if not exists teams text,
+  add column if not exists objectives text,
+  add column if not exists refresh text,
+  add column if not exists scenario_rules text,
+  add column if not exists image_url text;
+
+alter table public.monsters
+  add column if not exists monster_type text,
+  add column if not exists threat_level text,
+  add column if not exists armor_points text,
+  add column if not exists abilities text,
+  add column if not exists immunities text,
+  add column if not exists image_url text;
+
+alter table public.custom_spells
+  add column if not exists spell_type text,
+  add column if not exists school text,
+  add column if not exists range text,
+  add column if not exists incantation text,
+  add column if not exists materials text,
+  add column if not exists effect text,
+  add column if not exists limitations text,
+  add column if not exists notes text,
+  add column if not exists image_url text;
+
+-- ---------------------------------------------------------------------------
+-- Storage bucket + policies for uploaded entity images
+-- ---------------------------------------------------------------------------
+insert into storage.buckets (id, name, public)
+values ('metagard-images', 'metagard-images', true)
+on conflict (id) do nothing;
+
+drop policy if exists "Public read metagard-images" on storage.objects;
+create policy "Public read metagard-images"
+  on storage.objects for select to public
+  using (bucket_id = 'metagard-images');
+
+drop policy if exists "Authenticated upload metagard-images" on storage.objects;
+create policy "Authenticated upload metagard-images"
+  on storage.objects for insert to authenticated
+  with check (
+    bucket_id = 'metagard-images'
+    and owner = auth.uid()
+  );
+
+-- ---------------------------------------------------------------------------
+-- Park Champion tools filtering fields (battlegames)
+-- ---------------------------------------------------------------------------
+alter table public.battle_games
+  add column if not exists min_players int,
+  add column if not exists max_players int,
+  add column if not exists min_teams int,
+  add column if not exists max_teams int;
+
+-- ---------------------------------------------------------------------------
+-- Class equipment for Build View martial equipment table
+-- ---------------------------------------------------------------------------
+alter table public.classes
+  add column if not exists armor text,
+  add column if not exists shields text,
+  add column if not exists weapons text;
+
+-- Seed baseline martial equipment from amtgard-sappy-spellbook appConstants.js
+update public.classes set armor = '4pts', shields = 'Large', weapons = 'All Melee, Javelins' where name = 'Anti-Paladin';
+update public.classes set armor = '2pts', shields = 'None', weapons = 'Daggers, Short, Bow' where name = 'Archer';
+update public.classes set armor = '2pts', shields = 'None', weapons = 'Dagger, Short, Long, Light Thrown, Heavy Thrown, Bow' where name = 'Assassin';
+update public.classes set armor = '3pts', shields = 'Medium', weapons = 'All Melee, Javelins, Rocks' where name = 'Barbarian';
+update public.classes set armor = '1pt', shields = 'None', weapons = 'All Melee, Heavy Thrown' where name = 'Monk';
+update public.classes set armor = '4pts', shields = 'Large', weapons = 'All Melee, Javelins' where name = 'Paladin';
+update public.classes set armor = '3pts', shields = 'Small', weapons = 'Dagger, Short, Long, Heavy Thrown, Bow' where name = 'Scout';
+update public.classes set armor = '6pts', shields = 'Large', weapons = 'All Melee, Javelins' where name = 'Warrior';

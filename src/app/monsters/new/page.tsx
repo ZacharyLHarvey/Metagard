@@ -8,6 +8,12 @@ export default function NewMonsterPage() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [monsterType, setMonsterType] = useState("");
+  const [threatLevel, setThreatLevel] = useState("");
+  const [armorPoints, setArmorPoints] = useState("");
+  const [abilities, setAbilities] = useState("");
+  const [immunities, setImmunities] = useState("");
+  const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -15,10 +21,34 @@ export default function NewMonsterPage() {
     e.preventDefault();
     setBusy(true);
     setError("");
+    let imageUrl: string | null = null;
+    if (file) {
+      const form = new FormData();
+      form.append("entity", "monsters");
+      form.append("file", file);
+      const uploadRes = await fetch("/api/uploads/image", { method: "POST", body: form });
+      if (!uploadRes.ok) {
+        const body = (await uploadRes.json().catch(() => ({}))) as { error?: string };
+        setError(body.error ?? "Image upload failed");
+        setBusy(false);
+        return;
+      }
+      const uploadBody = (await uploadRes.json()) as { publicUrl?: string };
+      imageUrl = uploadBody.publicUrl ?? null;
+    }
     const res = await fetch("/api/monsters", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, description: description || null }),
+      body: JSON.stringify({
+        name,
+        description: description || null,
+        monster_type: monsterType || null,
+        threat_level: threatLevel || null,
+        armor_points: armorPoints || null,
+        abilities: abilities || null,
+        immunities: immunities || null,
+        image_url: imageUrl,
+      }),
     });
     setBusy(false);
     if (!res.ok) {
@@ -47,6 +77,30 @@ export default function NewMonsterPage() {
             onChange={(e) => setName(e.target.value)}
             required
           />
+        </div>
+        <div>
+          <label className="block text-sm text-neutral-400 mb-1">Monster type</label>
+          <input className="w-full px-3 py-2 bg-neutral-800 border border-neutral-700 rounded" value={monsterType} onChange={(e) => setMonsterType(e.target.value)} />
+        </div>
+        <div>
+          <label className="block text-sm text-neutral-400 mb-1">Threat level</label>
+          <input className="w-full px-3 py-2 bg-neutral-800 border border-neutral-700 rounded" value={threatLevel} onChange={(e) => setThreatLevel(e.target.value)} />
+        </div>
+        <div>
+          <label className="block text-sm text-neutral-400 mb-1">Armor points</label>
+          <input className="w-full px-3 py-2 bg-neutral-800 border border-neutral-700 rounded" value={armorPoints} onChange={(e) => setArmorPoints(e.target.value)} />
+        </div>
+        <div>
+          <label className="block text-sm text-neutral-400 mb-1">Abilities</label>
+          <textarea className="w-full px-3 py-2 bg-neutral-800 border border-neutral-700 rounded min-h-20" value={abilities} onChange={(e) => setAbilities(e.target.value)} />
+        </div>
+        <div>
+          <label className="block text-sm text-neutral-400 mb-1">Immunities</label>
+          <textarea className="w-full px-3 py-2 bg-neutral-800 border border-neutral-700 rounded min-h-20" value={immunities} onChange={(e) => setImmunities(e.target.value)} />
+        </div>
+        <div>
+          <label className="block text-sm text-neutral-400 mb-1">Image</label>
+          <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
         </div>
         <div>
           <label className="block text-sm text-neutral-400 mb-1">Description</label>

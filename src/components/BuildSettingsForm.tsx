@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { BuildRow } from "@/lib/spellbook/types";
+import { isMartialClass } from "@/lib/spellbook/martial";
 
 type Props = {
   build: BuildRow;
@@ -24,6 +25,7 @@ export default function BuildSettingsForm({ build, classNames }: Props) {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
+  const martial = isMartialClass(className);
 
   async function onSave() {
     setSaving(true);
@@ -114,6 +116,15 @@ export default function BuildSettingsForm({ build, classNames }: Props) {
         <input type="checkbox" checked={lookThePart} onChange={(e) => setLookThePart(e.target.checked)} />
         Look The Part
       </label>
+      {martial ? (
+        <p className="text-xs text-neutral-400">
+          Martial class behavior: abilities are auto-assigned by class/level; Look The Part grants the class LTP ability (no bonus points).
+        </p>
+      ) : (
+        <p className="text-xs text-neutral-400">
+          Caster behavior: point-buy remains enabled; Look The Part gives +1 point at highest spell circle.
+        </p>
+      )}
 
       <div>
         <label className="block mb-2 text-sm text-neutral-300">Notes</label>

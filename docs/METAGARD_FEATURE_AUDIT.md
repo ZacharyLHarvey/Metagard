@@ -35,7 +35,7 @@
 - Leaderboards  
 - Spell browser, spell rating, grouping by type/school  
 - Profile: my builds, saved builds, favorites  
-- Monsters, custom classes, battle games, custom spells (full CRUD + ratings)  
+- Monsters, custom classes, battlegames, custom spells (full CRUD + ratings)  
 - Achievements, favorite graphs (charts)  
 - DB-backed bug/feature queue  
 
@@ -46,7 +46,7 @@
 **Explicitly deferred (assumptions documented):**
 
 - **Achievements / S-tier builder**: requires rules engine + migrations; extend `profile_achievements` later.  
-- **Favorite class / battle game graphs**: needs chart lib + aggregation queries; favorites stored as text on `profiles` for now.  
+- **Favorite class / battlegame graphs**: needs chart lib + aggregation queries; favorites stored as text on `profiles` for now.  
 - **Bug/feature DB**: email flow kept; optional `feedback_tickets` table can be added similarly to comments.  
 - **Discord**: optional `NEXT_PUBLIC_DISCORD_URL` in nav when set.  
 
@@ -76,7 +76,7 @@ Run new SQL in Supabase SQL Editor after review: `supabase/policies/metagard_ext
 | Profile: my / saved builds, delete, unsave | `src/app/profile/page.tsx`, `DeleteBuildButton`, `UnsaveSavedBuildButton` |
 | Monsters + ratings | `src/app/monsters/**`, `POST /api/monsters`, rating route |
 | Custom classes + ratings | `src/app/custom-classes/**`, `/api/custom-classes` |
-| Battle games + ratings | `src/app/battle-games/**`, `/api/battle-games` |
+| Battlegames + ratings | `src/app/battle-games/**`, `/api/battle-games` |
 | Custom spells + ratings | `src/app/custom-spells/**`, `/api/custom-spells` |
 | Navigation | `Navbar.tsx` (Spells, Leaderboards, UGC, optional `NEXT_PUBLIC_DISCORD_URL`) |
 
@@ -100,7 +100,7 @@ Run new SQL in Supabase SQL Editor after review: `supabase/policies/metagard_ext
   - vote + raw-average rollups by numeric/string entity keys
 - Tier badge component in `src/components/TierBadge.tsx`
 - Tier data surfaced for rated entities:
-  - Builds, Spells, Monsters, Custom classes, Battle games, Custom spells, and Classes
+  - Builds, Spells, Monsters, Custom classes, Battlegames, Custom spells, and Classes
   - List pages, detail pages, and leaderboards now show weighted rating + tier (+ vote counts)
   - Rating APIs now return weighted/tier payload in response
 - Leaderboards updated to sort by:

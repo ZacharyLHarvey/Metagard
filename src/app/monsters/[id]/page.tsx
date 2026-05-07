@@ -45,6 +45,14 @@ export default async function MonsterDetailPage({ params }: Params) {
       <p className="text-neutral-400 text-sm">
         <TierBadge tier={tierData.tier} /> · WR {tierData.weightedRating.toFixed(2)} · Raw ★ {stat.rawAverage.toFixed(2)} · {stat.votes} votes
       </p>
+      {m.image_url ? <img src={String(m.image_url)} alt={String(m.name)} className="w-full max-h-96 object-contain rounded border border-neutral-800" /> : null}
+      <div className="grid md:grid-cols-2 gap-3 text-sm">
+        {m.monster_type ? <p><span className="text-neutral-400">Type:</span> {String(m.monster_type)}</p> : null}
+        {m.threat_level ? <p><span className="text-neutral-400">Threat:</span> {String(m.threat_level)}</p> : null}
+        {m.armor_points ? <p><span className="text-neutral-400">Armor:</span> {String(m.armor_points)}</p> : null}
+      </div>
+      {m.abilities ? <p className="text-sm whitespace-pre-wrap text-neutral-300"><span className="text-neutral-400">Abilities: </span>{String(m.abilities)}</p> : null}
+      {m.immunities ? <p className="text-sm whitespace-pre-wrap text-neutral-300"><span className="text-neutral-400">Immunities: </span>{String(m.immunities)}</p> : null}
       {m.description ? <p className="text-sm whitespace-pre-wrap text-neutral-300">{String(m.description)}</p> : null}
 
       <section className="border border-neutral-800 rounded-lg p-4">

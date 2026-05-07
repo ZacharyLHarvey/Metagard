@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/server/supabaseServer";
+import { refreshMartialBuildSelections } from "@/lib/queries/spellbook";
 
 type Params = {
   params: Promise<{ id: string }>;
@@ -47,6 +48,7 @@ export async function PATCH(request: Request, context: Params) {
       .eq("id", buildId)
       .eq("owner_id", user.id);
     if (error) throw error;
+    await refreshMartialBuildSelections(buildId);
 
     return NextResponse.json({ ok: true });
   } catch (error) {

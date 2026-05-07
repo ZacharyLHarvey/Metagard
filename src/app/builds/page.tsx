@@ -1,6 +1,7 @@
 import Link from "next/link";
 import SaveBuildButton from "@/components/SaveBuildButton";
 import TierBadge from "@/components/TierBadge";
+import AutoQuerySelect from "@/components/AutoQuerySelect";
 import { getGlobalAverageRating, getNumericEntityVoteStats } from "@/lib/queries/ratingStats";
 import { createClient } from "@/lib/server/supabaseServer";
 import { getProfile } from "@/lib/queries/getProfile";
@@ -120,26 +121,13 @@ export default async function BuildsPage({ searchParams }: { searchParams: Promi
     <main className="p-10 text-white space-y-10">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <h1 className="text-2xl font-bold">{pageTitle}</h1>
-        <form method="get" className="flex items-center gap-2">
-          <label htmlFor="group" className="text-sm text-neutral-400">
-            Tierlist group
-          </label>
-          <select
-            id="group"
-            name="group"
-            defaultValue={group}
-            className="px-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-sm"
-          >
-            {filterOptions.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-          <button type="submit" className="px-3 py-2 bg-blue-600 rounded text-sm">
-            Apply
-          </button>
-        </form>
+        <AutoQuerySelect
+          name="group"
+          label="Tierlist group"
+          value={group}
+          clearValue="all"
+          options={filterOptions}
+        />
       </div>
       <p className="text-sm text-neutral-400 max-w-2xl">
         Grouped by class; within each group, sorted by level then name.
