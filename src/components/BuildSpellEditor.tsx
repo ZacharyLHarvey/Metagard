@@ -22,6 +22,7 @@ import {
   selectionKeyForCatalogSpell,
   selectionKeyFromRow,
 } from "@/lib/spellbook/selection";
+import { buildMartialAutoSelections, isMartialClass } from "@/lib/spellbook/martial";
 
 type Props = {
   buildId: number;
@@ -94,6 +95,23 @@ export default function BuildSpellEditor({
   const [collapsedLevels, setCollapsedLevels] = useState<Set<number>>(() => new Set());
 
   const [selectionMap, setSelectionMap] = useState<Record<string, Selection>>(() => {
+    const martial = isMartialClass(className);
+    if (martial) {
+      const auto = buildMartialAutoSelections(spells, lookThePart);
+      const autoBase: Record<string, Selection> = {};
+      for (const s of auto) {
+        const key = s.selection_group ?? `${s.spell_level}:${s.spell_id}`;
+        autoBase[key] = {
+          spell_id: s.spell_id,
+          spell_level: s.spell_level,
+          purchased: 1,
+          experienced: 0,
+          selection_group: s.selection_group,
+          chosen: true,
+        };
+      }
+      return autoBase;
+    }
     const base: Record<string, Selection> = {};
     for (const s of initialSelections) {
       base[selectionKeyFromRow(s)] = {
@@ -121,6 +139,7 @@ export default function BuildSpellEditor({
   }, [maxLevel, spells]);
 
   const caster = isCasterClass(className);
+  const martial = isMartialClass(className);
   const casterLtpBonus = caster && lookThePart ? 1 : 0;
   const totalBudget = useMemo(
     () => maxLevel * POINTS_PER_SPELL_LEVEL + casterLtpBonus,
@@ -145,6 +164,7 @@ export default function BuildSpellEditor({
   );
 
   function increment(spell: SpellRow, level: number) {
+    if (martial) return;
     const evaluated = evaluateSpellRules(spell, selectedSpellNames);
     if (evaluated.restricted) {
       setRuleWarning(evaluated.reason ?? "Spell restricted by active archetype limitations.");
@@ -183,6 +203,7 @@ export default function BuildSpellEditor({
   }
 
   function decrement(spell: SpellRow, level: number) {
+    if (martial) return;
     const key = selectionKeyForCatalogSpell(spell);
     setSelectionMap((prev) => {
       const existing = prev[key];
@@ -243,11 +264,18 @@ export default function BuildSpellEditor({
         </div>
       ) : null}
       <div className="rounded border border-neutral-800 p-3 bg-neutral-900/40">
-        <p className="text-sm text-neutral-300">
-          Points: <span className="font-semibold">{pointsSpent}</span> spent /{" "}
-          <span className="font-semibold">{totalBudget}</span> total /{" "}
-          <span className="font-semibold">{pointsRemaining}</span> remaining
-        </p>
+        {martial ? (
+          <p className="text-sm text-neutral-300">
+            Martial class build: point-buy is disabled. Abilities are automatically assigned by class/level.
+            {lookThePart ? " Look The Part bonus ability is included." : " Enable Look The Part in settings to include the LTP ability."}
+          </p>
+        ) : (
+          <p className="text-sm text-neutral-300">
+            Points: <span className="font-semibold">{pointsSpent}</span> spent /{" "}
+            <span className="font-semibold">{totalBudget}</span> total /{" "}
+            <span className="font-semibold">{pointsRemaining}</span> remaining
+          </p>
+        )}
         {caster ? (
           <p className="mt-2 text-xs text-neutral-500">
             Caster: unused points from higher circles can be spent on lower-circle spells (up to {POINTS_PER_SPELL_LEVEL}{" "}
@@ -366,6 +394,7 @@ export default function BuildSpellEditor({
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => decrement(spell, level)}
+                      disabled={martial}
                       className="px-2 py-1 bg-neutral-700 rounded"
                     >
                       -
@@ -373,7 +402,7 @@ export default function BuildSpellEditor({
                     <span className="w-8 text-center">{purchased}</span>
                     <button
                       onClick={() => increment(spell, level)}
-                      disabled={evaluated.restricted}
+                      disabled={evaluated.restricted || martial}
                       className="px-2 py-1 bg-blue-600 rounded"
                     >
                       +
@@ -391,10 +420,10 @@ export default function BuildSpellEditor({
       <div className="flex items-center gap-3">
         <button
           onClick={saveSelections}
-          disabled={saving}
+          disabled={saving || martial}
           className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded"
         >
-          {saving ? "Saving..." : "Save Build Spells"}
+          {martial ? "Auto-managed for martial class" : saving ? "Saving..." : "Save Build Spells"}
         </button>
         {error ? <p className="text-sm text-red-400">{error}</p> : null}
       </div>

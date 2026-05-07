@@ -10,6 +10,7 @@ import { getProfile } from "@/lib/queries/getProfile";
 import { getBuildById, getBuildSpellSelections, getCatalogSpellsForClass } from "@/lib/queries/spellbook";
 import { getMyBuildRating } from "@/lib/queries/social";
 import { computeTierResult } from "@/lib/tier";
+import { isMartialClass } from "@/lib/spellbook/martial";
 
 type Params = {
   params: Promise<{ id: string }>;
@@ -38,6 +39,7 @@ export default async function BuildDetailsPage({ params }: Params) {
   const tierData = computeTierResult(stat.rawAverage, stat.votes, globalAverage);
 
   const canAct = Boolean(profile);
+  const martial = isMartialClass(build.class);
 
   return (
     <main className="p-10 text-white space-y-6">
@@ -102,7 +104,17 @@ export default async function BuildDetailsPage({ params }: Params) {
         <CloneBuildButton buildId={buildId} canClone={canAct} />
       </section>
 
-      <BuildSpellDetails selections={selections} spells={spells} />
+      <BuildSpellDetails
+        selections={selections}
+        spells={spells}
+        className={build.class}
+        lookThePart={build.look_the_part}
+      />
+      {martial ? (
+        <p className="text-xs text-neutral-400">
+          Martial class build: abilities are auto-assigned by class/level. Look The Part grants class-specific LTP ability only.
+        </p>
+      ) : null}
 
       <BuildCommentsSection buildId={buildId} canComment={canAct} />
     </main>

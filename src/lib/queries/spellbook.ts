@@ -10,6 +10,7 @@ import type {
   ClassRow,
   SpellRow,
 } from "@/lib/spellbook/types";
+import { buildMartialAutoSelections, isMartialClass } from "@/lib/spellbook/martial";
 
 function toNumberOrNull(value: unknown): number | null {
   if (typeof value === "number" && Number.isFinite(value)) return value;
@@ -334,7 +335,21 @@ export async function createBuild(input: {
     .single();
 
   if (error) throw error;
-  return data.id as number;
+  const buildId = data.id as number;
+  if (isMartialClass(input.className)) {
+    const spells = await getCatalogSpellsForClass(input.className, input.level);
+    const selections = buildMartialAutoSelections(spells, input.lookThePart).map((s) => ({
+      ...s,
+      build_id: buildId,
+    }));
+    if (selections.length > 0) {
+      const { error: selErr } = await supabase.from("build_spell_selections").insert(
+        selections.map((s) => ({ ...s, metadata: {} }))
+      );
+      if (selErr) throw selErr;
+    }
+  }
+  return buildId;
 }
 
 export async function upsertBuildSpellSelections(buildId: number, selections: BuildSpellSelectionInput[]) {
@@ -345,7 +360,7 @@ export async function upsertBuildSpellSelections(buildId: number, selections: Bu
 
   const { data: ownedBuild } = await supabase
     .from("builds")
-    .select("id")
+    .select("id,class,level,look_the_part")
     .eq("id", buildId)
     .eq("owner_id", userId)
     .single();
@@ -356,9 +371,21 @@ export async function upsertBuildSpellSelections(buildId: number, selections: Bu
 
   await supabase.from("build_spell_selections").delete().eq("build_id", buildId);
 
-  if (selections.length === 0) return;
+  let effectiveSelections = selections;
+  if (ownedBuild && isMartialClass(String((ownedBuild as { class?: unknown }).class ?? ""))) {
+    const spells = await getCatalogSpellsForClass(
+      String((ownedBuild as { class?: unknown }).class ?? ""),
+      Number((ownedBuild as { level?: unknown }).level ?? 1)
+    );
+    effectiveSelections = buildMartialAutoSelections(
+      spells,
+      Boolean((ownedBuild as { look_the_part?: unknown }).look_the_part)
+    ).map((s) => ({ ...s, build_id: buildId }));
+  }
 
-  const payload = selections.map((s) => ({
+  if (effectiveSelections.length === 0) return;
+
+  const payload = effectiveSelections.map((s) => ({
     build_id: buildId,
     spell_id: s.spell_id,
     spell_level: s.spell_level,
@@ -370,6 +397,31 @@ export async function upsertBuildSpellSelections(buildId: number, selections: Bu
   }));
 
   const { error } = await supabase.from("build_spell_selections").insert(payload);
+  if (error) throw error;
+}
+
+export async function refreshMartialBuildSelections(buildId: number) {
+  const userId = await getCurrentUserId();
+  if (!userId) throw new Error("Unauthorized");
+  const supabase = await createClient();
+
+  const { data: build } = await supabase
+    .from("builds")
+    .select("id,class,level,look_the_part,owner_id")
+    .eq("id", buildId)
+    .single();
+  if (!build || build.owner_id !== userId) throw new Error("Forbidden");
+  if (!isMartialClass(String(build.class ?? ""))) return;
+
+  const spells = await getCatalogSpellsForClass(String(build.class ?? ""), Number(build.level ?? 1));
+  const selections = buildMartialAutoSelections(spells, Boolean(build.look_the_part)).map((s) => ({
+    ...s,
+    build_id: buildId,
+    metadata: {},
+  }));
+  await supabase.from("build_spell_selections").delete().eq("build_id", buildId);
+  if (selections.length === 0) return;
+  const { error } = await supabase.from("build_spell_selections").insert(selections);
   if (error) throw error;
 }
 
