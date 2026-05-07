@@ -38,19 +38,30 @@ export default async function BattleGameDetailPage({ params }: Params) {
 
   return (
     <main className="p-10 text-white max-w-2xl space-y-6">
-      <Link href="/battle-games" className="text-sm text-blue-400 hover:underline">
-        ← Battle games
+      <Link href="/battlegames" className="text-sm text-blue-400 hover:underline">
+        ← Battlegames
       </Link>
       <h1 className="text-2xl font-bold">{String(m.name)}</h1>
       <p className="text-neutral-400 text-sm">
         <TierBadge tier={tierData.tier} /> · WR {tierData.weightedRating.toFixed(2)} · Raw ★ {stat.rawAverage.toFixed(2)} · {stat.votes} votes
       </p>
+      {m.image_url ? <img src={String(m.image_url)} alt={String(m.name)} className="w-full max-h-96 object-contain rounded border border-neutral-800" /> : null}
+      <div className="grid md:grid-cols-2 gap-3 text-sm">
+        {m.game_type ? <p><span className="text-neutral-400">Game Type:</span> {String(m.game_type)}</p> : null}
+        {m.lives ? <p><span className="text-neutral-400">Lives:</span> {String(m.lives)}</p> : null}
+        {m.respawn ? <p><span className="text-neutral-400">Respawn:</span> {String(m.respawn)}</p> : null}
+        {m.base ? <p><span className="text-neutral-400">Base:</span> {String(m.base)}</p> : null}
+        {m.teams ? <p><span className="text-neutral-400">Teams:</span> {String(m.teams)}</p> : null}
+        {m.objectives ? <p><span className="text-neutral-400">Objectives:</span> {String(m.objectives)}</p> : null}
+        {m.refresh ? <p><span className="text-neutral-400">Refresh:</span> {String(m.refresh)}</p> : null}
+      </div>
+      {m.scenario_rules ? <p className="text-sm whitespace-pre-wrap text-neutral-300"><span className="text-neutral-400">Scenario Rules: </span>{String(m.scenario_rules)}</p> : null}
       {m.description ? <p className="text-sm whitespace-pre-wrap text-neutral-300">{String(m.description)}</p> : null}
 
       <section className="border border-neutral-800 rounded-lg p-4">
         <p className="text-sm text-neutral-400 mb-2">Your rating</p>
         <EntityRatingButtons
-          postUrl={`/api/battle-games/${eid}/rating`}
+          postUrl={`/api/battlegames/${eid}/rating`}
           canRate={Boolean(profileId)}
           initialMyRating={myRating}
         />

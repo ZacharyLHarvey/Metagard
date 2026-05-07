@@ -70,13 +70,13 @@ export default function ProfileFavoritesForm({
         </select>
       </div>
       <div>
-        <label className="block text-sm text-neutral-400 mb-1">Favorite battle game</label>
+        <label className="block text-sm text-neutral-400 mb-1">Favorite battlegame</label>
         <select
           className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded"
           value={favoriteBattleGame}
           onChange={(e) => setFavoriteBattleGame(e.target.value)}
         >
-          <option value="">No favorite battle game</option>
+          <option value="">No favorite battlegame</option>
           {battleGameOptions.map((name) => (
             <option key={name} value={name}>
               {name}

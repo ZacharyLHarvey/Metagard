@@ -40,6 +40,9 @@ export default async function Navbar() {
         <Link href="/leaderboards" className="hover:text-blue-400 transition">
           Leaderboards
         </Link>
+        <Link href="/park-champion-tools" className="hover:text-blue-400 transition">
+          Park Champion Tools
+        </Link>
 
         <Link href="/monsters" className="hover:text-blue-400 transition">
           Monsters
@@ -49,8 +52,8 @@ export default async function Navbar() {
           Custom classes
         </Link>
 
-        <Link href="/battle-games" className="hover:text-blue-400 transition">
-          Battle games
+        <Link href="/battlegames" className="hover:text-blue-400 transition">
+          Battlegames
         </Link>
 
         <Link href="/custom-spells" className="hover:text-blue-400 transition">

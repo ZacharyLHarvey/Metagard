@@ -21,14 +21,14 @@ export default async function ClassLeaderboardPage() {
         .
       </p>
       <div className="border border-neutral-800 rounded-lg overflow-hidden">
-        <table className="w-full text-sm border-collapse">
+        <table className="w-full text-sm border-collapse table-fixed">
           <thead className="bg-neutral-900">
             <tr>
-              <th className="px-4 py-2 text-left border-b border-neutral-800">#</th>
+              <th className="px-4 py-2 text-left border-b border-neutral-800 w-12">#</th>
               <th className="px-4 py-2 text-left border-b border-neutral-800">Class</th>
-              <th className="px-4 py-2 text-left border-b border-neutral-800">Tier</th>
-              <th className="px-4 py-2 text-left border-b border-neutral-800">WR</th>
-              <th className="px-4 py-2 text-left border-b border-neutral-800">Votes</th>
+              <th className="px-4 py-2 text-left border-b border-neutral-800 w-20">Tier</th>
+              <th className="px-4 py-2 text-left border-b border-neutral-800 w-24">WR</th>
+              <th className="px-4 py-2 text-left border-b border-neutral-800 w-20">Votes</th>
             </tr>
           </thead>
           <tbody>
