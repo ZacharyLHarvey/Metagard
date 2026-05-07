@@ -23,6 +23,7 @@ import {
   selectionKeyFromRow,
 } from "@/lib/spellbook/selection";
 import { buildMartialAutoSelections, isMartialClass } from "@/lib/spellbook/martial";
+import { getPickOneGroups } from "@/lib/spellbook/martial";
 
 type Props = {
   buildId: number;
@@ -97,7 +98,20 @@ export default function BuildSpellEditor({
   const [selectionMap, setSelectionMap] = useState<Record<string, Selection>>(() => {
     const martial = isMartialClass(className);
     if (martial) {
-      const auto = buildMartialAutoSelections(spells, lookThePart);
+      const auto = buildMartialAutoSelections(
+        spells,
+        lookThePart,
+        className,
+        initialSelections.map((s) => ({
+          build_id: buildId,
+          spell_id: s.spell_id,
+          spell_level: s.spell_level,
+          purchased: s.purchased,
+          experienced: s.experienced,
+          selection_group: s.selection_group,
+          chosen: s.chosen,
+        }))
+      );
       const autoBase: Record<string, Selection> = {};
       for (const s of auto) {
         const key = s.selection_group ?? `${s.spell_level}:${s.spell_id}`;
@@ -162,6 +176,15 @@ export default function BuildSpellEditor({
     () => buildSelectedSpellNameSet(purchasedBySpellId, spells),
     [purchasedBySpellId, spells]
   );
+  const pickOneGroups = useMemo(() => {
+    const selectedRuleIds = new Set<number>();
+    for (const [key, value] of Object.entries(selectionMap)) {
+      if (!key.startsWith("csr:") || value.purchased <= 0) continue;
+      const id = Number(key.slice(4));
+      if (Number.isFinite(id)) selectedRuleIds.add(id);
+    }
+    return getPickOneGroups(spells, className, selectedRuleIds);
+  }, [spells, className, selectionMap]);
 
   function increment(spell: SpellRow, level: number) {
     if (martial) return;
@@ -202,7 +225,7 @@ export default function BuildSpellEditor({
     });
   }
 
-  function decrement(spell: SpellRow, level: number) {
+  function decrement(spell: SpellRow) {
     if (martial) return;
     const key = selectionKeyForCatalogSpell(spell);
     setSelectionMap((prev) => {
@@ -218,6 +241,32 @@ export default function BuildSpellEditor({
         ...prev,
         [key]: { ...existing, purchased },
       };
+    });
+  }
+
+  function choosePickOne(groupKey: string, chosenCatalogRuleId: number) {
+    setSelectionMap((prev) => {
+      const next = { ...prev };
+      const groupOptions =
+        pickOneGroups.find((g) => g.groupKey === groupKey)?.options ?? [];
+      for (const option of groupOptions) {
+        if (option.catalog_rule_id == null) continue;
+        const key = catalogRuleKey(option.catalog_rule_id);
+        delete next[key];
+      }
+      const chosen = groupOptions.find((o) => o.catalog_rule_id === chosenCatalogRuleId);
+      if (chosen?.catalog_rule_id != null) {
+        const key = catalogRuleKey(chosen.catalog_rule_id);
+        next[key] = {
+          spell_id: chosen.id,
+          spell_level: chosen.level ?? 1,
+          purchased: 1,
+          experienced: 0,
+          selection_group: key,
+          chosen: true,
+        };
+      }
+      return next;
     });
   }
 
@@ -304,6 +353,10 @@ export default function BuildSpellEditor({
         </div>
       </div>
 
+      {pickOneGroups.length > 0 ? (
+        <div className="hidden" />
+      ) : null}
+
       {Array.from({ length: maxLevel }, (_, idx) => idx + 1).map((level) => {
         const spentHere = pointsSpentBySpellLevel[level] ?? 0;
         const remainingHere = caster
@@ -345,7 +398,9 @@ export default function BuildSpellEditor({
           </button>
           {!collapsed ? (
           <div className="space-y-2 mt-2">
-            {(grouped[level] ?? []).map((spell) => {
+            {(grouped[level] ?? [])
+              .filter((spell) => !pickOneGroups.some((g) => g.options.some((o) => o.catalog_rule_id === spell.catalog_rule_id)))
+              .map((spell) => {
               const key = selectionKeyForCatalogSpell(spell);
               const purchased = selectionMap[key]?.purchased ?? 0;
               const evaluated = evaluateSpellRules(spell, selectedSpellNames);
@@ -376,7 +431,7 @@ export default function BuildSpellEditor({
                   <div>
                     <p className="font-medium">{spell.name}</p>
                     <p className="text-xs text-neutral-400">
-                      cost {evaluated.adjustedCost}
+                      {martial ? "" : `cost ${evaluated.adjustedCost}`}
                       {showTypeSchool && spell.type ? ` - ${spell.type}` : ""}
                       {showTypeSchool && spell.school ? ` (${spell.school})` : ""}
                     </p>
@@ -392,25 +447,60 @@ export default function BuildSpellEditor({
                     ) : null}
                   </div>
                   <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => decrement(spell, level)}
-                      disabled={martial}
-                      className="px-2 py-1 bg-neutral-700 rounded"
-                    >
-                      -
-                    </button>
-                    <span className="w-8 text-center">{purchased}</span>
-                    <button
-                      onClick={() => increment(spell, level)}
-                      disabled={evaluated.restricted || martial}
-                      className="px-2 py-1 bg-blue-600 rounded"
-                    >
-                      +
-                    </button>
+                    {martial ? null : (
+                      <>
+                        <button
+                          onClick={() => decrement(spell)}
+                          className="px-2 py-1 bg-neutral-700 rounded"
+                        >
+                          -
+                        </button>
+                        <span className="w-8 text-center">{purchased}</span>
+                        <button
+                          onClick={() => increment(spell, level)}
+                          disabled={evaluated.restricted}
+                          className="px-2 py-1 bg-blue-600 rounded"
+                        >
+                          +
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               );
             })}
+            {pickOneGroups
+              .filter((g) => g.level === level)
+              .map((group, idx) => {
+                const chosen = group.options.find((opt) =>
+                  opt.catalog_rule_id != null && selectionMap[catalogRuleKey(opt.catalog_rule_id)]?.purchased > 0
+                );
+                const chosenId = chosen?.catalog_rule_id ?? "";
+                return (
+                  <div key={group.groupKey} className="rounded border border-neutral-800 p-3 ml-6">
+                    <p className="text-sm text-neutral-300">
+                      {group.optionalMartialArchetype
+                        ? "Optional (Martial Archetype): Pick one of the following abilities for this level:"
+                        : "Pick one of the following abilities for this level:"}
+                    </p>
+                    <p className="text-xs text-neutral-500 mb-2">
+                      {group.requiredForMartial ? "Required for martial builds." : "Optional choice."}
+                    </p>
+                    <select
+                      className="w-full px-3 py-2 bg-neutral-800 border border-neutral-700 rounded text-sm"
+                      value={chosenId}
+                      onChange={(e) => choosePickOne(group.groupKey, Number(e.target.value))}
+                    >
+                      <option value="">Select one</option>
+                      {group.options.map((opt) => (
+                        <option key={opt.catalog_rule_id ?? `${opt.id}-${idx}`} value={opt.catalog_rule_id ?? ""}>
+                          {opt.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                );
+              })}
           </div>
           ) : null}
         </section>
@@ -420,10 +510,21 @@ export default function BuildSpellEditor({
       <div className="flex items-center gap-3">
         <button
           onClick={saveSelections}
-          disabled={saving || martial}
+          disabled={
+            saving ||
+            pickOneGroups.some(
+              (g) =>
+                g.requiredForMartial &&
+                !g.options.some(
+                  (opt) =>
+                    opt.catalog_rule_id != null &&
+                    selectionMap[catalogRuleKey(opt.catalog_rule_id)]?.purchased > 0
+                )
+            )
+          }
           className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded"
         >
-          {martial ? "Auto-managed for martial class" : saving ? "Saving..." : "Save Build Spells"}
+          {saving ? "Saving..." : "Save Build Spells"}
         </button>
         {error ? <p className="text-sm text-red-400">{error}</p> : null}
       </div>

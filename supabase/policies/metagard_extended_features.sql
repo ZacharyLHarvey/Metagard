@@ -658,3 +658,21 @@ alter table public.battle_games
   add column if not exists max_players int,
   add column if not exists min_teams int,
   add column if not exists max_teams int;
+
+-- ---------------------------------------------------------------------------
+-- Class equipment for Build View martial equipment table
+-- ---------------------------------------------------------------------------
+alter table public.classes
+  add column if not exists armor text,
+  add column if not exists shields text,
+  add column if not exists weapons text;
+
+-- Seed baseline martial equipment from amtgard-sappy-spellbook appConstants.js
+update public.classes set armor = '4pts', shields = 'Large', weapons = 'All Melee, Javelins' where name = 'Anti-Paladin';
+update public.classes set armor = '2pts', shields = 'None', weapons = 'Daggers, Short, Bow' where name = 'Archer';
+update public.classes set armor = '2pts', shields = 'None', weapons = 'Dagger, Short, Long, Light Thrown, Heavy Thrown, Bow' where name = 'Assassin';
+update public.classes set armor = '3pts', shields = 'Medium', weapons = 'All Melee, Javelins, Rocks' where name = 'Barbarian';
+update public.classes set armor = '1pt', shields = 'None', weapons = 'All Melee, Heavy Thrown' where name = 'Monk';
+update public.classes set armor = '4pts', shields = 'Large', weapons = 'All Melee, Javelins' where name = 'Paladin';
+update public.classes set armor = '3pts', shields = 'Small', weapons = 'Dagger, Short, Long, Heavy Thrown, Bow' where name = 'Scout';
+update public.classes set armor = '6pts', shields = 'Large', weapons = 'All Melee, Javelins' where name = 'Warrior';

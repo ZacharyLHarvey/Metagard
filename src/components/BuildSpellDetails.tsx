@@ -9,6 +9,8 @@ import {
 } from "@/lib/spellbook/rules";
 import { findSpellForSelection } from "@/lib/spellbook/selection";
 import { isMartialClass } from "@/lib/spellbook/martial";
+import { catalogRuleKey } from "@/lib/spellbook/selection";
+import { getPickOneGroups } from "@/lib/spellbook/martial";
 
 type Props = {
   selections: BuildSpellSelectionRow[];
@@ -58,6 +60,43 @@ export default function BuildSpellDetails({ selections, spells, className, lookT
         .map(([level, rows]) => ({ level, rows })),
     };
   }, [selections, spells, className, lookThePart]);
+  const unresolvedPickOneByLevel = useMemo(() => {
+    const selectedRuleIds = new Set<number>();
+    for (const selection of selections) {
+      if (!selection.selection_group?.startsWith("csr:") || selection.purchased <= 0) continue;
+      const rid = Number(selection.selection_group.slice(4));
+      if (Number.isFinite(rid)) selectedRuleIds.add(rid);
+    }
+    const groups = getPickOneGroups(spells, className, selectedRuleIds);
+    const unresolved = groups.filter((g) => {
+      if (!g.requiredForMartial) return false;
+      return !g.options.some(
+        (opt) => {
+          if (opt.catalog_rule_id == null) return false;
+          const key = catalogRuleKey(opt.catalog_rule_id);
+          return selections.some((s) => s.selection_group === key && s.purchased > 0);
+        }
+      );
+    });
+    const byLevel = new Map<number, typeof unresolved>();
+    for (const group of unresolved) {
+      if (!byLevel.has(group.level)) byLevel.set(group.level, []);
+      byLevel.get(group.level)!.push(group);
+    }
+    return byLevel;
+  }, [selections, spells, className]);
+  const levelSections = useMemo(() => {
+    const byLevel = new Map<number, BuildSpellSelectionRow[]>();
+    for (const group of groupedSelections) {
+      byLevel.set(group.level, group.rows);
+    }
+    for (const level of unresolvedPickOneByLevel.keys()) {
+      if (!byLevel.has(level)) byLevel.set(level, []);
+    }
+    return [...byLevel.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .map(([level, rows]) => ({ level, rows }));
+  }, [groupedSelections, unresolvedPickOneByLevel]);
 
   return (
     <section className="space-y-4">
@@ -82,7 +121,7 @@ export default function BuildSpellDetails({ selections, spells, className, lookT
         </div>
       </div>
 
-      {groupedSelections.length === 0 && lookThePartSelections.length === 0 ? (
+      {levelSections.length === 0 && lookThePartSelections.length === 0 ? (
         <div className="border border-neutral-800 rounded-lg p-6 text-neutral-400">
           No spell selections saved for this build yet.
         </div>
@@ -132,11 +171,23 @@ export default function BuildSpellDetails({ selections, spells, className, lookT
               </table>
             </section>
           ) : null}
-          {groupedSelections.map(({ level, rows }) => (
+          {levelSections.map(({ level, rows }) => (
             <section key={level} className="border border-neutral-800 rounded-lg overflow-hidden">
               <h3 className="px-4 py-2 bg-neutral-900 border-b border-neutral-800 font-semibold">Level {level}</h3>
               <table className="w-full text-left border-collapse">
                 <tbody>
+                  {(unresolvedPickOneByLevel.get(level) ?? []).map((group, idx) => (
+                    <tr key={`warn-${level}-${idx}`}>
+                      <td className="pl-8 pr-4 py-2 border-b border-neutral-800">
+                        <p className="font-medium text-amber-300">⚠️ Pick one in edit mode</p>
+                        {group.options.map((opt) => (
+                          <p key={opt.catalog_rule_id ?? opt.name} className="text-sm text-neutral-300 mt-1">
+                            1x {opt.name}
+                          </p>
+                        ))}
+                      </td>
+                    </tr>
+                  ))}
                   {rows.map((selection) => {
                     const spell = findSpellForSelection(spells, selection);
                     const evaluated = spell

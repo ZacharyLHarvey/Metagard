@@ -105,6 +105,27 @@ export async function getClassById(id: number): Promise<ClassRow | null> {
   return classes.find((c) => c.id === id) ?? null;
 }
 
+export type ClassEquipment = {
+  armor: string | null;
+  shields: string | null;
+  weapons: string | null;
+};
+
+export async function getClassEquipment(className: string): Promise<ClassEquipment | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("classes")
+    .select("armor,shields,weapons")
+    .eq("name", className)
+    .maybeSingle();
+  if (!data) return null;
+  return {
+    armor: toStringOrNull((data as Record<string, unknown>).armor),
+    shields: toStringOrNull((data as Record<string, unknown>).shields),
+    weapons: toStringOrNull((data as Record<string, unknown>).weapons),
+  };
+}
+
 export type ClassLeaderboardRow = {
   id: number;
   name: string;
@@ -338,7 +359,7 @@ export async function createBuild(input: {
   const buildId = data.id as number;
   if (isMartialClass(input.className)) {
     const spells = await getCatalogSpellsForClass(input.className, input.level);
-    const selections = buildMartialAutoSelections(spells, input.lookThePart).map((s) => ({
+    const selections = buildMartialAutoSelections(spells, input.lookThePart, input.className).map((s) => ({
       ...s,
       build_id: buildId,
     }));
@@ -379,7 +400,9 @@ export async function upsertBuildSpellSelections(buildId: number, selections: Bu
     );
     effectiveSelections = buildMartialAutoSelections(
       spells,
-      Boolean((ownedBuild as { look_the_part?: unknown }).look_the_part)
+      Boolean((ownedBuild as { look_the_part?: unknown }).look_the_part),
+      String((ownedBuild as { class?: unknown }).class ?? ""),
+      selections
     ).map((s) => ({ ...s, build_id: buildId }));
   }
 
@@ -414,7 +437,16 @@ export async function refreshMartialBuildSelections(buildId: number) {
   if (!isMartialClass(String(build.class ?? ""))) return;
 
   const spells = await getCatalogSpellsForClass(String(build.class ?? ""), Number(build.level ?? 1));
-  const selections = buildMartialAutoSelections(spells, Boolean(build.look_the_part)).map((s) => ({
+  const { data: existingSelections } = await supabase
+    .from("build_spell_selections")
+    .select("spell_id,spell_level,purchased,experienced,selection_group,chosen")
+    .eq("build_id", buildId);
+  const selections = buildMartialAutoSelections(
+    spells,
+    Boolean(build.look_the_part),
+    String(build.class ?? ""),
+    (existingSelections ?? []) as BuildSpellSelectionInput[]
+  ).map((s) => ({
     ...s,
     build_id: buildId,
     metadata: {},
