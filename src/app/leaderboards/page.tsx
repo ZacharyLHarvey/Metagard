@@ -178,12 +178,6 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
           preserveKeys={["gameType"]}
         />
       </div>
-      <p className="text-sm text-neutral-400 max-w-2xl">
-        Tierlists ranked by tier, weighted rating, and vote count (Bayesian smoothing m=10). Run{" "}
-        <code className="text-neutral-300">metagard_extended_features.sql</code> so ratings and{" "}
-        <code className="text-neutral-300">spells.average_rating</code> stay in sync.
-      </p>
-
       {showBuilds ? (
         <>
           <section>

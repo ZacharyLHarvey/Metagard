@@ -1,17 +1,22 @@
 import UnsaveSavedBuildButton from "@/components/UnsaveSavedBuildButton";
-import { getProfile } from "@/lib/queries/getProfile";
+import ThemedWordmark from "@/components/ThemedWordmark";
+import { getProfileCached } from "@/lib/queries/getProfileCached";
 import Link from "next/link";
 import { getMyBuilds, getSavedBuilds } from "@/lib/queries/spellbook";
 
 export default async function Home() {
-  const profile = await getProfile();
+  const profile = await getProfileCached();
+  const initialTheme = profile?.theme_preference === "light" ? "light" : "dark";
   const [myBuilds, savedBuilds] = await Promise.all([getMyBuilds(), getSavedBuilds()]);
 
   return (
     <main className="p-10 text-white">
-      <header className="text-center">
-        <h1 className="text-2xl font-bold">Metagard</h1>
-        <p className="mt-4 text-neutral-400">Welcome back, {profile?.display_name}.</p>
+      <header className="px-4 text-center sm:px-6">
+        <h1 className="sr-only">Metagard</h1>
+        <ThemedWordmark initialTheme={initialTheme} priority />
+        <p className="mt-6 text-neutral-400">
+          Welcome back, {profile?.display_name}.
+        </p>
       </header>
 
       {/* Shared column layout */}

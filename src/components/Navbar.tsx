@@ -1,9 +1,11 @@
 import Link from "next/link";
-import { getProfile } from "@/lib/queries/getProfile";
+import { getProfileCached } from "@/lib/queries/getProfileCached";
 import NavbarMenu from "@/components/NavbarMenu";
+import ThemedAppIcon from "@/components/ThemedAppIcon";
 
 export default async function Navbar() {
-  const profile = await getProfile();
+  const profile = await getProfileCached();
+  const initialTheme = profile?.theme_preference === "light" ? "light" : "dark";
   const links = [
     { href: "/", label: "Home" },
     { href: "/builds", label: "Builds" },
@@ -24,9 +26,18 @@ export default async function Navbar() {
 
   return (
     <>
-      <nav className="w-full px-4 py-3 border-b border-neutral-800 flex items-center justify-between bg-neutral-900/60 backdrop-blur sticky top-0 z-40">
-        <Link href="/" className="font-semibold text-sm sm:text-base">
-          Metagard
+      <nav className="w-full px-4 py-3 border-b border-neutral-800 flex items-center justify-between gap-3 bg-neutral-900/60 backdrop-blur sticky top-0 z-40">
+        <Link
+          href="/"
+          className="flex min-w-0 shrink items-center"
+          aria-label="Metagard home"
+        >
+          <ThemedAppIcon
+            initialTheme={initialTheme}
+            className="h-10 w-10 sm:h-11 sm:w-11"
+            sizes="(max-width: 640px) 40px, 44px"
+            priority
+          />
         </Link>
 
         <NavbarMenu
