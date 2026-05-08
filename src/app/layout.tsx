@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
+import ThemeProvider from "@/components/ThemeProvider";
+import { getProfile } from "@/lib/queries/getProfile";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,15 +25,34 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const profilePromise = getProfile();
   return (
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col bg-neutral-950 text-white">
-        <Navbar />
-        {children}
+      <body className="min-h-full flex flex-col bg-[var(--background)] text-[var(--foreground)] transition-colors">
+        <ThemeRoot profilePromise={profilePromise}>{children}</ThemeRoot>
       </body>
     </html>
+  );
+}
+
+async function ThemeRoot({
+  profilePromise,
+  children,
+}: {
+  profilePromise: ReturnType<typeof getProfile>;
+  children: React.ReactNode;
+}) {
+  const profile = await profilePromise;
+  const initialTheme = profile?.theme_preference === "light" ? "light" : "dark";
+
+  return (
+    <ThemeProvider initialTheme={initialTheme}>
+      <Navbar />
+      {children}
+    </ThemeProvider>
   );
 }

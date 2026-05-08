@@ -13,6 +13,7 @@ export async function PATCH(request: Request) {
       favorite_class?: string | null;
       favorite_battle_game?: string | null;
       favorite_spell?: string | null;
+      theme_preference?: string | null;
     };
 
     const patch: Record<string, unknown> = {};
@@ -29,6 +30,9 @@ export async function PATCH(request: Request) {
     if ("favorite_spell" in body) {
       patch.favorite_spell =
         typeof body.favorite_spell === "string" ? body.favorite_spell.trim() || null : null;
+    }
+    if ("theme_preference" in body) {
+      patch.theme_preference = body.theme_preference === "light" ? "light" : "dark";
     }
 
     if (Object.keys(patch).length === 0) {
