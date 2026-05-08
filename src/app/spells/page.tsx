@@ -1,6 +1,7 @@
 import Link from "next/link";
 import TierBadge from "@/components/TierBadge";
 import { getAllSpellsList } from "@/lib/queries/spellbook";
+import AutoQuerySelect from "@/components/AutoQuerySelect";
 
 type Search = { group?: string };
 
@@ -42,25 +43,25 @@ export default async function SpellsPage({ searchParams }: { searchParams: Promi
 
   return (
     <main className="p-10 text-white space-y-6">
-      <h1 className="text-2xl font-bold">Spells</h1>
-      <p className="text-sm text-neutral-400">
-        Catalog from Supabase. Group by{" "}
-        <Link href="/spells" className="text-blue-400 underline">
-          all
-        </Link>
-        {" · "}
-        <Link href="/spells?group=type" className="text-blue-400 underline">
-          type
-        </Link>
-        {" · "}
-        <Link href="/spells?group=school" className="text-blue-400 underline">
-          school
-        </Link>
-        .{" "}
-        <Link href="/leaderboards/spells" className="text-blue-400 underline">
-          Leaderboard
-        </Link>
-      </p>
+      <div className="flex flex-wrap gap-4 items-baseline justify-between">
+        <h1 className="text-2xl font-bold">Spells</h1>
+        <div className="flex items-center gap-3 flex-wrap">
+          <AutoQuerySelect
+            name="group"
+            label="Display"
+            value={group}
+            clearValue="all"
+            options={[
+              { value: "all", label: "All" },
+              { value: "type", label: "Type" },
+              { value: "school", label: "School" },
+            ]}
+          />
+          <Link href="/leaderboards/spells" className="text-sm text-blue-400 underline">
+            Leaderboard
+          </Link>
+        </div>
+      </div>
 
       {sections.map((sec) => (
         <section key={sec.title} className="border border-neutral-800 rounded-lg overflow-hidden">
