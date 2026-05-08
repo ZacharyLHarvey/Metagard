@@ -37,7 +37,7 @@ export default async function CustomSpellsPage() {
               {m.name}
             </Link>
             <span className="text-sm text-neutral-500">
-              <TierBadge tier={tierData.tier} /> · WR {tierData.weightedRating.toFixed(2)}
+              <TierBadge tier={tierData.tier} /> · {tierData.weightedRating.toFixed(2)}
             </span>
           </li>
           );

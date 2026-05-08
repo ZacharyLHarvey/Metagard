@@ -44,27 +44,31 @@ export default async function BuildDetailsPage({ params }: Params) {
   const tierData = computeTierResult(stat.rawAverage, stat.votes, globalAverage);
 
   const canAct = Boolean(profile);
+  const profileOwnerId = profile && "id" in profile && profile.id != null ? String(profile.id) : null;
+  const canManageBuild = profileOwnerId != null && profileOwnerId === build.owner_id;
   const martial = isMartialClass(build.class);
   const equipment = martial ? await getClassEquipment(build.class) : null;
 
   return (
-    <main className="p-10 text-white space-y-6">
+    <main className="px-4 py-4 sm:px-6 lg:px-10 text-white space-y-5 sm:space-y-6 max-w-6xl">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">{build.name}</h1>
+          <h1 className="text-xl sm:text-2xl font-bold break-words">{build.name}</h1>
           <p className="text-neutral-400">
             {build.class} level {build.level} {build.look_the_part ? "- Look The Part" : ""}
           </p>
           {build.notes ? <p className="text-sm text-neutral-500 mt-2 whitespace-pre-wrap">{build.notes}</p> : null}
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Link href={`/builds/${build.id}/settings`} className="px-3 py-2 bg-neutral-700 rounded">
-            Settings
-          </Link>
-          <Link href={`/builds/${build.id}/edit`} className="px-3 py-2 bg-amber-600 rounded">
-            Edit Spells
-          </Link>
-        </div>
+        {canManageBuild ? (
+          <div className="flex flex-wrap gap-2">
+            <Link href={`/builds/${build.id}/settings`} className="px-3 py-2 bg-neutral-700 rounded text-sm sm:text-base">
+              Settings
+            </Link>
+            <Link href={`/builds/${build.id}/edit`} className="px-3 py-2 bg-amber-600 rounded text-sm sm:text-base">
+              Edit Spells
+            </Link>
+          </div>
+        ) : null}
       </div>
 
       <section className="rounded-lg border border-neutral-800 p-4">

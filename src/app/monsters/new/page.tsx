@@ -63,16 +63,16 @@ export default function NewMonsterPage() {
   }
 
   return (
-    <main className="p-10 text-white max-w-lg space-y-6">
+    <main className="px-4 py-4 sm:px-6 lg:px-10 text-white max-w-2xl space-y-5 sm:space-y-6">
       <Link href="/monsters" className="text-sm text-blue-400 hover:underline">
         ← Monsters
       </Link>
-      <h1 className="text-2xl font-bold">Create monster</h1>
+      <h1 className="text-xl sm:text-2xl font-bold">Create monster</h1>
       <form onSubmit={submit} className="space-y-4">
         <div>
           <label className="block text-sm text-neutral-400 mb-1">Name</label>
           <input
-            className="w-full px-3 py-2 bg-neutral-800 border border-neutral-700 rounded"
+            className="w-full px-3 py-2.5 bg-neutral-800 border border-neutral-700 rounded"
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
@@ -80,23 +80,23 @@ export default function NewMonsterPage() {
         </div>
         <div>
           <label className="block text-sm text-neutral-400 mb-1">Monster type</label>
-          <input className="w-full px-3 py-2 bg-neutral-800 border border-neutral-700 rounded" value={monsterType} onChange={(e) => setMonsterType(e.target.value)} />
+          <input className="w-full px-3 py-2.5 bg-neutral-800 border border-neutral-700 rounded" value={monsterType} onChange={(e) => setMonsterType(e.target.value)} />
         </div>
         <div>
           <label className="block text-sm text-neutral-400 mb-1">Threat level</label>
-          <input className="w-full px-3 py-2 bg-neutral-800 border border-neutral-700 rounded" value={threatLevel} onChange={(e) => setThreatLevel(e.target.value)} />
+          <input className="w-full px-3 py-2.5 bg-neutral-800 border border-neutral-700 rounded" value={threatLevel} onChange={(e) => setThreatLevel(e.target.value)} />
         </div>
         <div>
           <label className="block text-sm text-neutral-400 mb-1">Armor points</label>
-          <input className="w-full px-3 py-2 bg-neutral-800 border border-neutral-700 rounded" value={armorPoints} onChange={(e) => setArmorPoints(e.target.value)} />
+          <input className="w-full px-3 py-2.5 bg-neutral-800 border border-neutral-700 rounded" value={armorPoints} onChange={(e) => setArmorPoints(e.target.value)} />
         </div>
         <div>
           <label className="block text-sm text-neutral-400 mb-1">Abilities</label>
-          <textarea className="w-full px-3 py-2 bg-neutral-800 border border-neutral-700 rounded min-h-20" value={abilities} onChange={(e) => setAbilities(e.target.value)} />
+          <textarea className="w-full px-3 py-2.5 bg-neutral-800 border border-neutral-700 rounded min-h-24" value={abilities} onChange={(e) => setAbilities(e.target.value)} />
         </div>
         <div>
           <label className="block text-sm text-neutral-400 mb-1">Immunities</label>
-          <textarea className="w-full px-3 py-2 bg-neutral-800 border border-neutral-700 rounded min-h-20" value={immunities} onChange={(e) => setImmunities(e.target.value)} />
+          <textarea className="w-full px-3 py-2.5 bg-neutral-800 border border-neutral-700 rounded min-h-24" value={immunities} onChange={(e) => setImmunities(e.target.value)} />
         </div>
         <div>
           <label className="block text-sm text-neutral-400 mb-1">Image</label>
@@ -105,7 +105,7 @@ export default function NewMonsterPage() {
         <div>
           <label className="block text-sm text-neutral-400 mb-1">Description</label>
           <textarea
-            className="w-full px-3 py-2 bg-neutral-800 border border-neutral-700 rounded min-h-28"
+            className="w-full px-3 py-2.5 bg-neutral-800 border border-neutral-700 rounded min-h-32"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />

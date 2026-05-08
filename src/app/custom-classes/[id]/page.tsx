@@ -43,7 +43,7 @@ export default async function CustomClassDetailPage({ params }: Params) {
       </Link>
       <h1 className="text-2xl font-bold">{String(m.name)}</h1>
       <p className="text-neutral-400 text-sm">
-        <TierBadge tier={tierData.tier} /> · WR {tierData.weightedRating.toFixed(2)} · Raw ★ {stat.rawAverage.toFixed(2)} · {stat.votes} votes
+        <TierBadge tier={tierData.tier} /> · {tierData.weightedRating.toFixed(2)} · Raw ★ {stat.rawAverage.toFixed(2)} · {stat.votes} votes
       </p>
       {m.description ? <p className="text-sm whitespace-pre-wrap text-neutral-300">{String(m.description)}</p> : null}
 

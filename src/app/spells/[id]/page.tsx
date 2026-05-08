@@ -36,7 +36,7 @@ export default async function SpellDetailPage({ params }: Params) {
       <h1 className="text-2xl font-bold">{name}</h1>
       <p className="text-neutral-400 text-sm">
         <TierBadge tier={tierData.tier} /> · {String(row.type ?? "—")} · {String(row.school ?? "—")}
-        {row.level != null ? ` · circle ${row.level}` : ""} · WR {tierData.weightedRating.toFixed(2)} · Raw ★{" "}
+        {row.level != null ? ` · circle ${row.level}` : ""} · {tierData.weightedRating.toFixed(2)} · Raw ★{" "}
         {stat.rawAverage.toFixed(2)} · {stat.votes} votes
       </p>
 

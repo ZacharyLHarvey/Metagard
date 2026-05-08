@@ -69,16 +69,16 @@ export default function NewCustomSpellPage() {
   }
 
   return (
-    <main className="p-10 text-white max-w-lg space-y-6">
+    <main className="px-4 py-4 sm:px-6 lg:px-10 text-white max-w-2xl space-y-5 sm:space-y-6">
       <Link href="/custom-spells" className="text-sm text-blue-400 hover:underline">
         ← Custom spells
       </Link>
-      <h1 className="text-2xl font-bold">Create custom spell</h1>
+      <h1 className="text-xl sm:text-2xl font-bold">Create custom spell</h1>
       <form onSubmit={submit} className="space-y-4">
         <div>
           <label className="block text-sm text-neutral-400 mb-1">Name</label>
           <input
-            className="w-full px-3 py-2 bg-neutral-800 border border-neutral-700 rounded"
+            className="w-full px-3 py-2.5 bg-neutral-800 border border-neutral-700 rounded"
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
@@ -86,35 +86,35 @@ export default function NewCustomSpellPage() {
         </div>
         <div>
           <label className="block text-sm text-neutral-400 mb-1">Type (T)</label>
-          <input className="w-full px-3 py-2 bg-neutral-800 border border-neutral-700 rounded" value={spellType} onChange={(e) => setSpellType(e.target.value)} />
+          <input className="w-full px-3 py-2.5 bg-neutral-800 border border-neutral-700 rounded" value={spellType} onChange={(e) => setSpellType(e.target.value)} />
         </div>
         <div>
           <label className="block text-sm text-neutral-400 mb-1">School (S)</label>
-          <input className="w-full px-3 py-2 bg-neutral-800 border border-neutral-700 rounded" value={school} onChange={(e) => setSchool(e.target.value)} />
+          <input className="w-full px-3 py-2.5 bg-neutral-800 border border-neutral-700 rounded" value={school} onChange={(e) => setSchool(e.target.value)} />
         </div>
         <div>
           <label className="block text-sm text-neutral-400 mb-1">Range (R)</label>
-          <input className="w-full px-3 py-2 bg-neutral-800 border border-neutral-700 rounded" value={range} onChange={(e) => setRange(e.target.value)} />
+          <input className="w-full px-3 py-2.5 bg-neutral-800 border border-neutral-700 rounded" value={range} onChange={(e) => setRange(e.target.value)} />
         </div>
         <div>
           <label className="block text-sm text-neutral-400 mb-1">Incantation (I)</label>
-          <textarea className="w-full px-3 py-2 bg-neutral-800 border border-neutral-700 rounded min-h-20" value={incantation} onChange={(e) => setIncantation(e.target.value)} />
+          <textarea className="w-full px-3 py-2.5 bg-neutral-800 border border-neutral-700 rounded min-h-24" value={incantation} onChange={(e) => setIncantation(e.target.value)} />
         </div>
         <div>
           <label className="block text-sm text-neutral-400 mb-1">Materials (M)</label>
-          <input className="w-full px-3 py-2 bg-neutral-800 border border-neutral-700 rounded" value={materials} onChange={(e) => setMaterials(e.target.value)} />
+          <input className="w-full px-3 py-2.5 bg-neutral-800 border border-neutral-700 rounded" value={materials} onChange={(e) => setMaterials(e.target.value)} />
         </div>
         <div>
           <label className="block text-sm text-neutral-400 mb-1">Effect (E)</label>
-          <textarea className="w-full px-3 py-2 bg-neutral-800 border border-neutral-700 rounded min-h-20" value={effect} onChange={(e) => setEffect(e.target.value)} />
+          <textarea className="w-full px-3 py-2.5 bg-neutral-800 border border-neutral-700 rounded min-h-24" value={effect} onChange={(e) => setEffect(e.target.value)} />
         </div>
         <div>
           <label className="block text-sm text-neutral-400 mb-1">Limitations (L)</label>
-          <textarea className="w-full px-3 py-2 bg-neutral-800 border border-neutral-700 rounded min-h-20" value={limitations} onChange={(e) => setLimitations(e.target.value)} />
+          <textarea className="w-full px-3 py-2.5 bg-neutral-800 border border-neutral-700 rounded min-h-24" value={limitations} onChange={(e) => setLimitations(e.target.value)} />
         </div>
         <div>
           <label className="block text-sm text-neutral-400 mb-1">Notes (N)</label>
-          <textarea className="w-full px-3 py-2 bg-neutral-800 border border-neutral-700 rounded min-h-20" value={notes} onChange={(e) => setNotes(e.target.value)} />
+          <textarea className="w-full px-3 py-2.5 bg-neutral-800 border border-neutral-700 rounded min-h-24" value={notes} onChange={(e) => setNotes(e.target.value)} />
         </div>
         <div>
           <label className="block text-sm text-neutral-400 mb-1">Image</label>
@@ -123,7 +123,7 @@ export default function NewCustomSpellPage() {
         <div>
           <label className="block text-sm text-neutral-400 mb-1">Description</label>
           <textarea
-            className="w-full px-3 py-2 bg-neutral-800 border border-neutral-700 rounded min-h-28"
+            className="w-full px-3 py-2.5 bg-neutral-800 border border-neutral-700 rounded min-h-32"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />

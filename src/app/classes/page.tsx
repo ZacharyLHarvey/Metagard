@@ -27,7 +27,7 @@ export default async function ClassesPage() {
               {r.name}
             </Link>
             <span className="text-sm text-neutral-500">
-              <TierBadge tier={r.tier as "S+" | "S" | "A" | "B" | "C" | "D" | "F"} /> · WR {r.weighted_rating.toFixed(2)} · {r.ratings_count} vote{r.ratings_count === 1 ? "" : "s"}
+              <TierBadge tier={r.tier as "S+" | "S" | "A" | "B" | "C" | "D" | "F"} /> · {r.weighted_rating.toFixed(2)} · {r.ratings_count} vote{r.ratings_count === 1 ? "" : "s"}
             </span>
           </li>
         ))}

@@ -51,7 +51,7 @@ export default async function BattlegamesPage({ searchParams }: { searchParams: 
               {m.name} {m.game_type ? <span className="text-xs text-neutral-500">({m.game_type})</span> : null}
             </Link>
             <span className="text-sm text-neutral-500">
-              <TierBadge tier={tierData.tier} /> · WR {tierData.weightedRating.toFixed(2)}
+              <TierBadge tier={tierData.tier} /> · {tierData.weightedRating.toFixed(2)}
             </span>
           </li>
           );

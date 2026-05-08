@@ -35,7 +35,7 @@ export default async function ClassDetailPage({ params }: Params) {
       </Link>
       <h1 className="text-2xl font-bold">{klass.name}</h1>
       <p className="text-sm text-neutral-400">
-        <TierBadge tier={stat.tier as "S+" | "S" | "A" | "B" | "C" | "D" | "F"} /> · WR {stat.weighted_rating.toFixed(2)} · Raw ★ {stat.average_rating.toFixed(2)} · {stat.ratings_count} vote
+        <TierBadge tier={stat.tier as "S+" | "S" | "A" | "B" | "C" | "D" | "F"} /> · {stat.weighted_rating.toFixed(2)} · Raw ★ {stat.average_rating.toFixed(2)} · {stat.ratings_count} vote
         {stat.ratings_count === 1 ? "" : "s"}
       </p>
 
