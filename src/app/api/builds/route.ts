@@ -8,6 +8,11 @@ export async function POST(request: Request) {
       className?: string;
       level?: number;
       lookThePart?: boolean;
+      playStyle?: string | null;
+      priority?: string | null;
+      synergy?: string | null;
+      enemies?: string | null;
+      recommendedGear?: string | null;
     };
 
     if (!body.name || !body.className || !body.level) {
@@ -19,6 +24,11 @@ export async function POST(request: Request) {
       className: body.className,
       level: body.level,
       lookThePart: Boolean(body.lookThePart),
+      playStyle: body.playStyle,
+      priority: body.priority,
+      synergy: body.synergy,
+      enemies: body.enemies,
+      recommendedGear: body.recommendedGear,
     });
 
     return NextResponse.json({ id });

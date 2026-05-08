@@ -146,8 +146,8 @@ export default function BuildSettingsForm({ build, classNames }: Props) {
 
       <div>
         <label className="block mb-2 text-sm text-neutral-300">Priority</label>
-        <input
-          className="w-full px-3 py-2 rounded bg-neutral-800 border border-neutral-700"
+        <textarea
+          className="w-full px-3 py-2 rounded bg-neutral-800 border border-neutral-700 min-h-20"
           value={priority}
           onChange={(e) => setPriority(e.target.value)}
         />
