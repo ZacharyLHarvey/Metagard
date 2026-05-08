@@ -44,69 +44,43 @@ export default async function BuildDetailsPage({ params }: Params) {
   const tierData = computeTierResult(stat.rawAverage, stat.votes, globalAverage);
 
   const canAct = Boolean(profile);
+  const profileOwnerId = profile && "id" in profile && profile.id != null ? String(profile.id) : null;
+  const canManageBuild = profileOwnerId != null && profileOwnerId === build.owner_id;
   const martial = isMartialClass(build.class);
   const equipment = martial ? await getClassEquipment(build.class) : null;
 
   return (
-    <main className="p-10 text-white space-y-6">
+    <main className="px-4 py-4 sm:px-6 lg:px-10 text-white space-y-5 sm:space-y-6 max-w-6xl">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">{build.name}</h1>
+          <h1 className="text-xl sm:text-2xl font-bold break-words">{build.name}</h1>
           <p className="text-neutral-400">
             {build.class} level {build.level} {build.look_the_part ? "- Look The Part" : ""}
           </p>
           {build.notes ? <p className="text-sm text-neutral-500 mt-2 whitespace-pre-wrap">{build.notes}</p> : null}
-          <dl className="mt-4 space-y-2 text-sm text-neutral-300 max-w-2xl">
-            {build.play_style ? (
-              <>
-                <dt className="text-neutral-500 font-medium">Play style</dt>
-                <dd className="whitespace-pre-wrap">{build.play_style}</dd>
-              </>
-            ) : null}
-            {build.build_priority ? (
-              <>
-                <dt className="text-neutral-500 font-medium">Priority</dt>
-                <dd>{build.build_priority}</dd>
-              </>
-            ) : null}
-            {build.synergy ? (
-              <>
-                <dt className="text-neutral-500 font-medium">Synergy</dt>
-                <dd className="whitespace-pre-wrap">{build.synergy}</dd>
-              </>
-            ) : null}
-            {build.enemies ? (
-              <>
-                <dt className="text-neutral-500 font-medium">Enemies / counters</dt>
-                <dd className="whitespace-pre-wrap">{build.enemies}</dd>
-              </>
-            ) : null}
-            {build.recommended_gear ? (
-              <>
-                <dt className="text-neutral-500 font-medium">Recommended gear</dt>
-                <dd className="whitespace-pre-wrap">{build.recommended_gear}</dd>
-              </>
-            ) : null}
-          </dl>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Link href={`/builds/${build.id}/settings`} className="px-3 py-2 bg-neutral-700 rounded">
-            Settings
-          </Link>
-          <Link href={`/builds/${build.id}/edit`} className="px-3 py-2 bg-amber-600 rounded">
-            Edit Spells
-          </Link>
-        </div>
+        {canManageBuild ? (
+          <div className="flex flex-wrap gap-2">
+            <Link href={`/builds/${build.id}/settings`} className="px-3 py-2 bg-neutral-700 rounded text-sm sm:text-base">
+              Settings
+            </Link>
+            <Link href={`/builds/${build.id}/edit`} className="px-3 py-2 bg-amber-600 rounded text-sm sm:text-base">
+              Edit Spells
+            </Link>
+          </div>
+        ) : null}
       </div>
 
-      <section className="rounded-lg border border-neutral-800 p-4 space-y-3">
-        <p className="text-sm text-neutral-400">
-          <TierBadge tier={tierData.tier} /> · Weighted:{" "}
-          <span className="text-neutral-200 font-semibold">{tierData.weightedRating.toFixed(2)}</span> · Raw:{" "}
-          <span className="text-neutral-200 font-semibold">{stat.rawAverage.toFixed(2)}</span> ★ · {stat.votes} vote
-          {stat.votes === 1 ? "" : "s"}
-        </p>
-        <CloneBuildButton buildId={buildId} canClone={canAct} />
+      <section className="rounded-lg border border-neutral-800 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-neutral-400">
+            <TierBadge tier={tierData.tier} /> · Weighted:{" "}
+            <span className="text-neutral-200 font-semibold">{tierData.weightedRating.toFixed(2)}</span> · Raw:{" "}
+            <span className="text-neutral-200 font-semibold">{stat.rawAverage.toFixed(2)}</span> ★ · {stat.votes} vote
+            {stat.votes === 1 ? "" : "s"}
+          </p>
+          <CloneBuildButton buildId={buildId} canClone={canAct} />
+        </div>
       </section>
 
       {martial ? (
@@ -142,6 +116,48 @@ export default async function BuildDetailsPage({ params }: Params) {
           Martial class build: abilities are auto-assigned by class/level. Look The Part grants class-specific LTP ability only.
         </p>
       ) : null}
+
+      <section className="space-y-3 text-sm text-neutral-300 max-w-3xl">
+        <section className="rounded-lg border border-neutral-800 p-4 bg-neutral-900/30 space-y-1">
+          <p className="text-neutral-500 font-medium">Playstyle</p>
+          <p className="text-xs text-neutral-400">
+            How this build is meant to approach fights, objectives, and battlefield movement.
+          </p>
+          <p className="whitespace-pre-wrap text-neutral-200">{build.play_style ?? "—"}</p>
+        </section>
+
+        <section className="rounded-lg border border-neutral-800 p-4 bg-neutral-900/30 space-y-1">
+          <p className="text-neutral-500 font-medium">Priority</p>
+          <p className="text-xs text-neutral-400">
+            What you should focus on first when playing this build in a Battlegame.
+          </p>
+          <p className="whitespace-pre-wrap text-neutral-200">{build.build_priority ?? "—"}</p>
+        </section>
+
+        <section className="rounded-lg border border-neutral-800 p-4 bg-neutral-900/30 space-y-1">
+          <p className="text-neutral-500 font-medium">Synergy</p>
+          <p className="text-xs text-neutral-400">
+            Which classes, teammates, or abilities enhance this build’s effectiveness.
+          </p>
+          <p className="whitespace-pre-wrap text-neutral-200">{build.synergy ?? "—"}</p>
+        </section>
+
+        <section className="rounded-lg border border-neutral-800 p-4 bg-neutral-900/30 space-y-1">
+          <p className="text-neutral-500 font-medium">Enemies</p>
+          <p className="text-xs text-neutral-400">
+            The classes or tactics that most threaten this build during Battlegames.
+          </p>
+          <p className="whitespace-pre-wrap text-neutral-200">{build.enemies ?? "—"}</p>
+        </section>
+
+        <section className="rounded-lg border border-neutral-800 p-4 bg-neutral-900/30 space-y-1">
+          <p className="text-neutral-500 font-medium">Recommended Gear</p>
+          <p className="text-xs text-neutral-400">
+            The weapons, shields, and equipment that best support this build’s playstyle.
+          </p>
+          <p className="whitespace-pre-wrap text-neutral-200">{build.recommended_gear ?? "—"}</p>
+        </section>
+      </section>
 
       <section className="rounded-lg border border-neutral-800 p-4 space-y-3">
         <p className="text-sm text-neutral-400">Rate this build</p>

@@ -55,13 +55,13 @@ export default function ProfileFavoritesForm({
       <h2 className="text-lg font-semibold">Favorites</h2>
       <p className="text-sm text-neutral-500">Choose your favorites from the current catalog.</p>
       <div>
-        <label className="block text-sm text-neutral-400 mb-1">Favorite class</label>
+        <label className="block text-sm text-neutral-400 mb-1">Favorite Class</label>
         <select
           className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded"
           value={favoriteClass}
           onChange={(e) => setFavoriteClass(e.target.value)}
         >
-          <option value="">No favorite class</option>
+          <option value="">No Favorite Class</option>
           {classOptions.map((name) => (
             <option key={name} value={name}>
               {name}
@@ -70,13 +70,13 @@ export default function ProfileFavoritesForm({
         </select>
       </div>
       <div>
-        <label className="block text-sm text-neutral-400 mb-1">Favorite battlegame</label>
+        <label className="block text-sm text-neutral-400 mb-1">Favorite Battlegame</label>
         <select
           className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded"
           value={favoriteBattleGame}
           onChange={(e) => setFavoriteBattleGame(e.target.value)}
         >
-          <option value="">No favorite battlegame</option>
+          <option value="">No Favorite Battlegame</option>
           {battleGameOptions.map((name) => (
             <option key={name} value={name}>
               {name}
@@ -85,13 +85,13 @@ export default function ProfileFavoritesForm({
         </select>
       </div>
       <div>
-        <label className="block text-sm text-neutral-400 mb-1">Favorite spell</label>
+        <label className="block text-sm text-neutral-400 mb-1">Favorite Spell</label>
         <select
           className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded"
           value={favoriteSpell}
           onChange={(e) => setFavoriteSpell(e.target.value)}
         >
-          <option value="">No favorite spell</option>
+          <option value="">No Favorite Spell</option>
           {spellOptions.map((name) => (
             <option key={name} value={name}>
               {name}

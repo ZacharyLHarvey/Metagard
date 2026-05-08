@@ -11,6 +11,6 @@ const STYLES: Record<TierLabel, string> = {
 };
 
 export default function TierBadge({ tier }: { tier: TierLabel }) {
-  return <span className={`px-2 py-0.5 rounded text-xs font-semibold ${STYLES[tier]}`}>{tier}</span>;
+  return <span className={`px-2.5 py-1 rounded-md text-sm font-semibold leading-none ${STYLES[tier]}`}>{tier}</span>;
 }
 

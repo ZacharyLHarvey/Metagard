@@ -28,6 +28,22 @@ alter table public.profiles
   add column if not exists favorite_battle_game text,
   add column if not exists favorite_spell text;
 
+alter table public.profiles
+  add column if not exists theme_preference text not null default 'dark';
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'profiles_theme_preference_check'
+  ) then
+    alter table public.profiles
+      add constraint profiles_theme_preference_check
+      check (theme_preference in ('dark', 'light'));
+  end if;
+end $$;
+
 -- ---------------------------------------------------------------------------
 -- Build ratings (rate once: PK user_id + build_id)
 -- ---------------------------------------------------------------------------

@@ -6,10 +6,10 @@ export default async function CreateBuildPage() {
   const classNames = classes.map((c) => c.name);
 
   return (
-    <main className="p-10 text-white">
-      <h1 className="text-2xl font-bold mb-6">Create a New Build</h1>
+    <main className="px-4 py-4 sm:px-6 lg:px-10 text-white space-y-4 sm:space-y-6 max-w-4xl">
+      <h1 className="text-xl sm:text-2xl font-bold">Create a New Build</h1>
 
-      <div className="border border-neutral-800 rounded-lg p-6 bg-neutral-900/40">
+      <div className="border border-neutral-800 rounded-lg p-4 sm:p-6 bg-neutral-900/40">
         <CreateBuildForm classes={classNames} />
       </div>
     </main>

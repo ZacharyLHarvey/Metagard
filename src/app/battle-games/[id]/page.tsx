@@ -43,7 +43,7 @@ export default async function BattleGameDetailPage({ params }: Params) {
       </Link>
       <h1 className="text-2xl font-bold">{String(m.name)}</h1>
       <p className="text-neutral-400 text-sm">
-        <TierBadge tier={tierData.tier} /> · WR {tierData.weightedRating.toFixed(2)} · Raw ★ {stat.rawAverage.toFixed(2)} · {stat.votes} votes
+        <TierBadge tier={tierData.tier} /> · {tierData.weightedRating.toFixed(2)} · Raw ★ {stat.rawAverage.toFixed(2)} · {stat.votes} votes
       </p>
       {m.image_url ? <img src={String(m.image_url)} alt={String(m.name)} className="w-full max-h-96 object-contain rounded border border-neutral-800" /> : null}
       <div className="grid md:grid-cols-2 gap-3 text-sm">

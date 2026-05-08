@@ -336,6 +336,11 @@ export async function createBuild(input: {
   className: string;
   level: number;
   lookThePart: boolean;
+  playStyle?: string | null;
+  priority?: string | null;
+  synergy?: string | null;
+  enemies?: string | null;
+  recommendedGear?: string | null;
 }) {
   const userId = await getCurrentUserId();
   if (!userId) throw new Error("Unauthorized");
@@ -348,6 +353,11 @@ export async function createBuild(input: {
       class: input.className,
       level: input.level,
       look_the_part: input.lookThePart,
+      play_style: input.playStyle ?? null,
+      build_priority: input.priority ?? null,
+      synergy: input.synergy ?? null,
+      enemies: input.enemies ?? null,
+      recommended_gear: input.recommendedGear ?? null,
       owner_id: userId,
       average_rating: 0,
       ruleset_version: "V8.7",

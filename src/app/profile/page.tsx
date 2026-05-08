@@ -13,7 +13,7 @@ export default async function ProfilePage() {
 
   if (!profile) {
     return (
-      <main className="min-h-screen bg-neutral-950 text-white p-10">
+      <main className="min-h-screen bg-neutral-950 text-white px-4 py-4 sm:px-6 lg:px-10">
         <h1 className="text-2xl font-bold">Profile</h1>
         <p className="mt-4 text-neutral-400">
           <Link href="/login" className="text-blue-400 underline">
@@ -65,7 +65,7 @@ export default async function ProfilePage() {
   ).sort((a, b) => a.localeCompare(b));
 
   return (
-    <main className="min-h-screen bg-neutral-950 text-white p-10 space-y-10">
+    <main className="min-h-screen bg-neutral-950 text-white px-4 py-4 sm:px-6 lg:px-10 space-y-8 sm:space-y-10 max-w-6xl">
       <div>
         <h1 className="text-2xl font-bold">Your profile</h1>
         <p className="mt-2 text-neutral-400">
@@ -130,7 +130,7 @@ function BuildTable({
 
   return (
     <div className="border border-neutral-800 rounded-lg overflow-x-auto">
-      <table className="w-full text-left text-sm border-collapse min-w-[32rem]">
+      <table className="w-full text-left text-sm border-collapse">
         <thead className="bg-neutral-900">
           <tr>
             <th className="px-4 py-2 border-b border-neutral-800">Name</th>
@@ -146,10 +146,10 @@ function BuildTable({
               <td className="px-4 py-2 border-b border-neutral-800">{b.class}</td>
               <td className="px-4 py-2 border-b border-neutral-800">{b.level}</td>
               <td className="px-4 py-2 border-b border-neutral-800 text-right">
-                <div className="flex justify-end flex-wrap gap-2">
+                <div className="flex justify-start sm:justify-end flex-wrap gap-2">
                   <Link
                     href={`/builds/${b.id}`}
-                    className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm"
+                    className="px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded text-sm"
                   >
                     View
                   </Link>

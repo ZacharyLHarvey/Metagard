@@ -107,9 +107,9 @@ export default async function FavoritesPage() {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <PieChart title="Favorite class" slices={classSlices} size={360} />
-        <PieChart title="Favorite battlegame" slices={gameSlices} size={360} />
-        <PieChart title="Favorite spell" slices={spellSlices} size={360} />
+        <PieChart title="Favorite Class" slices={classSlices} size={360} />
+        <PieChart title="Favorite Battlegame" slices={gameSlices} size={360} />
+        <PieChart title="Favorite Spell" slices={spellSlices} size={360} />
       </div>
     </main>
   );

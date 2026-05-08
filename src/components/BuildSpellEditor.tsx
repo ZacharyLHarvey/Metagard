@@ -299,7 +299,7 @@ export default function BuildSpellEditor({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 sm:space-y-6">
       <TipsAlert message="Long press a spell row to view detailed spell text, restrictions, and notes." />
       <SpellDetailModal spell={selectedSpell} onClose={() => setSelectedSpell(null)} />
       {ruleWarning ? (
@@ -312,7 +312,7 @@ export default function BuildSpellEditor({
           </div>
         </div>
       ) : null}
-      <div className="rounded border border-neutral-800 p-3 bg-neutral-900/40">
+      <div className="rounded border border-neutral-800 p-3 sm:p-4 bg-neutral-900/40">
         {martial ? (
           <p className="text-sm text-neutral-300">
             Martial class build: point-buy is disabled. Abilities are automatically assigned by class/level.
@@ -337,7 +337,7 @@ export default function BuildSpellEditor({
             ) : null}
           </p>
         ) : null}
-        <div className="mt-3 flex flex-wrap gap-4 text-sm">
+        <div className="mt-3 flex flex-wrap gap-3 sm:gap-4 text-sm">
           <label className="flex items-center gap-2">
             <input type="checkbox" checked={showTypeSchool} onChange={(e) => setShowTypeSchool(e.target.checked)} />
             show type/school
@@ -370,7 +370,7 @@ export default function BuildSpellEditor({
           : Math.max(POINTS_PER_SPELL_LEVEL - spentHere, 0);
         const collapsed = collapsedLevels.has(level);
         return (
-        <section key={level} className="border border-neutral-800 rounded-lg p-4">
+        <section key={level} className="border border-neutral-800 rounded-lg p-3 sm:p-4">
           <button
             type="button"
             className="flex w-full items-center justify-between gap-3 text-left rounded-md px-1 py-2 -mx-1 hover:bg-neutral-800/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
@@ -409,7 +409,7 @@ export default function BuildSpellEditor({
               return (
                 <div
                   key={key}
-                  className={`flex items-center justify-between rounded border p-2 ${
+                  className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded border p-2 sm:p-3 ${
                     evaluated.restricted ? "border-red-800 bg-red-950/20" : "border-neutral-800"
                   }`}
                   onMouseDown={() => {
@@ -446,12 +446,12 @@ export default function BuildSpellEditor({
                       <p className="text-xs text-neutral-500 mt-1">({spell.materials})</p>
                     ) : null}
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 self-start sm:self-center">
                     {martial ? null : (
                       <>
                         <button
                           onClick={() => decrement(spell)}
-                          className="px-2 py-1 bg-neutral-700 rounded"
+                          className="px-3 py-1.5 bg-neutral-700 rounded"
                         >
                           -
                         </button>
@@ -459,7 +459,7 @@ export default function BuildSpellEditor({
                         <button
                           onClick={() => increment(spell, level)}
                           disabled={evaluated.restricted}
-                          className="px-2 py-1 bg-blue-600 rounded"
+                          className="px-3 py-1.5 bg-blue-600 rounded"
                         >
                           +
                         </button>
@@ -477,7 +477,7 @@ export default function BuildSpellEditor({
                 );
                 const chosenId = chosen?.catalog_rule_id ?? "";
                 return (
-                  <div key={group.groupKey} className="rounded border border-neutral-800 p-3 ml-6">
+                  <div key={group.groupKey} className="rounded border border-neutral-800 p-3 ml-3 sm:ml-6">
                     <p className="text-sm text-neutral-300">
                       {group.optionalMartialArchetype
                         ? "Optional (Martial Archetype): Pick one of the following abilities for this level:"
@@ -507,7 +507,7 @@ export default function BuildSpellEditor({
         );
       })}
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <button
           onClick={saveSelections}
           disabled={

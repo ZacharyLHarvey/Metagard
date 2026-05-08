@@ -23,8 +23,8 @@ export default async function EditBuildPage({ params }: Params) {
   ]);
 
   return (
-    <main className="p-10 text-white space-y-6">
-      <h1 className="text-2xl font-bold">Edit Build: {build.name}</h1>
+    <main className="px-4 py-4 sm:px-6 lg:px-10 text-white space-y-5 sm:space-y-6 max-w-6xl">
+      <h1 className="text-xl sm:text-2xl font-bold break-words">Edit Build: {build.name}</h1>
       <p className="text-neutral-400">
         {build.class} level {build.level}
         {build.look_the_part ? " · Look the Part" : ""}

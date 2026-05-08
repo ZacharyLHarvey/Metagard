@@ -7,13 +7,12 @@ import { isMartialClass } from "@/lib/spellbook/martial";
 
 type Props = {
   build: BuildRow;
-  classNames: string[];
 };
 
-export default function BuildSettingsForm({ build, classNames }: Props) {
+export default function BuildSettingsForm({ build }: Props) {
   const router = useRouter();
   const [name, setName] = useState(build.name);
-  const [className, setClassName] = useState(build.class);
+  const className = build.class;
   const [level, setLevel] = useState(build.level);
   const [lookThePart, setLookThePart] = useState(build.look_the_part);
   const [notes, setNotes] = useState(build.notes ?? "");
@@ -35,7 +34,6 @@ export default function BuildSettingsForm({ build, classNames }: Props) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name,
-        className,
         level,
         lookThePart,
         notes: notes || null,
@@ -72,11 +70,11 @@ export default function BuildSettingsForm({ build, classNames }: Props) {
   }
 
   return (
-    <div className="space-y-4 max-w-xl">
+    <div className="space-y-4 sm:space-y-5 max-w-xl">
       <div>
         <label className="block mb-2 text-sm text-neutral-300">Name</label>
         <input
-          className="w-full px-3 py-2 rounded bg-neutral-800 border border-neutral-700"
+          className="w-full px-3 py-2.5 rounded bg-neutral-800 border border-neutral-700"
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
@@ -84,19 +82,14 @@ export default function BuildSettingsForm({ build, classNames }: Props) {
 
       <div>
         <label className="block mb-2 text-sm text-neutral-300">Class</label>
-        <select
-          className="w-full px-3 py-2 rounded bg-neutral-800 border border-neutral-700"
+        <input
+          className="w-full px-3 py-2.5 rounded bg-neutral-800 border border-neutral-700 text-neutral-300"
           value={className}
-          onChange={(e) => setClassName(e.target.value)}
-        >
-          {classNames.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-        </select>
-        <p className="text-xs text-amber-600/90 mt-1">
-          Changing class may invalidate spell choices; review your spell list after saving.
+          readOnly
+          disabled
+        />
+        <p className="text-xs text-neutral-500 mt-1">
+          Class is locked after build creation.
         </p>
       </div>
 
@@ -106,7 +99,7 @@ export default function BuildSettingsForm({ build, classNames }: Props) {
           type="number"
           min={1}
           max={6}
-          className="w-full px-3 py-2 rounded bg-neutral-800 border border-neutral-700"
+          className="w-full px-3 py-2.5 rounded bg-neutral-800 border border-neutral-700"
           value={level}
           onChange={(e) => setLevel(Number(e.target.value))}
         />
@@ -129,7 +122,7 @@ export default function BuildSettingsForm({ build, classNames }: Props) {
       <div>
         <label className="block mb-2 text-sm text-neutral-300">Notes</label>
         <textarea
-          className="w-full px-3 py-2 rounded bg-neutral-800 border border-neutral-700 min-h-24"
+          className="w-full px-3 py-2.5 rounded bg-neutral-800 border border-neutral-700 min-h-24"
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
         />
@@ -138,7 +131,7 @@ export default function BuildSettingsForm({ build, classNames }: Props) {
       <div>
         <label className="block mb-2 text-sm text-neutral-300">Play style</label>
         <textarea
-          className="w-full px-3 py-2 rounded bg-neutral-800 border border-neutral-700 min-h-20"
+          className="w-full px-3 py-2.5 rounded bg-neutral-800 border border-neutral-700 min-h-20"
           value={playStyle}
           onChange={(e) => setPlayStyle(e.target.value)}
         />
@@ -146,8 +139,8 @@ export default function BuildSettingsForm({ build, classNames }: Props) {
 
       <div>
         <label className="block mb-2 text-sm text-neutral-300">Priority</label>
-        <input
-          className="w-full px-3 py-2 rounded bg-neutral-800 border border-neutral-700"
+        <textarea
+          className="w-full px-3 py-2.5 rounded bg-neutral-800 border border-neutral-700 min-h-20"
           value={priority}
           onChange={(e) => setPriority(e.target.value)}
         />
@@ -156,7 +149,7 @@ export default function BuildSettingsForm({ build, classNames }: Props) {
       <div>
         <label className="block mb-2 text-sm text-neutral-300">Synergy</label>
         <textarea
-          className="w-full px-3 py-2 rounded bg-neutral-800 border border-neutral-700 min-h-20"
+          className="w-full px-3 py-2.5 rounded bg-neutral-800 border border-neutral-700 min-h-20"
           value={synergy}
           onChange={(e) => setSynergy(e.target.value)}
         />
@@ -165,7 +158,7 @@ export default function BuildSettingsForm({ build, classNames }: Props) {
       <div>
         <label className="block mb-2 text-sm text-neutral-300">Enemies / counters</label>
         <textarea
-          className="w-full px-3 py-2 rounded bg-neutral-800 border border-neutral-700 min-h-20"
+          className="w-full px-3 py-2.5 rounded bg-neutral-800 border border-neutral-700 min-h-20"
           value={enemies}
           onChange={(e) => setEnemies(e.target.value)}
         />
@@ -174,13 +167,13 @@ export default function BuildSettingsForm({ build, classNames }: Props) {
       <div>
         <label className="block mb-2 text-sm text-neutral-300">Recommended gear</label>
         <textarea
-          className="w-full px-3 py-2 rounded bg-neutral-800 border border-neutral-700 min-h-20"
+          className="w-full px-3 py-2.5 rounded bg-neutral-800 border border-neutral-700 min-h-20"
           value={recommendedGear}
           onChange={(e) => setRecommendedGear(e.target.value)}
         />
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <button type="button" onClick={onSave} disabled={saving} className="px-4 py-2 bg-blue-600 rounded">
           {saving ? "Saving..." : "Save Settings"}
         </button>

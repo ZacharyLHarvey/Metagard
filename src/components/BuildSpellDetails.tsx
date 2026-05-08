@@ -25,6 +25,16 @@ export default function BuildSpellDetails({ selections, spells, className, lookT
   const [showMaterials, setShowMaterials] = useState(false);
   const [showRange, setShowRange] = useState(false);
 
+  function displayNameWithTypeTag(spell: SpellRow | null | undefined, fallbackName: string, purchased: number) {
+    const type = spell?.type ?? null;
+    const isArchetype = type === "Archetype";
+    const isTrait = type === "Trait";
+    const tag = isArchetype ? "Archetype" : isTrait ? "Trait" : null;
+    const name = spell?.name ?? fallbackName;
+    if (tag) return `${name} - (${tag})`;
+    return `${purchased}x ${name}`;
+  }
+
   const purchasedBySpellId = useMemo(() => {
     const map: Record<number, number> = {};
     for (const s of selections) {
@@ -144,7 +154,7 @@ export default function BuildSpellDetails({ selections, spells, className, lookT
                       <tr key={selection.id}>
                         <td className="pl-8 pr-4 py-2 border-b border-neutral-800">
                           <p className="font-medium">
-                            {selection.purchased}x {spell?.name ?? `Spell #${selection.spell_id}`}
+                            {displayNameWithTypeTag(spell, `Spell #${selection.spell_id}`, selection.purchased)}
                           </p>
                           <p className="text-xs text-neutral-400">
                             {showTypeSchool && spell?.type ? `${spell.type}` : ""}
@@ -182,7 +192,7 @@ export default function BuildSpellDetails({ selections, spells, className, lookT
                         <p className="font-medium text-amber-300">⚠️ Pick one in edit mode</p>
                         {group.options.map((opt) => (
                           <p key={opt.catalog_rule_id ?? opt.name} className="text-sm text-neutral-300 mt-1">
-                            1x {opt.name}
+                            {displayNameWithTypeTag(opt, opt.name, 1)}
                           </p>
                         ))}
                       </td>
@@ -200,7 +210,7 @@ export default function BuildSpellDetails({ selections, spells, className, lookT
                       <tr key={selection.id}>
                         <td className="pl-8 pr-4 py-2 border-b border-neutral-800">
                           <p className="font-medium">
-                            {selection.purchased}x {spell?.name ?? `Spell #${selection.spell_id}`}
+                            {displayNameWithTypeTag(spell, `Spell #${selection.spell_id}`, selection.purchased)}
                           </p>
                           <p className="text-xs text-neutral-400">
                             {showTypeSchool && spell?.type ? `${spell.type}` : ""}

@@ -13,7 +13,6 @@ export async function PATCH(request: Request, context: Params) {
     const buildId = Number(id);
     const body = (await request.json()) as {
       name?: string;
-      className?: string;
       level?: number;
       lookThePart?: boolean;
       notes?: string | null;
@@ -31,7 +30,6 @@ export async function PATCH(request: Request, context: Params) {
 
     const patch: Record<string, unknown> = {};
     if (typeof body.name === "string" && body.name.trim().length > 0) patch.name = body.name.trim();
-    if (typeof body.className === "string" && body.className.trim().length > 0) patch.class = body.className.trim();
     if (typeof body.level === "number" && body.level >= 1 && body.level <= 6) patch.level = body.level;
     if (typeof body.lookThePart === "boolean") patch.look_the_part = body.lookThePart;
     if (typeof body.notes === "string" || body.notes === null) patch.notes = body.notes;

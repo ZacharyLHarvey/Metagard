@@ -157,9 +157,9 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
   const keys = showBuilds ? [...byClassLevel.keys()].sort() : [];
 
   return (
-    <main className="p-10 text-white space-y-8">
+    <main className="px-4 py-4 sm:px-6 lg:px-10 text-white space-y-6 sm:space-y-8">
       <div className="flex flex-wrap gap-4 items-baseline justify-between">
-        <h1 className="text-2xl font-bold">Leaderboards</h1>
+        <h1 className="text-xl sm:text-2xl font-bold">Leaderboards</h1>
         <AutoQuerySelect
           name="lb"
           label="Show"
@@ -231,7 +231,7 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
             <h2 className="text-lg font-semibold mb-3">By class &amp; level</h2>
             <div className="space-y-6">
               {keys.map((key) => (
-                <div key={key} className="border border-neutral-800 rounded-lg p-4">
+                <div key={key} className="border border-neutral-800 rounded-lg p-3 sm:p-4">
                   <h3 className="font-medium text-neutral-200 mb-2">{key}</h3>
                   <div className="border border-neutral-800 rounded-lg overflow-hidden">
                     <table className="w-full text-sm border-collapse table-fixed">

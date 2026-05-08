@@ -4,7 +4,6 @@ import TierBadge from "@/components/TierBadge";
 import AutoQuerySelect from "@/components/AutoQuerySelect";
 import { getGlobalAverageRating, getNumericEntityVoteStats } from "@/lib/queries/ratingStats";
 import { createClient } from "@/lib/server/supabaseServer";
-import { getProfile } from "@/lib/queries/getProfile";
 import { computeTierResult } from "@/lib/tier";
 
 type Build = {
@@ -50,7 +49,6 @@ type Search = { group?: string };
 export default async function BuildsPage({ searchParams }: { searchParams: Promise<Search> }) {
   const { group = "all" } = await searchParams;
   const supabase = await createClient();
-  const profile = await getProfile();
 
   const { data: builds, error } = await supabase
     .from("builds")
@@ -62,7 +60,7 @@ export default async function BuildsPage({ searchParams }: { searchParams: Promi
   if (error) {
     console.error("Error loading builds:", error.message, error);
     return (
-      <main className="p-10 text-white">
+      <main className="px-4 py-4 sm:px-6 lg:px-10 text-white">
         <h1 className="text-2xl font-bold mb-6">All Builds</h1>
         <p>Failed to load builds.</p>
         <p className="mt-2 text-sm text-neutral-500">{error.message}</p>
@@ -118,9 +116,9 @@ export default async function BuildsPage({ searchParams }: { searchParams: Promi
           : "All builds";
 
   return (
-    <main className="p-10 text-white space-y-10">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <h1 className="text-2xl font-bold">{pageTitle}</h1>
+    <main className="px-4 py-4 sm:px-6 lg:px-10 text-white space-y-6 sm:space-y-8">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <h1 className="text-xl sm:text-2xl font-bold">{pageTitle}</h1>
         <AutoQuerySelect
           name="group"
           label="Tierlist group"
@@ -153,12 +151,12 @@ export default async function BuildsPage({ searchParams }: { searchParams: Promi
       ) : null}
 
       {visibleClassKeys.map((classKey) => (
-        <section key={classKey} className="space-y-3">
+        <section key={classKey} className="space-y-2 sm:space-y-3">
           <h2 className="text-lg font-semibold text-neutral-200 border-b border-neutral-800 pb-2">
             {labelByClassKey.get(classKey) ?? classKey}
           </h2>
           <div className="border border-neutral-800 rounded-lg overflow-hidden">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse text-sm sm:text-base">
               <thead className="bg-neutral-900">
                 <tr>
                   <th className="col-name px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
@@ -174,7 +172,7 @@ export default async function BuildsPage({ searchParams }: { searchParams: Promi
                     Rating
                   </th>
                   <th className="col-look px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
-                    Look the Part
+                    LTP
                   </th>
                   <th className="col-actions px-4 py-2 border-b border-neutral-800 text-right">Actions</th>
                 </tr>
@@ -197,28 +195,20 @@ export default async function BuildsPage({ searchParams }: { searchParams: Promi
                     <td className="col-rating px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
                       <div className="flex items-center gap-2">
                         <TierBadge tier={tierData.tier} />
-                        <span>WR {tierData.weightedRating.toFixed(2)}</span>
+                        <span>{tierData.weightedRating.toFixed(2)}</span>
                       </div>
                     </td>
                     <td className="col-look px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
                       {b.look_the_part ? "✔️" : "—"}
                     </td>
                     <td className="col-actions px-4 py-2 border-b border-neutral-800 text-right">
-                      <div className="flex justify-end gap-3 flex-wrap">
+                      <div className="flex justify-start sm:justify-end gap-2 sm:gap-3 flex-wrap">
                         <Link
                           href={`/builds/${b.id}`}
-                          className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm"
+                          className="px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded text-sm"
                         >
                           View
                         </Link>
-                        {profile?.id && b.owner_id === profile.id ? (
-                          <Link
-                            href={`/builds/${b.id}/edit`}
-                            className="px-3 py-1 bg-amber-600 hover:bg-amber-700 rounded text-sm"
-                          >
-                            Edit
-                          </Link>
-                        ) : null}
                         <SaveBuildButton buildId={b.id} />
                       </div>
                     </td>
