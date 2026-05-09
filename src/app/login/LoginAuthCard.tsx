@@ -28,6 +28,21 @@ function validateLoginPassword(password: string): string | undefined {
   return undefined;
 }
 
+/** Maps Supabase Auth errors to clearer copy where helpful. */
+function friendlyAuthMessage(raw: string, mode: "signup" | "login"): string {
+  const m = raw.toLowerCase();
+  if (m.includes("rate limit") || m.includes("too many requests")) {
+    if (mode === "signup") {
+      return (
+        "Too many sign-up or confirmation emails were sent in a short time. Wait a few minutes and try again. " +
+        "For local testing, your Supabase project can raise auth email limits or use a custom SMTP provider (Supabase Dashboard → Authentication)."
+      );
+    }
+    return "Too many attempts. Please wait a few minutes and try again.";
+  }
+  return raw;
+}
+
 function validateSignUp(
   email: string,
   displayName: string,
@@ -121,7 +136,7 @@ export default function LoginAuthCard({ initialTheme }: LoginAuthCardProps) {
     setLoginSubmitting(false);
 
     if (error) {
-      setLoginError(error.message);
+      setLoginError(friendlyAuthMessage(error.message, "login"));
       return;
     }
 
@@ -154,7 +169,7 @@ export default function LoginAuthCard({ initialTheme }: LoginAuthCardProps) {
     const trimmedEmail = signUpEmail.trim();
     const trimmedName = signUpDisplayName.trim();
 
-    const { error: signUpErr } = await supabase.auth.signUp({
+    const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
       email: trimmedEmail,
       password: signUpPassword,
       options: {
@@ -165,25 +180,28 @@ export default function LoginAuthCard({ initialTheme }: LoginAuthCardProps) {
       },
     });
 
-    if (signUpErr) {
-      setSignUpSubmitting(false);
-      setSignUpError(signUpErr.message);
-      return;
-    }
-
-    const {
-      data: { user },
-      error: getUserErr,
-    } = await supabase.auth.getUser();
-
     setSignUpSubmitting(false);
 
-    if (getUserErr) {
-      setSignUpError(getUserErr.message);
+    if (signUpErr) {
+      setSignUpError(friendlyAuthMessage(signUpErr.message, "signup"));
       return;
     }
 
-    if (user) {
+    // Do not call getUser() here: with "confirm email" enabled, signUp succeeds but there is
+    // no session yet, and getUser() surfaces "Auth session missing!".
+    const session = signUpData.session;
+    const user = signUpData.user;
+
+    if (session && user) {
+      // Ensure profiles row exists (DB trigger also creates it; upsert covers dev / race).
+      const { error: profileErr } = await supabase.from("profiles").upsert(
+        { id: user.id, display_name: trimmedName },
+        { onConflict: "id" }
+      );
+      if (profileErr) {
+        setSignUpError(friendlyAuthMessage(profileErr.message, "signup"));
+        return;
+      }
       window.location.href = "/";
       return;
     }

@@ -708,3 +708,41 @@ update public.classes set armor = '1pt', shields = 'None', weapons = 'All Melee,
 update public.classes set armor = '4pts', shields = 'Large', weapons = 'All Melee, Javelins' where name = 'Paladin';
 update public.classes set armor = '3pts', shields = 'Small', weapons = 'Dagger, Short, Long, Heavy Thrown, Bow' where name = 'Scout';
 update public.classes set armor = '6pts', shields = 'Large', weapons = 'All Melee, Javelins' where name = 'Warrior';
+
+-- ---------------------------------------------------------------------------
+-- Create public.profiles when a new auth.users row is inserted
+-- (covers email-confirm signups: no session yet, but profile row is required.)
+-- display_name comes from signUp user_metadata / OAuth raw_user_meta_data.
+-- ---------------------------------------------------------------------------
+create or replace function public.metagard_handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  dn text;
+begin
+  dn := coalesce(
+    nullif(btrim(coalesce(new.raw_user_meta_data->>'display_name', '')), ''),
+    nullif(btrim(coalesce(new.raw_user_meta_data->>'full_name', '')), ''),
+    nullif(btrim(coalesce(new.raw_user_meta_data->>'name', '')), ''),
+    'Player'
+  );
+  insert into public.profiles (id, display_name)
+  values (new.id, dn)
+  on conflict (id) do nothing;
+  return new;
+end;
+$$;
+
+drop trigger if exists metagard_on_auth_user_created on auth.users;
+create trigger metagard_on_auth_user_created
+  after insert on auth.users
+  for each row execute procedure public.metagard_handle_new_user();
+
+-- Allow first-time profile row from the client if trigger is absent or delayed (defensive).
+drop policy if exists "Users insert own profile" on public.profiles;
+create policy "Users insert own profile"
+  on public.profiles for insert to authenticated
+  with check (auth.uid() = id);
