@@ -305,6 +305,31 @@ export async function getSavedBuilds() {
   return mapped;
 }
 
+/** Builds created by a user (public list; RLS must allow reading builds rows). */
+export async function getBuildsOwnedByUser(ownerId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("builds")
+    .select("*")
+    .eq("owner_id", ownerId)
+    .order("created_at", { ascending: false });
+  return (data ?? []) as BuildRow[];
+}
+
+/** Saved builds for a profile user (public when RLS allows reading saved_builds). */
+export async function getSavedBuildsForUser(userId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("saved_builds")
+    .select("build_id, builds(*)")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+  const mapped = (data ?? [])
+    .map((row) => row.builds)
+    .filter(Boolean) as unknown as BuildRow[];
+  return mapped;
+}
+
 export async function getPublicBuilds() {
   const supabase = await createClient();
   const { data } = await supabase

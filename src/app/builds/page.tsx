@@ -1,7 +1,9 @@
 import Link from "next/link";
+import CreatorAttribution from "@/components/CreatorAttribution";
 import SaveBuildButton from "@/components/SaveBuildButton";
 import TierBadge from "@/components/TierBadge";
 import AutoQuerySelect from "@/components/AutoQuerySelect";
+import { getDisplayNamesForOwnerIds } from "@/lib/queries/publicProfiles";
 import { getGlobalAverageRating, getNumericEntityVoteStats } from "@/lib/queries/ratingStats";
 import { createClient } from "@/lib/server/supabaseServer";
 import { computeTierResult } from "@/lib/tier";
@@ -75,6 +77,7 @@ export default async function BuildsPage({ searchParams }: { searchParams: Promi
     rows.map((r) => r.id)
   );
   const globalAverage = await getGlobalAverageRating("build_ratings");
+  const creatorByOwnerId = await getDisplayNamesForOwnerIds(rows.map((r) => r.owner_id));
   const byClass = new Map<string, Build[]>();
   const labelByClassKey = new Map<string, string>();
   for (const b of rows) {
@@ -174,6 +177,9 @@ export default async function BuildsPage({ searchParams }: { searchParams: Promi
                   <th className="col-look px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
                     LTP
                   </th>
+                  <th className="px-4 py-2 border-b border-neutral-800 border-r border-neutral-800 min-w-[9rem]">
+                    Creator
+                  </th>
                   <th className="col-actions px-4 py-2 border-b border-neutral-800 text-right">Actions</th>
                 </tr>
               </thead>
@@ -200,6 +206,14 @@ export default async function BuildsPage({ searchParams }: { searchParams: Promi
                     </td>
                     <td className="col-look px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
                       {b.look_the_part ? "✔️" : "—"}
+                    </td>
+                    <td className="px-4 py-2 border-b border-neutral-800 border-r border-neutral-800 align-top">
+                      <CreatorAttribution
+                        ownerId={b.owner_id}
+                        displayName={
+                          b.owner_id ? (creatorByOwnerId.get(b.owner_id) ?? "Player") : "Player"
+                        }
+                      />
                     </td>
                     <td className="col-actions px-4 py-2 border-b border-neutral-800 text-right">
                       <div className="flex justify-start sm:justify-end gap-2 sm:gap-3 flex-wrap">

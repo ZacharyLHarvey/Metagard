@@ -31,6 +31,8 @@ type Props = {
   maxLevel: number;
   /** Look the Part: casters get +1 point at the build’s highest spell circle. */
   lookThePart: boolean;
+  /** From profile: whether to show spellbook tips (e.g. long-press hint). */
+  spellbookTipsEnabled: boolean;
   spells: SpellRow[];
   initialSelections: BuildSpellSelectionRow[];
 };
@@ -82,6 +84,7 @@ export default function BuildSpellEditor({
   className,
   maxLevel,
   lookThePart,
+  spellbookTipsEnabled,
   spells,
   initialSelections,
 }: Props) {
@@ -283,7 +286,7 @@ export default function BuildSpellEditor({
 
     if (!response.ok) {
       const body = (await response.json().catch(() => ({}))) as { error?: string };
-      setError(body.error ?? "Failed to save selections");
+      setError(body.error ?? "Failed to Save Selections");
       setSaving(false);
       return;
     }
@@ -300,7 +303,10 @@ export default function BuildSpellEditor({
 
   return (
     <div className="space-y-5 sm:space-y-6">
-      <TipsAlert message="Long press a spell row to view detailed spell text, restrictions, and notes." />
+      <TipsAlert
+        tipsEnabled={spellbookTipsEnabled}
+        message="Long Press a Spell Row to View Detailed Spell Text, Restrictions, and Notes"
+      />
       <SpellDetailModal spell={selectedSpell} onClose={() => setSelectedSpell(null)} />
       {ruleWarning ? (
         <div className="rounded border border-amber-800 bg-amber-950/30 p-3 text-sm text-amber-200">
@@ -315,24 +321,24 @@ export default function BuildSpellEditor({
       <div className="rounded border border-neutral-800 p-3 sm:p-4 bg-neutral-900/40">
         {martial ? (
           <p className="text-sm text-neutral-300">
-            Martial class build: point-buy is disabled. Abilities are automatically assigned by class/level.
-            {lookThePart ? " Look The Part bonus ability is included." : " Enable Look The Part in settings to include the LTP ability."}
+            Martial Class Build: Point-Buy Is Disabled. Abilities Are Automatically Assigned by Class/Level.
+            {lookThePart ? " Look the Part Bonus Ability Is Included." : " Enable Look the Part in Settings to Include the LTP Ability."}
           </p>
         ) : (
           <p className="text-sm text-neutral-300">
-            Points: <span className="font-semibold">{pointsSpent}</span> spent /{" "}
-            <span className="font-semibold">{totalBudget}</span> total /{" "}
-            <span className="font-semibold">{pointsRemaining}</span> remaining
+            Points: <span className="font-semibold">{pointsSpent}</span> Spent /{" "}
+            <span className="font-semibold">{totalBudget}</span> Total /{" "}
+            <span className="font-semibold">{pointsRemaining}</span> Remaining
           </p>
         )}
         {caster ? (
           <p className="mt-2 text-xs text-neutral-500">
-            Caster: unused points from higher circles can be spent on lower-circle spells (up to {POINTS_PER_SPELL_LEVEL}{" "}
-            pts per circle into the shared pool).
+            Caster: Unused Points from Higher Circles Can Be Spent on Lower-Circle Spells (up to {POINTS_PER_SPELL_LEVEL}{" "}
+            Pts per Circle into the Shared Pool).
             {lookThePart ? (
               <>
                 {" "}
-                Look the Part adds +1 pt at circle {maxLevel} (total {totalBudget}).
+                Look the Part Adds +1 Pt at Circle {maxLevel} (Total {totalBudget}).
               </>
             ) : null}
           </p>
@@ -340,15 +346,15 @@ export default function BuildSpellEditor({
         <div className="mt-3 flex flex-wrap gap-3 sm:gap-4 text-sm">
           <label className="flex items-center gap-2">
             <input type="checkbox" checked={showTypeSchool} onChange={(e) => setShowTypeSchool(e.target.checked)} />
-            show type/school
+            Show Type/School
           </label>
           <label className="flex items-center gap-2">
             <input type="checkbox" checked={showIncantation} onChange={(e) => setShowIncantation(e.target.checked)} />
-            show incantation
+            Show Incantation
           </label>
           <label className="flex items-center gap-2">
             <input type="checkbox" checked={showMaterials} onChange={(e) => setShowMaterials(e.target.checked)} />
-            show materials
+            Show Materials
           </label>
         </div>
       </div>
@@ -388,8 +394,8 @@ export default function BuildSpellEditor({
               Level {level}
               <span className="ml-2 text-sm font-normal text-neutral-400 tabular-nums">
                 {caster
-                  ? `(${remainingHere} pt${remainingHere === 1 ? "" : "s"} left for circle ${level}+)`
-                  : `(${remainingHere} pt${remainingHere === 1 ? "" : "s"} left at this level)`}
+                  ? `(${remainingHere} Pt${remainingHere === 1 ? "" : "s"} Left for Circle ${level}+)`
+                  : `(${remainingHere} Pt${remainingHere === 1 ? "" : "s"} Left at This Level)`}
               </span>
             </h2>
             <span className="shrink-0 text-neutral-500 text-sm" aria-hidden>
@@ -431,7 +437,7 @@ export default function BuildSpellEditor({
                   <div>
                     <p className="font-medium">{spell.name}</p>
                     <p className="text-xs text-neutral-400">
-                      {martial ? "" : `cost ${evaluated.adjustedCost}`}
+                      {martial ? "" : `Cost ${evaluated.adjustedCost}`}
                       {showTypeSchool && spell.type ? ` - ${spell.type}` : ""}
                       {showTypeSchool && spell.school ? ` (${spell.school})` : ""}
                     </p>
@@ -480,18 +486,18 @@ export default function BuildSpellEditor({
                   <div key={group.groupKey} className="rounded border border-neutral-800 p-3 ml-3 sm:ml-6">
                     <p className="text-sm text-neutral-300">
                       {group.optionalMartialArchetype
-                        ? "Optional (Martial Archetype): Pick one of the following abilities for this level:"
-                        : "Pick one of the following abilities for this level:"}
+                        ? "Optional (Martial Archetype): Pick One of the Following Abilities for This Level:"
+                        : "Pick One of the Following Abilities for This Level:"}
                     </p>
                     <p className="text-xs text-neutral-500 mb-2">
-                      {group.requiredForMartial ? "Required for martial builds." : "Optional choice."}
+                      {group.requiredForMartial ? "Required for Martial Builds." : "Optional Choice."}
                     </p>
                     <select
                       className="w-full px-3 py-2 bg-neutral-800 border border-neutral-700 rounded text-sm"
                       value={chosenId}
                       onChange={(e) => choosePickOne(group.groupKey, Number(e.target.value))}
                     >
-                      <option value="">Select one</option>
+                      <option value="">Select One</option>
                       {group.options.map((opt) => (
                         <option key={opt.catalog_rule_id ?? `${opt.id}-${idx}`} value={opt.catalog_rule_id ?? ""}>
                           {opt.name}
@@ -524,7 +530,7 @@ export default function BuildSpellEditor({
           }
           className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded"
         >
-          {saving ? "Saving..." : "Save Build Spells"}
+          {saving ? "Saving…" : "Save Build Spells"}
         </button>
         {error ? <p className="text-sm text-red-400">{error}</p> : null}
       </div>

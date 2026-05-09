@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import CreatorAttribution from "@/components/CreatorAttribution";
 import EntityRatingButtons from "@/components/EntityRatingButtons";
 import TierBadge from "@/components/TierBadge";
 import { getGlobalAverageRating, getNumericEntityVoteStats } from "@/lib/queries/ratingStats";
+import { getDisplayNamesForOwnerIds } from "@/lib/queries/publicProfiles";
 import { getProfile } from "@/lib/queries/getProfile";
 import { createClient } from "@/lib/server/supabaseServer";
 import { computeTierResult } from "@/lib/tier";
@@ -35,6 +37,9 @@ export default async function CustomClassDetailPage({ params }: Params) {
   ]);
   const stat = voteStats.get(eid) ?? { votes: 0, rawAverage: Number(m.average_rating ?? 0) };
   const tierData = computeTierResult(stat.rawAverage, stat.votes, globalAverage);
+  const ownerId = typeof m.owner_id === "string" ? m.owner_id : null;
+  const creatorMap = await getDisplayNamesForOwnerIds([ownerId]);
+  const creatorName = ownerId ? (creatorMap.get(ownerId) ?? "Player") : "Player";
 
   return (
     <main className="p-10 text-white max-w-2xl space-y-6">
@@ -45,6 +50,7 @@ export default async function CustomClassDetailPage({ params }: Params) {
       <p className="text-neutral-400 text-sm">
         <TierBadge tier={tierData.tier} /> · {tierData.weightedRating.toFixed(2)} · Raw ★ {stat.rawAverage.toFixed(2)} · {stat.votes} votes
       </p>
+      <CreatorAttribution ownerId={ownerId} displayName={creatorName} />
       {m.description ? <p className="text-sm whitespace-pre-wrap text-neutral-300">{String(m.description)}</p> : null}
 
       <section className="border border-neutral-800 rounded-lg p-4">

@@ -31,6 +31,11 @@ alter table public.profiles
 alter table public.profiles
   add column if not exists theme_preference text not null default 'dark';
 
+alter table public.profiles
+  add column if not exists spellbook_tips_enabled boolean not null default true;
+
+comment on column public.profiles.spellbook_tips_enabled is 'When true, show spellbook contextual tips (e.g. long-press hint) for this user.';
+
 do $$
 begin
   if not exists (
@@ -520,6 +525,17 @@ create policy "Users update own profile"
   on public.profiles for update to authenticated
   using (auth.uid() = id)
   with check (auth.uid() = id);
+
+-- Public profile read (display name + favorites for /profile/[id]).
+drop policy if exists "Profiles readable for display" on public.profiles;
+create policy "Profiles readable for display"
+  on public.profiles for select to anon, authenticated using (true);
+
+-- Saved builds: allow reading any user’s saved list for public profiles (insert/delete still restricted).
+drop policy if exists "Users can read their own saved builds" on public.saved_builds;
+drop policy if exists "Anyone can read saved_builds" on public.saved_builds;
+create policy "Anyone can read saved_builds"
+  on public.saved_builds for select to anon, authenticated using (true);
 
 -- ---------------------------------------------------------------------------
 -- Core classes ratings (rate once per user/class_name)

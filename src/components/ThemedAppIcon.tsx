@@ -17,7 +17,7 @@ type ThemedAppIconProps = {
 };
 
 /**
- * Navbar / loading icon: `icon.png` in dark mode, `icon2.png` in light mode.
+ * Navbar / loading icon: `icon2.png` in dark mode, `icon.png` in light mode.
  * Subscribes to `html[data-theme]` so toggling Settings updates immediately.
  */
 export default function ThemedAppIcon({

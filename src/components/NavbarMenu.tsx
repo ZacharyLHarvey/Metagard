@@ -3,17 +3,19 @@
 import Link from "next/link";
 import { useRef } from "react";
 import LogoutButton from "@/components/LogoutButton";
-import TipsToggleButton from "@/components/TipsToggleButton";
 
 type NavItem = { href: string; label: string };
 
 export default function NavbarMenu({
   links,
   displayName,
+  profileNavLabel,
   discordUrl,
 }: {
   links: NavItem[];
   displayName?: string | null;
+  /** Shown on the profile button when signed in; omitted when not authenticated. */
+  profileNavLabel?: string;
   discordUrl?: string;
 }) {
   const detailsRef = useRef<HTMLDetailsElement | null>(null);
@@ -23,17 +25,27 @@ export default function NavbarMenu({
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex min-w-0 items-center gap-2">
+      {profileNavLabel ? (
+        <Link
+          href="/profile"
+          title="Profile"
+          aria-label={`Profile: ${profileNavLabel}`}
+          className="inline-flex max-w-[10rem] shrink items-center truncate rounded bg-neutral-800 px-3 py-1.5 text-sm text-neutral-100 hover:bg-neutral-700 sm:max-w-[14rem] transition"
+        >
+          {profileNavLabel}
+        </Link>
+      ) : null}
       <Link
         href="/settings"
         aria-label="Settings"
         title="Settings"
-        className="px-2 py-1 rounded bg-neutral-800 hover:bg-neutral-700 transition"
+        className="inline-flex shrink-0 items-center justify-center rounded bg-neutral-800 px-3 py-1.5 text-sm hover:bg-neutral-700 transition"
       >
         ⚙
       </Link>
       <details ref={detailsRef} className="relative">
-        <summary className="list-none cursor-pointer px-3 py-1.5 rounded bg-neutral-800 text-sm hover:bg-neutral-700 transition">
+        <summary className="list-none cursor-pointer inline-flex items-center rounded bg-neutral-800 px-3 py-1.5 text-sm hover:bg-neutral-700 transition">
           Menu
         </summary>
         <div className="absolute right-0 mt-2 w-64 rounded-lg border border-neutral-700 bg-neutral-900 p-3 space-y-2 max-h-[70vh] overflow-auto z-50">
@@ -59,8 +71,7 @@ export default function NavbarMenu({
               Discord
             </a>
           ) : null}
-          <div className="pt-2 border-t border-neutral-700 space-y-2">
-            <TipsToggleButton />
+          <div className="pt-2 border-t border-neutral-700">
             <LogoutButton />
           </div>
         </div>

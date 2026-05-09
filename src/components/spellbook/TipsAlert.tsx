@@ -1,28 +1,27 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
-const KEY = "enableTips";
-
-export default function TipsAlert({ message }: { message: string }) {
+export default function TipsAlert({
+  message,
+  tipsEnabled,
+}: {
+  message: string;
+  tipsEnabled: boolean;
+}) {
   const [dismissed, setDismissed] = useState(false);
-  const enabled = useMemo(() => {
-    if (typeof window === "undefined") return true;
-    const value = window.localStorage.getItem(KEY);
-    if (value === null) {
-      window.localStorage.setItem(KEY, "true");
-      return true;
-    }
-    return value === "true";
-  }, []);
 
-  if (!enabled || dismissed) return null;
+  if (!tipsEnabled || dismissed) return null;
 
   return (
     <div className="mb-4 rounded border border-blue-800 bg-blue-950/30 p-3 text-sm">
       <div className="flex items-start justify-between gap-3">
         <p className="text-blue-100">{message}</p>
-        <button onClick={() => setDismissed(true)} className="px-2 py-1 bg-blue-800 rounded">
+        <button
+          type="button"
+          onClick={() => setDismissed(true)}
+          className="shrink-0 rounded bg-blue-800 px-2 py-1 hover:bg-blue-700"
+        >
           Dismiss
         </button>
       </div>
