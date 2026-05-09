@@ -107,7 +107,7 @@ export default async function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col bg-[var(--background)] text-[var(--foreground)] transition-colors pb-14 lg:pb-0">
+      <body className="min-h-full flex flex-col bg-[var(--background)] text-[var(--foreground)] transition-colors pb-[var(--metagard-bottom-nav-pad)]">
         <ThemeProvider initialTheme={initialTheme}>
           <FaviconThemeSync />
           <Navbar />

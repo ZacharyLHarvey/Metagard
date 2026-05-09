@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import BuildCommentsSection from "@/components/BuildCommentsSection";
+import BuildInfoSection from "@/components/BuildInfoSection";
 import BuildRatingSection from "@/components/BuildRatingSection";
 import BuildSpellDetails from "@/components/BuildSpellDetails";
 import CloneBuildButton from "@/components/CloneBuildButton";
@@ -13,16 +14,23 @@ import {
   getCatalogSpellsForClass,
   getClassEquipment,
 } from "@/lib/queries/spellbook";
+import CreatorAttribution from "@/components/CreatorAttribution";
+import { getDisplayNamesForOwnerIds } from "@/lib/queries/publicProfiles";
 import { getMyBuildRating } from "@/lib/queries/social";
 import { computeTierResult } from "@/lib/tier";
 import { isMartialClass } from "@/lib/spellbook/martial";
+import type { BuildSpellDisplayMode } from "@/components/BuildSpellDetails";
 
 type Params = {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ display?: string }>;
 };
 
-export default async function BuildDetailsPage({ params }: Params) {
+export default async function BuildDetailsPage({ params, searchParams }: Params) {
   const { id } = await params;
+  const { display: rawDisplay } = await searchParams;
+  const display: BuildSpellDisplayMode =
+    rawDisplay === "type" || rawDisplay === "school" ? rawDisplay : "level";
   const buildId = Number(id);
 
   const build = await getBuildById(buildId);
@@ -48,6 +56,8 @@ export default async function BuildDetailsPage({ params }: Params) {
   const canManageBuild = profileOwnerId != null && profileOwnerId === build.owner_id;
   const martial = isMartialClass(build.class);
   const equipment = martial ? await getClassEquipment(build.class) : null;
+  const creatorMap = await getDisplayNamesForOwnerIds([build.owner_id]);
+  const creatorName = build.owner_id ? (creatorMap.get(build.owner_id) ?? "Player") : "Player";
 
   return (
     <main className="px-4 py-4 sm:px-6 lg:px-10 text-white space-y-5 sm:space-y-6 max-w-6xl">
@@ -58,6 +68,9 @@ export default async function BuildDetailsPage({ params }: Params) {
             {build.class} level {build.level} {build.look_the_part ? "- Look The Part" : ""}
           </p>
           {build.notes ? <p className="text-sm text-neutral-500 mt-2 whitespace-pre-wrap">{build.notes}</p> : null}
+          <div className="mt-2">
+            <CreatorAttribution ownerId={build.owner_id} displayName={creatorName} />
+          </div>
         </div>
         {canManageBuild ? (
           <div className="flex flex-wrap gap-2">
@@ -110,6 +123,7 @@ export default async function BuildDetailsPage({ params }: Params) {
         spells={spells}
         className={build.class}
         lookThePart={build.look_the_part}
+        display={display}
       />
       {martial ? (
         <p className="text-xs text-neutral-400">
@@ -117,47 +131,13 @@ export default async function BuildDetailsPage({ params }: Params) {
         </p>
       ) : null}
 
-      <section className="space-y-3 text-sm text-neutral-300 max-w-3xl">
-        <section className="rounded-lg border border-neutral-800 p-4 bg-neutral-900/30 space-y-1">
-          <p className="text-neutral-500 font-medium">Playstyle</p>
-          <p className="text-xs text-neutral-400">
-            How this build is meant to approach fights, objectives, and battlefield movement.
-          </p>
-          <p className="whitespace-pre-wrap text-neutral-200">{build.play_style ?? "—"}</p>
-        </section>
-
-        <section className="rounded-lg border border-neutral-800 p-4 bg-neutral-900/30 space-y-1">
-          <p className="text-neutral-500 font-medium">Priority</p>
-          <p className="text-xs text-neutral-400">
-            What you should focus on first when playing this build in a Battlegame.
-          </p>
-          <p className="whitespace-pre-wrap text-neutral-200">{build.build_priority ?? "—"}</p>
-        </section>
-
-        <section className="rounded-lg border border-neutral-800 p-4 bg-neutral-900/30 space-y-1">
-          <p className="text-neutral-500 font-medium">Synergy</p>
-          <p className="text-xs text-neutral-400">
-            Which classes, teammates, or abilities enhance this build’s effectiveness.
-          </p>
-          <p className="whitespace-pre-wrap text-neutral-200">{build.synergy ?? "—"}</p>
-        </section>
-
-        <section className="rounded-lg border border-neutral-800 p-4 bg-neutral-900/30 space-y-1">
-          <p className="text-neutral-500 font-medium">Enemies</p>
-          <p className="text-xs text-neutral-400">
-            The classes or tactics that most threaten this build during Battlegames.
-          </p>
-          <p className="whitespace-pre-wrap text-neutral-200">{build.enemies ?? "—"}</p>
-        </section>
-
-        <section className="rounded-lg border border-neutral-800 p-4 bg-neutral-900/30 space-y-1">
-          <p className="text-neutral-500 font-medium">Recommended Gear</p>
-          <p className="text-xs text-neutral-400">
-            The weapons, shields, and equipment that best support this build’s playstyle.
-          </p>
-          <p className="whitespace-pre-wrap text-neutral-200">{build.recommended_gear ?? "—"}</p>
-        </section>
-      </section>
+      <BuildInfoSection
+        playStyle={build.play_style}
+        buildPriority={build.build_priority}
+        synergy={build.synergy}
+        enemies={build.enemies}
+        recommendedGear={build.recommended_gear}
+      />
 
       <section className="rounded-lg border border-neutral-800 p-4 space-y-3">
         <p className="text-sm text-neutral-400">Rate this build</p>

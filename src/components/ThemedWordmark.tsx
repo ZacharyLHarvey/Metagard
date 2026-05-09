@@ -11,14 +11,20 @@ import { useDataTheme, type AppTheme } from "@/lib/useDataTheme";
 type ThemedWordmarkProps = {
   initialTheme: AppTheme;
   priority?: boolean;
+  /** Override outer wrapper sizing (default: responsive wordmark on marketing/home). */
+  wrapperClassName?: string;
 };
 
 /**
- * Full wordmark: `logo.png` / `logo2.png` following `html[data-theme]`.
+ * Full wordmark: `logo2.png` in dark mode, `logo.png` in light mode (`html[data-theme]`).
  */
+const defaultWordmarkWrapperClass =
+  "relative mx-auto aspect-[900/650] w-full max-w-md sm:max-w-lg";
+
 export default function ThemedWordmark({
   initialTheme,
   priority,
+  wrapperClassName,
 }: ThemedWordmarkProps) {
   const theme = useDataTheme(initialTheme);
 
@@ -27,7 +33,9 @@ export default function ThemedWordmark({
   const alt = theme === "light" ? SITE_LOGO_ALT_LIGHT : SITE_LOGO_ALT;
 
   return (
-    <div className="relative mx-auto aspect-[900/650] w-full max-w-md sm:max-w-lg">
+    <div
+      className={wrapperClassName ?? defaultWordmarkWrapperClass}
+    >
       <Image
         key={src}
         src={src}

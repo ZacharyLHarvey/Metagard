@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import BuildSpellEditor from "@/components/BuildSpellEditor";
+import { getProfileCached } from "@/lib/queries/getProfileCached";
 import {
   getBuildById,
   getBuildSpellSelections,
@@ -16,6 +17,9 @@ export default async function EditBuildPage({ params }: Params) {
 
   const build = await getBuildById(buildId);
   if (!build) notFound();
+
+  const profile = await getProfileCached();
+  const spellbookTipsEnabled = profile?.spellbook_tips_enabled !== false;
 
   const [spells, selections] = await Promise.all([
     getCatalogSpellsForClass(build.class, build.level),
@@ -34,6 +38,7 @@ export default async function EditBuildPage({ params }: Params) {
         className={build.class}
         maxLevel={build.level}
         lookThePart={build.look_the_part}
+        spellbookTipsEnabled={spellbookTipsEnabled}
         spells={spells}
         initialSelections={selections}
       />

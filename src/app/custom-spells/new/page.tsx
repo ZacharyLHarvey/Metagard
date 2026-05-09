@@ -71,9 +71,9 @@ export default function NewCustomSpellPage() {
   return (
     <main className="px-4 py-4 sm:px-6 lg:px-10 text-white max-w-2xl space-y-5 sm:space-y-6">
       <Link href="/custom-spells" className="text-sm text-blue-400 hover:underline">
-        ← Custom spells
+        ← Custom Spells
       </Link>
-      <h1 className="text-xl sm:text-2xl font-bold">Create custom spell</h1>
+      <h1 className="text-xl sm:text-2xl font-bold">Create Custom Spell</h1>
       <form onSubmit={submit} className="space-y-4">
         <div>
           <label className="block text-sm text-neutral-400 mb-1">Name</label>

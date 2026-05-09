@@ -35,9 +35,9 @@ export default function NewCustomClassPage() {
   return (
     <main className="p-10 text-white max-w-lg space-y-6">
       <Link href="/custom-classes" className="text-sm text-blue-400 hover:underline">
-        ← Custom classes
+        ← Custom Classes
       </Link>
-      <h1 className="text-2xl font-bold">Create custom class</h1>
+      <h1 className="text-2xl font-bold">Create Custom Class</h1>
       <form onSubmit={submit} className="space-y-4">
         <div>
           <label className="block text-sm text-neutral-400 mb-1">Name</label>

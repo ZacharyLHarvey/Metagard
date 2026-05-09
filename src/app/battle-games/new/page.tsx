@@ -82,7 +82,7 @@ export default function NewBattleGamePage() {
       <Link href="/battlegames" className="text-sm text-blue-400 hover:underline">
         ← Battlegames
       </Link>
-      <h1 className="text-xl sm:text-2xl font-bold">Create battlegame</h1>
+      <h1 className="text-xl sm:text-2xl font-bold">Create Battlegame</h1>
       <form onSubmit={submit} className="space-y-4">
         <div>
           <label className="block text-sm text-neutral-400 mb-1">Name</label>

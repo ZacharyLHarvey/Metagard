@@ -6,20 +6,23 @@ import ThemedAppIcon from "@/components/ThemedAppIcon";
 export default async function Navbar() {
   const profile = await getProfileCached();
   const initialTheme = profile?.theme_preference === "light" ? "light" : "dark";
+  const profileNavLabel = profile
+    ? (profile.display_name?.trim() || "Profile")
+    : undefined;
   const links = [
     { href: "/", label: "Home" },
     { href: "/builds", label: "Builds" },
     { href: "/create-build", label: "Create Build" },
-    { href: "/profile", label: "Profile" },
-    { href: "/favorites", label: "Favorites" },
+    { href: "/leaderboards", label: "Leaderboards" },
+    { href: "/battlegames", label: "Battlegames" },
     { href: "/spells", label: "Spells" },
     { href: "/classes", label: "Classes" },
-    { href: "/leaderboards", label: "Leaderboards" },
-    { href: "/park-champion-tools", label: "Tools" },
     { href: "/monsters", label: "Monsters" },
-    { href: "/custom-classes", label: "Custom classes" },
-    { href: "/battlegames", label: "Battlegames" },
-    { href: "/custom-spells", label: "Custom spells" },
+    { href: "/custom-classes", label: "Custom Classes" },
+    { href: "/custom-spells", label: "Custom Spells" },
+    { href: "/park-champion-tools", label: "Tools" },
+    { href: "/favorites", label: "Favorites" },
+    { href: "/profile", label: "Profile" },
     { href: "/patch-notes", label: "Patch Notes" },
     { href: "/bugs-and-features", label: "Bugs/Features" },
   ];
@@ -30,7 +33,7 @@ export default async function Navbar() {
         <Link
           href="/"
           className="flex min-w-0 shrink items-center"
-          aria-label="Metagard home"
+          aria-label="Metagard Home"
         >
           <ThemedAppIcon
             initialTheme={initialTheme}
@@ -43,11 +46,15 @@ export default async function Navbar() {
         <NavbarMenu
           links={links}
           displayName={profile?.display_name}
+          profileNavLabel={profileNavLabel}
           discordUrl={process.env.NEXT_PUBLIC_DISCORD_URL}
         />
       </nav>
 
-      <nav className="fixed bottom-0 inset-x-0 z-40 border-t border-neutral-800 bg-neutral-900/95 backdrop-blur">
+      <nav
+        className="fixed bottom-0 inset-x-0 z-40 border-t border-neutral-800 bg-neutral-900/95 backdrop-blur pb-[env(safe-area-inset-bottom,0px)]"
+        aria-label="Bottom navigation"
+      >
         <div className="grid grid-cols-5 text-xs">
           <Link href="/" className="py-2 text-center hover:text-blue-400">Home</Link>
           <Link href="/builds" className="py-2 text-center hover:text-blue-400">Builds</Link>

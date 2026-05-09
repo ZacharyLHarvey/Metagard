@@ -1,6 +1,8 @@
 import Link from "next/link";
+import CreatorAttribution from "@/components/CreatorAttribution";
 import TierBadge from "@/components/TierBadge";
 import AutoQuerySelect from "@/components/AutoQuerySelect";
+import { getDisplayNamesForOwnerIds } from "@/lib/queries/publicProfiles";
 import { getGlobalAverageRating, getNumericEntityVoteStats } from "@/lib/queries/ratingStats";
 import { createClient } from "@/lib/server/supabaseServer";
 import { computeTierResult } from "@/lib/tier";
@@ -9,6 +11,7 @@ import { BATTLEGAME_TYPES } from "@/lib/battlegames";
 type Row = {
   id: number;
   name: string;
+  owner_id?: string | null;
   game_type?: string | null;
   average_rating: number | null;
   created_at?: string | null;
@@ -24,9 +27,10 @@ export default async function BattlegamesLeaderboardPage({ searchParams }: { sea
   const { data } = await query;
   const rows = (data ?? []) as Row[];
 
-  const [globalAverage, voteStats] = await Promise.all([
+  const [globalAverage, voteStats, creatorByOwnerId] = await Promise.all([
     getGlobalAverageRating("battle_game_ratings"),
     getNumericEntityVoteStats("battle_game_ratings", "battle_game_id", rows.map((r) => r.id)),
+    getDisplayNamesForOwnerIds(rows.map((r) => r.owner_id)),
   ]);
 
   const ranked = rows
@@ -86,6 +90,14 @@ export default async function BattlegamesLeaderboardPage({ searchParams }: { sea
                   <Link href={`/battlegames/${r.id}`} className="text-blue-400 hover:underline">
                     {r.name} {r.game_type ? <span className="text-xs text-neutral-500">({r.game_type})</span> : null}
                   </Link>
+                  <div className="mt-1">
+                    <CreatorAttribution
+                      ownerId={r.owner_id}
+                      displayName={
+                        r.owner_id ? (creatorByOwnerId.get(r.owner_id) ?? "Player") : "Player"
+                      }
+                    />
+                  </div>
                 </td>
                 <td className="px-4 py-2 border-b border-neutral-800">
                   <TierBadge tier={r.tier} />

@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import CreatorAttribution from "@/components/CreatorAttribution";
 import EntityRatingButtons from "@/components/EntityRatingButtons";
 import TierBadge from "@/components/TierBadge";
 import { getGlobalAverageRating, getNumericEntityVoteStats } from "@/lib/queries/ratingStats";
+import { getDisplayNamesForOwnerIds } from "@/lib/queries/publicProfiles";
 import { getProfile } from "@/lib/queries/getProfile";
 import { createClient } from "@/lib/server/supabaseServer";
 import { computeTierResult } from "@/lib/tier";
@@ -35,6 +37,9 @@ export default async function MonsterDetailPage({ params }: Params) {
   ]);
   const stat = voteStats.get(mid) ?? { votes: 0, rawAverage: Number(m.average_rating ?? 0) };
   const tierData = computeTierResult(stat.rawAverage, stat.votes, globalAverage);
+  const ownerId = typeof m.owner_id === "string" ? m.owner_id : null;
+  const creatorMap = await getDisplayNamesForOwnerIds([ownerId]);
+  const creatorName = ownerId ? (creatorMap.get(ownerId) ?? "Player") : "Player";
 
   return (
     <main className="p-10 text-white max-w-2xl space-y-6">
@@ -45,6 +50,7 @@ export default async function MonsterDetailPage({ params }: Params) {
       <p className="text-neutral-400 text-sm">
         <TierBadge tier={tierData.tier} /> · {tierData.weightedRating.toFixed(2)} · Raw ★ {stat.rawAverage.toFixed(2)} · {stat.votes} votes
       </p>
+      <CreatorAttribution ownerId={ownerId} displayName={creatorName} />
       {m.image_url ? <img src={String(m.image_url)} alt={String(m.name)} className="w-full max-h-96 object-contain rounded border border-neutral-800" /> : null}
       <div className="grid md:grid-cols-2 gap-3 text-sm">
         {m.monster_type ? <p><span className="text-neutral-400">Type:</span> {String(m.monster_type)}</p> : null}

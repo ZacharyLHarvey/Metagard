@@ -67,7 +67,7 @@ export default function NewMonsterPage() {
       <Link href="/monsters" className="text-sm text-blue-400 hover:underline">
         ← Monsters
       </Link>
-      <h1 className="text-xl sm:text-2xl font-bold">Create monster</h1>
+      <h1 className="text-xl sm:text-2xl font-bold">Create Monster</h1>
       <form onSubmit={submit} className="space-y-4">
         <div>
           <label className="block text-sm text-neutral-400 mb-1">Name</label>

@@ -14,6 +14,7 @@ export async function PATCH(request: Request) {
       favorite_battle_game?: string | null;
       favorite_spell?: string | null;
       theme_preference?: string | null;
+      spellbook_tips_enabled?: boolean | null;
     };
 
     const patch: Record<string, unknown> = {};
@@ -33,6 +34,9 @@ export async function PATCH(request: Request) {
     }
     if ("theme_preference" in body) {
       patch.theme_preference = body.theme_preference === "light" ? "light" : "dark";
+    }
+    if ("spellbook_tips_enabled" in body && typeof body.spellbook_tips_enabled === "boolean") {
+      patch.spellbook_tips_enabled = body.spellbook_tips_enabled;
     }
 
     if (Object.keys(patch).length === 0) {

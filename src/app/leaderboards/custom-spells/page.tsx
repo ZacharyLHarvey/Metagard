@@ -1,19 +1,28 @@
 import Link from "next/link";
+import CreatorAttribution from "@/components/CreatorAttribution";
 import TierBadge from "@/components/TierBadge";
+import { getDisplayNamesForOwnerIds } from "@/lib/queries/publicProfiles";
 import { getGlobalAverageRating, getNumericEntityVoteStats } from "@/lib/queries/ratingStats";
 import { createClient } from "@/lib/server/supabaseServer";
 import { computeTierResult } from "@/lib/tier";
 
-type Row = { id: number; name: string; average_rating: number | null; created_at?: string | null };
+type Row = {
+  id: number;
+  name: string;
+  owner_id?: string | null;
+  average_rating: number | null;
+  created_at?: string | null;
+};
 
 export default async function CustomSpellsLeaderboardPage() {
   const supabase = await createClient();
   const { data } = await supabase.from("custom_spells").select("*");
   const rows = (data ?? []) as Row[];
 
-  const [globalAverage, voteStats] = await Promise.all([
+  const [globalAverage, voteStats, creatorByOwnerId] = await Promise.all([
     getGlobalAverageRating("custom_spell_ratings"),
     getNumericEntityVoteStats("custom_spell_ratings", "custom_spell_id", rows.map((r) => r.id)),
+    getDisplayNamesForOwnerIds(rows.map((r) => r.owner_id)),
   ]);
 
   const ranked = rows
@@ -59,6 +68,14 @@ export default async function CustomSpellsLeaderboardPage() {
                   <Link href={`/custom-spells/${r.id}`} className="text-blue-400 hover:underline">
                     {r.name}
                   </Link>
+                  <div className="mt-1">
+                    <CreatorAttribution
+                      ownerId={r.owner_id}
+                      displayName={
+                        r.owner_id ? (creatorByOwnerId.get(r.owner_id) ?? "Player") : "Player"
+                      }
+                    />
+                  </div>
                 </td>
                 <td className="px-4 py-2 border-b border-neutral-800">
                   <TierBadge tier={r.tier} />

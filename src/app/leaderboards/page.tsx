@@ -1,16 +1,30 @@
 import Link from "next/link";
+import CreatorAttribution from "@/components/CreatorAttribution";
 import TierBadge from "@/components/TierBadge";
 import AutoQuerySelect from "@/components/AutoQuerySelect";
 import { getAllSpellsList, getClassLeaderboard, getLeaderboardBuilds } from "@/lib/queries/spellbook";
 import type { BuildRow } from "@/lib/spellbook/types";
+import { getDisplayNamesForOwnerIds } from "@/lib/queries/publicProfiles";
 import { createClient } from "@/lib/server/supabaseServer";
 import { getGlobalAverageRating, getNumericEntityVoteStats } from "@/lib/queries/ratingStats";
 import { computeTierResult } from "@/lib/tier";
 import { BATTLEGAME_TYPES } from "@/lib/battlegames";
 
 type Search = { lb?: string; gameType?: string };
-type BattleGameRow = { id: number; name: string; average_rating: number | null; created_at?: string | null };
-type SimpleEntityRow = { id: number; name: string; average_rating: number | null; created_at?: string | null };
+type BattleGameRow = {
+  id: number;
+  name: string;
+  owner_id?: string | null;
+  average_rating: number | null;
+  created_at?: string | null;
+};
+type SimpleEntityRow = {
+  id: number;
+  name: string;
+  owner_id?: string | null;
+  average_rating: number | null;
+  created_at?: string | null;
+};
 
 async function getBattleGamesLeaderboard(gameType: string) {
   const supabase = await createClient();
@@ -146,6 +160,14 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
       : Promise.resolve([]),
   ]);
 
+  const creatorByOwnerId = await getDisplayNamesForOwnerIds([
+    ...builds.map((b) => b.owner_id),
+    ...battleGames.map((r) => r.owner_id),
+    ...monsters.map((r) => r.owner_id),
+    ...customClasses.map((r) => r.owner_id),
+    ...customSpells.map((r) => r.owner_id),
+  ]);
+
   const byClassLevel = new Map<string, BuildRow[]>();
   if (showBuilds) {
     for (const b of builds) {
@@ -206,6 +228,14 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
                         <div className="text-xs text-neutral-500">
                           {b.class} · L{b.level}
                         </div>
+                        <div className="mt-1">
+                          <CreatorAttribution
+                            ownerId={b.owner_id}
+                            displayName={
+                              b.owner_id ? (creatorByOwnerId.get(b.owner_id) ?? "Player") : "Player"
+                            }
+                          />
+                        </div>
                       </td>
                       <td className="px-4 py-2 border-b border-neutral-800">
                         <TierBadge tier={(b.tier as "S+" | "S" | "A" | "B" | "C" | "D" | "F") ?? "C"} />
@@ -222,7 +252,7 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold mb-3">By class &amp; level</h2>
+            <h2 className="text-lg font-semibold mb-3">By Class & Level</h2>
             <div className="space-y-6">
               {keys.map((key) => (
                 <div key={key} className="border border-neutral-800 rounded-lg p-3 sm:p-4">
@@ -245,6 +275,14 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
                               <Link href={`/builds/${b.id}`} className="text-blue-400 hover:underline truncate">
                                 {b.name}
                               </Link>
+                              <div className="mt-1">
+                                <CreatorAttribution
+                                  ownerId={b.owner_id}
+                                  displayName={
+                                    b.owner_id ? (creatorByOwnerId.get(b.owner_id) ?? "Player") : "Player"
+                                  }
+                                />
+                              </div>
                             </td>
                             <td className="px-4 py-2 border-b border-neutral-800">
                               <TierBadge tier={(b.tier as "S+" | "S" | "A" | "B" | "C" | "D" | "F") ?? "C"} />
@@ -393,6 +431,14 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
                       <Link href={`/battlegames/${r.id}`} className="text-blue-400 hover:underline">
                         {r.name}
                       </Link>
+                      <div className="mt-1">
+                        <CreatorAttribution
+                          ownerId={r.owner_id}
+                          displayName={
+                            r.owner_id ? (creatorByOwnerId.get(r.owner_id) ?? "Player") : "Player"
+                          }
+                        />
+                      </div>
                     </td>
                     <td className="px-4 py-2 border-b border-neutral-800">
                       <TierBadge tier={r.tier} />
@@ -434,6 +480,14 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
                       <Link href={`/monsters/${r.id}`} className="text-blue-400 hover:underline">
                         {r.name}
                       </Link>
+                      <div className="mt-1">
+                        <CreatorAttribution
+                          ownerId={r.owner_id}
+                          displayName={
+                            r.owner_id ? (creatorByOwnerId.get(r.owner_id) ?? "Player") : "Player"
+                          }
+                        />
+                      </div>
                     </td>
                     <td className="px-4 py-2 border-b border-neutral-800">
                       <TierBadge tier={r.tier} />
@@ -475,6 +529,14 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
                       <Link href={`/custom-classes/${r.id}`} className="text-blue-400 hover:underline">
                         {r.name}
                       </Link>
+                      <div className="mt-1">
+                        <CreatorAttribution
+                          ownerId={r.owner_id}
+                          displayName={
+                            r.owner_id ? (creatorByOwnerId.get(r.owner_id) ?? "Player") : "Player"
+                          }
+                        />
+                      </div>
                     </td>
                     <td className="px-4 py-2 border-b border-neutral-800">
                       <TierBadge tier={r.tier} />
@@ -516,6 +578,14 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
                       <Link href={`/custom-spells/${r.id}`} className="text-blue-400 hover:underline">
                         {r.name}
                       </Link>
+                      <div className="mt-1">
+                        <CreatorAttribution
+                          ownerId={r.owner_id}
+                          displayName={
+                            r.owner_id ? (creatorByOwnerId.get(r.owner_id) ?? "Player") : "Player"
+                          }
+                        />
+                      </div>
                     </td>
                     <td className="px-4 py-2 border-b border-neutral-800">
                       <TierBadge tier={r.tier} />
