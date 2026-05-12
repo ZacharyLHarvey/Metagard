@@ -62,7 +62,7 @@ export default async function MonsterDetailPage({ params }: Params) {
       {m.description ? <p className="text-sm whitespace-pre-wrap text-neutral-300">{String(m.description)}</p> : null}
 
       <section className="border border-neutral-800 rounded-lg p-4">
-        <p className="text-sm text-neutral-400 mb-2">Your rating</p>
+        <p className="text-sm text-neutral-400 mb-2">Your Rating</p>
         <EntityRatingButtons
           postUrl={`/api/monsters/${mid}/rating`}
           canRate={Boolean(profileId)}

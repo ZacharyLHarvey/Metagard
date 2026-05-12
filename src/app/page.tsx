@@ -1,10 +1,9 @@
+import BuildTableBodyRow from "@/components/BuildTableBodyRow";
 import CreateBuildHomeLink from "@/components/CreateBuildHomeLink";
 import CreatorAttribution from "@/components/CreatorAttribution";
-import UnsaveSavedBuildButton from "@/components/UnsaveSavedBuildButton";
 import ThemedWordmark from "@/components/ThemedWordmark";
 import { getDisplayNamesForOwnerIds } from "@/lib/queries/publicProfiles";
 import { getProfileCached } from "@/lib/queries/getProfileCached";
-import Link from "next/link";
 import { getMyBuilds, getSavedBuilds } from "@/lib/queries/spellbook";
 
 export default async function Home() {
@@ -23,15 +22,13 @@ export default async function Home() {
       {/* Shared column layout */}
       <style>
         {`
-          .home-my-builds .col-name { width: 42%; }
-          .home-my-builds .col-class { width: 24%; }
-          .home-my-builds .col-level { width: 14%; }
-          .home-my-builds .col-actions { width: 20%; }
-          .home-saved-builds .col-name { width: 32%; }
-          .home-saved-builds .col-class { width: 18%; }
-          .home-saved-builds .col-level { width: 12%; }
-          .home-saved-builds .col-creator { width: 18%; }
-          .home-saved-builds .col-actions { width: 20%; }
+          .home-my-builds .col-name { width: 45%; }
+          .home-my-builds .col-class { width: 30%; }
+          .home-my-builds .col-level { width: 25%; }
+          .home-saved-builds .col-name { width: 38%; }
+          .home-saved-builds .col-class { width: 20%; }
+          .home-saved-builds .col-level { width: 15%; }
+          .home-saved-builds .col-creator { width: 27%; }
         `}
       </style>
 
@@ -40,6 +37,7 @@ export default async function Home() {
         <h2 className="text-xl font-semibold mb-4">My Builds</h2>
 
         <div className="border border-neutral-800 rounded-lg overflow-hidden">
+          <div className="overflow-x-auto">
           <table className="home-my-builds w-full text-left border-collapse">
             <thead className="bg-neutral-900">
               <tr>
@@ -49,49 +47,29 @@ export default async function Home() {
                 <th className="col-class px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
                   Class
                 </th>
-                <th className="col-level px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
+                <th className="col-level px-4 py-1.5 leading-snug border-b border-neutral-800 border-r border-neutral-800">
                   Level
-                </th>
-                <th className="col-actions px-4 py-2 border-b border-neutral-800 text-right">
-                  Actions
                 </th>
               </tr>
             </thead>
 
             <tbody>
               {myBuilds.map((b) => (
-                <tr key={b.id} className="hover:bg-neutral-900/40 transition">
-                  <td className="col-name px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
+                <BuildTableBodyRow key={b.id} buildId={b.id} className="hover:bg-neutral-900/40 transition">
+                  <td className="col-name px-4 py-2 border-b border-neutral-800 border-r border-neutral-800 break-words">
                     {b.name}
                   </td>
                   <td className="col-class px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
                     {b.class}
                   </td>
-                  <td className="col-level px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
+                  <td className="col-level px-4 py-1.5 leading-snug border-b border-neutral-800 border-r border-neutral-800">
                     {b.level}
                   </td>
-
-                  <td className="col-actions px-4 py-2 border-b border-neutral-800 text-right">
-                    <div className="flex justify-end gap-3">
-                      <Link
-                        href={`/builds/${b.id}/edit`}
-                        className="px-3 py-1 bg-yellow-600 hover:bg-yellow-700 rounded text-sm"
-                      >
-                        Edit
-                      </Link>
-
-                      <Link
-                        href={`/builds/${b.id}`}
-                        className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm"
-                      >
-                        View
-                      </Link>
-                    </div>
-                  </td>
-                </tr>
+                </BuildTableBodyRow>
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       </section>
 
@@ -100,6 +78,7 @@ export default async function Home() {
         <h2 className="text-xl font-semibold mb-4">Saved Builds</h2>
 
         <div className="border border-neutral-800 rounded-lg overflow-hidden">
+          <div className="overflow-x-auto">
           <table className="home-saved-builds w-full text-left border-collapse">
             <thead className="bg-neutral-900">
               <tr>
@@ -109,28 +88,25 @@ export default async function Home() {
                 <th className="col-class px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
                   Class
                 </th>
-                <th className="col-level px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
+                <th className="col-level px-4 py-1.5 leading-snug border-b border-neutral-800 border-r border-neutral-800">
                   Level
                 </th>
                 <th className="col-creator px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
                   Creator
-                </th>
-                <th className="col-actions px-4 py-2 border-b border-neutral-800 text-right">
-                  Actions
                 </th>
               </tr>
             </thead>
 
             <tbody>
               {savedBuilds.map((b) => (
-                <tr key={b.id} className="hover:bg-neutral-900/40 transition">
-                  <td className="col-name px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
+                <BuildTableBodyRow key={b.id} buildId={b.id} className="hover:bg-neutral-900/40 transition">
+                  <td className="col-name px-4 py-2 border-b border-neutral-800 border-r border-neutral-800 break-words">
                     {b.name}
                   </td>
                   <td className="col-class px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
                     {b.class}
                   </td>
-                  <td className="col-level px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
+                  <td className="col-level px-4 py-1.5 leading-snug border-b border-neutral-800 border-r border-neutral-800">
                     {b.level}
                   </td>
                   <td className="col-creator px-4 py-2 border-b border-neutral-800 border-r border-neutral-800 align-top">
@@ -141,22 +117,11 @@ export default async function Home() {
                       }
                     />
                   </td>
-
-                  <td className="col-actions px-4 py-2 border-b border-neutral-800 text-right">
-                    <div className="flex justify-end gap-3">
-                      <Link
-                        href={`/builds/${b.id}`}
-                        className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm"
-                      >
-                        View
-                      </Link>
-                      <UnsaveSavedBuildButton buildId={b.id} />
-                    </div>
-                  </td>
-                </tr>
+                </BuildTableBodyRow>
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       </section>
 

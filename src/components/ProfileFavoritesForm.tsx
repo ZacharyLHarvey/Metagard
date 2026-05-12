@@ -100,7 +100,7 @@ export default function ProfileFavoritesForm({
         </select>
       </div>
       <button type="submit" disabled={busy} className="px-4 py-2 bg-blue-600 rounded text-sm">
-        {busy ? "Saving…" : "Save favorites"}
+        {busy ? "Saving…" : "Save Favorites"}
       </button>
       {message ? <p className="text-sm text-neutral-400">{message}</p> : null}
     </form>

@@ -124,19 +124,19 @@ export default function NewBattleGamePage() {
           <input className="w-full px-3 py-2.5 bg-neutral-800 border border-neutral-700 rounded" value={teams} onChange={(e) => setTeams(e.target.value)} />
         </div>
         <div>
-          <label className="block text-sm text-neutral-400 mb-1">Min players</label>
+          <label className="block text-sm text-neutral-400 mb-1">Min Players</label>
           <input className="w-full px-3 py-2.5 bg-neutral-800 border border-neutral-700 rounded" inputMode="numeric" value={minPlayers} onChange={(e) => setMinPlayers(e.target.value)} />
         </div>
         <div>
-          <label className="block text-sm text-neutral-400 mb-1">Max players</label>
+          <label className="block text-sm text-neutral-400 mb-1">Max Players</label>
           <input className="w-full px-3 py-2.5 bg-neutral-800 border border-neutral-700 rounded" inputMode="numeric" value={maxPlayers} onChange={(e) => setMaxPlayers(e.target.value)} />
         </div>
         <div>
-          <label className="block text-sm text-neutral-400 mb-1">Min teams</label>
+          <label className="block text-sm text-neutral-400 mb-1">Min Teams</label>
           <input className="w-full px-3 py-2.5 bg-neutral-800 border border-neutral-700 rounded" inputMode="numeric" value={minTeams} onChange={(e) => setMinTeams(e.target.value)} />
         </div>
         <div>
-          <label className="block text-sm text-neutral-400 mb-1">Max teams</label>
+          <label className="block text-sm text-neutral-400 mb-1">Max Teams</label>
           <input className="w-full px-3 py-2.5 bg-neutral-800 border border-neutral-700 rounded" inputMode="numeric" value={maxTeams} onChange={(e) => setMaxTeams(e.target.value)} />
         </div>
         <div>

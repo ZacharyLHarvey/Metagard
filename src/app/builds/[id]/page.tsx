@@ -5,6 +5,8 @@ import BuildInfoSection from "@/components/BuildInfoSection";
 import BuildRatingSection from "@/components/BuildRatingSection";
 import BuildSpellDetails from "@/components/BuildSpellDetails";
 import CloneBuildButton from "@/components/CloneBuildButton";
+import SaveBuildButton from "@/components/SaveBuildButton";
+import UnsaveSavedBuildButton from "@/components/UnsaveSavedBuildButton";
 import TierBadge from "@/components/TierBadge";
 import { getGlobalAverageRating, getNumericEntityVoteStats } from "@/lib/queries/ratingStats";
 import { getProfile } from "@/lib/queries/getProfile";
@@ -13,6 +15,7 @@ import {
   getBuildSpellSelections,
   getCatalogSpellsForClass,
   getClassEquipment,
+  isBuildSavedByCurrentUser,
 } from "@/lib/queries/spellbook";
 import CreatorAttribution from "@/components/CreatorAttribution";
 import { getDisplayNamesForOwnerIds } from "@/lib/queries/publicProfiles";
@@ -54,6 +57,8 @@ export default async function BuildDetailsPage({ params, searchParams }: Params)
   const canAct = Boolean(profile);
   const profileOwnerId = profile && "id" in profile && profile.id != null ? String(profile.id) : null;
   const canManageBuild = profileOwnerId != null && profileOwnerId === build.owner_id;
+  const isSaved =
+    canAct && !canManageBuild ? await isBuildSavedByCurrentUser(buildId) : false;
   const martial = isMartialClass(build.class);
   const equipment = martial ? await getClassEquipment(build.class) : null;
   const creatorMap = await getDisplayNamesForOwnerIds([build.owner_id]);
@@ -81,6 +86,10 @@ export default async function BuildDetailsPage({ params, searchParams }: Params)
               Edit Spells
             </Link>
           </div>
+        ) : canAct ? (
+          <div className="flex flex-wrap gap-2 [&_button]:px-3 [&_button]:py-2 [&_button]:text-sm [&_button]:sm:text-base">
+            {isSaved ? <UnsaveSavedBuildButton buildId={build.id} /> : <SaveBuildButton buildId={build.id} />}
+          </div>
         ) : null}
       </div>
 
@@ -99,6 +108,7 @@ export default async function BuildDetailsPage({ params, searchParams }: Params)
       {martial ? (
         <section className="border border-neutral-800 rounded-lg overflow-hidden">
           <h3 className="px-4 py-2 bg-neutral-900 border-b border-neutral-800 font-semibold">Equipment</h3>
+          <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <tbody>
               <tr>
@@ -115,6 +125,7 @@ export default async function BuildDetailsPage({ params, searchParams }: Params)
               </tr>
             </tbody>
           </table>
+          </div>
         </section>
       ) : null}
 
@@ -140,7 +151,7 @@ export default async function BuildDetailsPage({ params, searchParams }: Params)
       />
 
       <section className="rounded-lg border border-neutral-800 p-4 space-y-3">
-        <p className="text-sm text-neutral-400">Rate this build</p>
+        <p className="text-sm text-neutral-400">Rate This Build</p>
         <BuildRatingSection buildId={buildId} canRate={canAct} initialMyRating={myRating} />
       </section>
 

@@ -339,9 +339,11 @@ export default function BuildSpellDetails({
                 </span>
               </button>
               {!collapsedKeys.has("ltp") ? (
+                <div className="overflow-x-auto">
                 <table className="mt-2 w-full text-left border-collapse">
                   <tbody>{renderLookThePartRows()}</tbody>
                 </table>
+                </div>
               ) : null}
             </section>
           ) : null}
@@ -365,12 +367,14 @@ export default function BuildSpellDetails({
                       </span>
                     </button>
                     {!collapsed ? (
+                      <div className="overflow-x-auto">
                       <table className="mt-2 w-full text-left border-collapse">
                         <tbody>
                           {renderUnresolvedRowsForLevel(level)}
                           {rows.map((selection) => renderSelectionRow(selection))}
                         </tbody>
                       </table>
+                      </div>
                     ) : null}
                   </section>
                 );
@@ -386,15 +390,17 @@ export default function BuildSpellDetails({
                     onClick={() => toggleSectionCollapse("martial-unresolved")}
                     aria-expanded={!collapsedKeys.has("martial-unresolved")}
                   >
-                    <h3 className="text-lg font-semibold text-amber-200">Required martial picks</h3>
+                    <h3 className="text-lg font-semibold text-amber-200">Required Martial Picks</h3>
                     <span className="shrink-0 text-neutral-500 text-sm" aria-hidden>
                       {collapsedKeys.has("martial-unresolved") ? "▶" : "▼"}
                     </span>
                   </button>
                   {!collapsedKeys.has("martial-unresolved") ? (
+                    <div className="overflow-x-auto">
                     <table className="mt-2 w-full text-left border-collapse">
                       <tbody>{renderAllUnresolvedPickOneRows()}</tbody>
                     </table>
+                    </div>
                   ) : null}
                 </section>
               ) : null}
@@ -415,9 +421,11 @@ export default function BuildSpellDetails({
                       </span>
                     </button>
                     {!collapsed ? (
+                      <div className="overflow-x-auto">
                       <table className="mt-2 w-full text-left border-collapse">
                         <tbody>{rows.map((selection) => renderSelectionRow(selection))}</tbody>
                       </table>
+                      </div>
                     ) : null}
                   </section>
                 );

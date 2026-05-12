@@ -26,6 +26,12 @@ function toStringOrNull(value: unknown): string | null {
   return null;
 }
 
+/** Smart quotes mis-decoded as ΓÇ£ / ΓÇ¥ (common in legacy Swiftgard exports). */
+function fixMojibakeCurlyQuotes(value: string | null): string | null {
+  if (value == null) return null;
+  return value.replace(/ΓÇ£/g, '"').replace(/ΓÇ¥/g, '"');
+}
+
 function normalizeSpellRow(row: Record<string, unknown>): SpellRow | null {
   const id = toNumberOrNull(row.id);
   const name =
@@ -44,11 +50,11 @@ function normalizeSpellRow(row: Record<string, unknown>): SpellRow | null {
     school: toStringOrNull(row.school),
     type: toStringOrNull(row.type),
     range: toStringOrNull(row.range),
-    materials: toStringOrNull(row.materials),
-    incantation: toStringOrNull(row.incantation),
-    effect: toStringOrNull(row.effect),
-    limitation: toStringOrNull(row.limitation),
-    note: toStringOrNull(row.note),
+    materials: fixMojibakeCurlyQuotes(toStringOrNull(row.materials)),
+    incantation: fixMojibakeCurlyQuotes(toStringOrNull(row.incantation)),
+    effect: fixMojibakeCurlyQuotes(toStringOrNull(row.effect)),
+    limitation: fixMojibakeCurlyQuotes(toStringOrNull(row.limitation)),
+    note: fixMojibakeCurlyQuotes(toStringOrNull(row.note)),
     cost: toNumberOrNull(row.cost),
     max: toNumberOrNull(row.max) ?? toNumberOrNull(row.max_count),
     frequency: formatSpellFrequency(row.frequency) ?? toStringOrNull(row.frequency),
@@ -305,6 +311,20 @@ export async function getSavedBuilds() {
   return mapped;
 }
 
+/** Same `saved_builds` source as `getSavedBuilds` / `toggleSavedBuild`. */
+export async function isBuildSavedByCurrentUser(buildId: number): Promise<boolean> {
+  const userId = await getCurrentUserId();
+  if (!userId) return false;
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("saved_builds")
+    .select("build_id")
+    .eq("user_id", userId)
+    .eq("build_id", buildId)
+    .maybeSingle();
+  return data != null;
+}
+
 /** Builds created by a user (public list; RLS must allow reading builds rows). */
 export async function getBuildsOwnedByUser(ownerId: string) {
   const supabase = await createClient();
@@ -540,7 +560,13 @@ export type SpellListRow = {
 export async function getSpellById(id: number) {
   const supabase = await createClient();
   const { data } = await supabase.from("spells").select("*").eq("id", id).maybeSingle();
-  return data as Record<string, unknown> | null;
+  if (!data) return null;
+  const row = { ...(data as Record<string, unknown>) };
+  for (const key of ["effect", "materials", "incantation", "limitation", "note"] as const) {
+    const v = row[key];
+    if (typeof v === "string") row[key] = fixMojibakeCurlyQuotes(v) ?? v;
+  }
+  return row;
 }
 
 export async function getAllSpellsList(): Promise<SpellListRow[]> {

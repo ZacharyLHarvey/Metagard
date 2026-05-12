@@ -41,7 +41,7 @@ export default async function SpellDetailPage({ params }: Params) {
       </p>
 
       <section className="border border-neutral-800 rounded-lg p-4 space-y-2">
-        <p className="text-sm text-neutral-400">Rate this spell</p>
+        <p className="text-sm text-neutral-400">Rate This Spell</p>
         <EntityRatingButtons
           postUrl={`/api/spells/${spellId}/rating`}
           canRate={Boolean(profileId)}

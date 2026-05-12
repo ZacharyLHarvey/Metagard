@@ -48,7 +48,7 @@ export default function CloneBuildButton({ buildId, canClone }: Props) {
         onClick={() => void clone()}
         className="px-3 py-2 bg-purple-700 hover:bg-purple-600 rounded text-sm"
       >
-        {busy ? "Cloning…" : "Clone build"}
+        {busy ? "Cloning…" : "Clone"}
       </button>
       {error ? <p className="text-sm text-red-400 mt-1">{error}</p> : null}
     </div>

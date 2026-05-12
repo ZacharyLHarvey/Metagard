@@ -1,4 +1,5 @@
 import Link from "next/link";
+import BuildTableBodyRow from "@/components/BuildTableBodyRow";
 import CreatorAttribution from "@/components/CreatorAttribution";
 import TierBadge from "@/components/TierBadge";
 import AutoQuerySelect from "@/components/AutoQuerySelect";
@@ -188,14 +189,14 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
           value={lb}
           clearValue="all"
           options={[
-            { value: "all", label: "ALL" },
+            { value: "all", label: "All" },
             { value: "builds", label: "Builds" },
             { value: "spells", label: "Spells" },
             { value: "classes", label: "Classes" },
             { value: "battle-games", label: "Battlegames" },
             { value: "monsters", label: "Monsters" },
-            { value: "custom-classes", label: "Custom classes" },
-            { value: "custom-spells", label: "Custom spells" },
+            { value: "custom-classes", label: "Custom Classes" },
+            { value: "custom-spells", label: "Custom Spells" },
           ]}
           preserveKeys={["gameType"]}
         />
@@ -204,9 +205,10 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
         <>
           <section>
             <div className="flex items-baseline justify-between gap-4 flex-wrap">
-              <h2 className="text-lg font-semibold mb-3">Top builds (global)</h2>
+              <h2 className="text-lg font-semibold mb-3">Top Builds (Global)</h2>
             </div>
             <div className="border border-neutral-800 rounded-lg overflow-hidden">
+              <div className="overflow-x-auto">
               <table className="w-full text-sm border-collapse table-fixed">
                 <thead className="bg-neutral-900">
                   <tr>
@@ -219,7 +221,7 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
                 </thead>
                 <tbody>
                   {builds.slice(0, 25).map((b, i) => (
-                    <tr key={b.id} className="hover:bg-neutral-900/40">
+                    <BuildTableBodyRow key={b.id} buildId={b.id} className="hover:bg-neutral-900/40">
                       <td className="px-4 py-2 border-b border-neutral-800 text-neutral-500">{i + 1}</td>
                       <td className="px-4 py-2 border-b border-neutral-800">
                         <Link href={`/builds/${b.id}`} className="text-blue-400 hover:underline">
@@ -244,10 +246,11 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
                         {Number(b.weighted_rating ?? 0).toFixed(2)}
                       </td>
                       <td className="px-4 py-2 border-b border-neutral-800">{Number(b.ratings_count ?? 0)}</td>
-                    </tr>
+                    </BuildTableBodyRow>
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
           </section>
 
@@ -258,6 +261,7 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
                 <div key={key} className="border border-neutral-800 rounded-lg p-3 sm:p-4">
                   <h3 className="font-medium text-neutral-200 mb-2">{key}</h3>
                   <div className="border border-neutral-800 rounded-lg overflow-hidden">
+                    <div className="overflow-x-auto">
                     <table className="w-full text-sm border-collapse table-fixed">
                       <thead className="bg-neutral-900">
                         <tr>
@@ -269,7 +273,7 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
                       </thead>
                       <tbody>
                         {byClassLevel.get(key)!.slice(0, 10).map((b, i) => (
-                          <tr key={b.id} className="hover:bg-neutral-900/40">
+                          <BuildTableBodyRow key={b.id} buildId={b.id} className="hover:bg-neutral-900/40">
                             <td className="px-4 py-2 border-b border-neutral-800 text-neutral-500">{i + 1}</td>
                             <td className="px-4 py-2 border-b border-neutral-800">
                               <Link href={`/builds/${b.id}`} className="text-blue-400 hover:underline truncate">
@@ -290,10 +294,11 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
                             <td className="px-4 py-2 border-b border-neutral-800">
                               {Number(b.weighted_rating ?? 0).toFixed(2)}
                             </td>
-                          </tr>
+                          </BuildTableBodyRow>
                         ))}
                       </tbody>
                     </table>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -307,10 +312,11 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
           <div className="flex items-baseline justify-between flex-wrap gap-4">
             <h2 className="text-lg font-semibold">Spells</h2>
             <Link href="/leaderboards/spells" className="text-sm text-blue-400 hover:underline">
-              Open spell leaderboard →
+              Open Spell Leaderboard →
             </Link>
           </div>
           <div className="border border-neutral-800 rounded-lg overflow-hidden">
+            <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse table-fixed">
               <thead className="bg-neutral-900">
                 <tr>
@@ -350,6 +356,7 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
                   ))}
               </tbody>
             </table>
+            </div>
           </div>
         </section>
       ) : null}
@@ -359,10 +366,11 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
           <div className="flex items-baseline justify-between flex-wrap gap-4">
             <h2 className="text-lg font-semibold">Classes</h2>
             <Link href="/leaderboards/classes" className="text-sm text-blue-400 hover:underline">
-              Open class leaderboard →
+              Open Class Leaderboard →
             </Link>
           </div>
           <div className="border border-neutral-800 rounded-lg overflow-hidden">
+            <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse table-fixed">
               <thead className="bg-neutral-900">
                 <tr>
@@ -392,6 +400,7 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         </section>
       ) : null}
@@ -401,7 +410,7 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
           <div className="flex items-baseline justify-between flex-wrap gap-4">
             <h2 className="text-lg font-semibold">Battlegames</h2>
             <Link href="/leaderboards/battlegames" className="text-sm text-blue-400 hover:underline">
-              Open battlegames leaderboard →
+              Open Battlegames Leaderboard →
             </Link>
           </div>
           <AutoQuerySelect
@@ -413,6 +422,7 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
             options={BATTLEGAME_TYPES.map((type) => ({ value: type, label: type }))}
           />
           <div className="border border-neutral-800 rounded-lg overflow-hidden">
+            <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse table-fixed">
               <thead className="bg-neutral-900">
                 <tr>
@@ -449,6 +459,7 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         </section>
       ) : null}
@@ -458,10 +469,11 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
           <div className="flex items-baseline justify-between flex-wrap gap-4">
             <h2 className="text-lg font-semibold">Monsters</h2>
             <Link href="/leaderboards/monsters" className="text-sm text-blue-400 hover:underline">
-              Open monsters leaderboard →
+              Open Monsters Leaderboard →
             </Link>
           </div>
           <div className="border border-neutral-800 rounded-lg overflow-hidden">
+            <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse table-fixed">
               <thead className="bg-neutral-900">
                 <tr>
@@ -498,6 +510,7 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         </section>
       ) : null}
@@ -505,17 +518,18 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
       {showCustomClasses ? (
         <section className="space-y-3">
           <div className="flex items-baseline justify-between flex-wrap gap-4">
-            <h2 className="text-lg font-semibold">Custom classes</h2>
+            <h2 className="text-lg font-semibold">Custom Classes</h2>
             <Link href="/leaderboards/custom-classes" className="text-sm text-blue-400 hover:underline">
-              Open custom classes leaderboard →
+              Open Custom Classes Leaderboard →
             </Link>
           </div>
           <div className="border border-neutral-800 rounded-lg overflow-hidden">
+            <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse table-fixed">
               <thead className="bg-neutral-900">
                 <tr>
                   <th className="px-4 py-2 text-left border-b border-neutral-800 w-12">#</th>
-                  <th className="px-4 py-2 text-left border-b border-neutral-800">Custom class</th>
+                  <th className="px-4 py-2 text-left border-b border-neutral-800">Custom Class</th>
                   <th className="px-4 py-2 text-left border-b border-neutral-800 w-20">Tier</th>
                   <th className="px-4 py-2 text-left border-b border-neutral-800 w-24">WR</th>
                   <th className="px-4 py-2 text-left border-b border-neutral-800 w-20">Votes</th>
@@ -547,6 +561,7 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         </section>
       ) : null}
@@ -554,17 +569,18 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
       {showCustomSpells ? (
         <section className="space-y-3">
           <div className="flex items-baseline justify-between flex-wrap gap-4">
-            <h2 className="text-lg font-semibold">Custom spells</h2>
+            <h2 className="text-lg font-semibold">Custom Spells</h2>
             <Link href="/leaderboards/custom-spells" className="text-sm text-blue-400 hover:underline">
-              Open custom spells leaderboard →
+              Open Custom Spells Leaderboard →
             </Link>
           </div>
           <div className="border border-neutral-800 rounded-lg overflow-hidden">
+            <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse table-fixed">
               <thead className="bg-neutral-900">
                 <tr>
                   <th className="px-4 py-2 text-left border-b border-neutral-800 w-12">#</th>
-                  <th className="px-4 py-2 text-left border-b border-neutral-800">Custom spell</th>
+                  <th className="px-4 py-2 text-left border-b border-neutral-800">Custom Spell</th>
                   <th className="px-4 py-2 text-left border-b border-neutral-800 w-20">Tier</th>
                   <th className="px-4 py-2 text-left border-b border-neutral-800 w-24">WR</th>
                   <th className="px-4 py-2 text-left border-b border-neutral-800 w-20">Votes</th>
@@ -596,6 +612,7 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         </section>
       ) : null}

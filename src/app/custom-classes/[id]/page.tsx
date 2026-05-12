@@ -44,7 +44,7 @@ export default async function CustomClassDetailPage({ params }: Params) {
   return (
     <main className="p-10 text-white max-w-2xl space-y-6">
       <Link href="/custom-classes" className="text-sm text-blue-400 hover:underline">
-        ← Custom classes
+        ← Custom Classes
       </Link>
       <h1 className="text-2xl font-bold">{String(m.name)}</h1>
       <p className="text-neutral-400 text-sm">
@@ -54,7 +54,7 @@ export default async function CustomClassDetailPage({ params }: Params) {
       {m.description ? <p className="text-sm whitespace-pre-wrap text-neutral-300">{String(m.description)}</p> : null}
 
       <section className="border border-neutral-800 rounded-lg p-4">
-        <p className="text-sm text-neutral-400 mb-2">Your rating</p>
+        <p className="text-sm text-neutral-400 mb-2">Your Rating</p>
         <EntityRatingButtons
           postUrl={`/api/custom-classes/${eid}/rating`}
           canRate={Boolean(profileId)}

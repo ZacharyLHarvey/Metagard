@@ -129,7 +129,7 @@ export default function BuildSettingsForm({ build }: Props) {
       </div>
 
       <div>
-        <label className="block mb-2 text-sm text-neutral-300">Play style</label>
+        <label className="block mb-2 text-sm text-neutral-300">Play Style</label>
         <textarea
           className="w-full px-3 py-2.5 rounded bg-neutral-800 border border-neutral-700 min-h-20"
           value={playStyle}
@@ -156,7 +156,7 @@ export default function BuildSettingsForm({ build }: Props) {
       </div>
 
       <div>
-        <label className="block mb-2 text-sm text-neutral-300">Enemies / counters</label>
+        <label className="block mb-2 text-sm text-neutral-300">Enemies / Counters</label>
         <textarea
           className="w-full px-3 py-2.5 rounded bg-neutral-800 border border-neutral-700 min-h-20"
           value={enemies}
@@ -165,7 +165,7 @@ export default function BuildSettingsForm({ build }: Props) {
       </div>
 
       <div>
-        <label className="block mb-2 text-sm text-neutral-300">Recommended gear</label>
+        <label className="block mb-2 text-sm text-neutral-300">Recommended Gear</label>
         <textarea
           className="w-full px-3 py-2.5 rounded bg-neutral-800 border border-neutral-700 min-h-20"
           value={recommendedGear}

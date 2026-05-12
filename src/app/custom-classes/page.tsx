@@ -27,9 +27,9 @@ export default async function CustomClassesPage() {
   return (
     <main className="p-10 text-white space-y-6">
       <div className="flex justify-between items-center flex-wrap gap-4">
-        <h1 className="text-2xl font-bold">Custom classes</h1>
+        <h1 className="text-2xl font-bold">Custom Classes</h1>
         <Link href="/custom-classes/new" className="px-3 py-2 bg-blue-600 rounded text-sm">
-          Create custom class
+          Create Custom Class
         </Link>
       </div>
       <ul className="border border-neutral-800 rounded-lg divide-y divide-neutral-800">

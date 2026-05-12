@@ -56,9 +56,9 @@ export default async function BattlegamesLeaderboardPage({ searchParams }: { sea
   return (
     <main className="p-10 text-white space-y-6">
       <div className="flex flex-wrap gap-4 items-baseline justify-between">
-        <h1 className="text-2xl font-bold">Battlegames leaderboard</h1>
+        <h1 className="text-2xl font-bold">Battlegames Leaderboard</h1>
         <Link href="/leaderboards" className="text-sm text-blue-400 hover:underline">
-          ← Main leaderboards
+          ← Main Leaderboards
         </Link>
       </div>
       <p className="text-sm text-neutral-400 max-w-2xl">
@@ -72,6 +72,7 @@ export default async function BattlegamesLeaderboardPage({ searchParams }: { sea
         options={BATTLEGAME_TYPES.map((type) => ({ value: type, label: type }))}
       />
       <div className="border border-neutral-800 rounded-lg overflow-hidden">
+        <div className="overflow-x-auto">
         <table className="w-full text-sm border-collapse table-fixed">
           <thead className="bg-neutral-900">
             <tr>
@@ -108,6 +109,7 @@ export default async function BattlegamesLeaderboardPage({ searchParams }: { sea
             ))}
           </tbody>
         </table>
+        </div>
       </div>
     </main>
   );

@@ -27,9 +27,9 @@ export default async function CustomSpellsPage() {
   return (
     <main className="p-10 text-white space-y-6">
       <div className="flex justify-between items-center flex-wrap gap-4">
-        <h1 className="text-2xl font-bold">Custom spells</h1>
+        <h1 className="text-2xl font-bold">Custom Spells</h1>
         <Link href="/custom-spells/new" className="px-3 py-2 bg-blue-600 rounded text-sm">
-          Create custom spell
+          Create Custom Spell
         </Link>
       </div>
       <ul className="border border-neutral-800 rounded-lg divide-y divide-neutral-800">

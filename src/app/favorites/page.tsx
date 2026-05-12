@@ -52,7 +52,7 @@ export default async function FavoritesPage() {
         </p>
         <p className="text-sm text-red-400">{statsError.message}</p>
         <Link href="/profile" className="text-blue-400 underline text-sm">
-          ← Back to profile
+          ← Back to Profile
         </Link>
       </main>
     );
@@ -102,7 +102,7 @@ export default async function FavoritesPage() {
           </p>
         </div>
         <Link href="/profile" className="text-blue-400 underline text-sm">
-          ← Back to profile
+          ← Back to Profile
         </Link>
       </div>
 

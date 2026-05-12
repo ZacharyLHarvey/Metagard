@@ -72,7 +72,7 @@ export default function CreateBuildForm({ classes }: { classes: string[] }) {
           onChange={(e) => setClassName(e.target.value)}
           required
         >
-          <option value="">Select a class</option>
+          <option value="">Select a Class</option>
           {classes.map((c) => (
             <option key={c} value={c}>{c}</option>
           ))}
@@ -112,7 +112,7 @@ export default function CreateBuildForm({ classes }: { classes: string[] }) {
       )}
 
       <div>
-        <label className="block mb-2 text-neutral-300">Playstyle</label>
+        <label className="block mb-2 text-neutral-300">Play Style</label>
         <p className="text-xs text-neutral-400 mb-2">
           How this build is meant to approach fights, objectives, and battlefield movement.
         </p>

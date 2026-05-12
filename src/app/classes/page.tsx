@@ -10,7 +10,7 @@ export default async function ClassesPage() {
       <div className="flex flex-wrap gap-4 items-baseline justify-between">
         <h1 className="text-2xl font-bold">Classes</h1>
         <Link href="/leaderboards/classes" className="text-sm text-blue-400 hover:underline">
-          Class leaderboard →
+          Class Leaderboard →
         </Link>
       </div>
       <p className="text-sm text-neutral-400 max-w-2xl">

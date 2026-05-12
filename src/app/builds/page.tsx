@@ -1,6 +1,5 @@
-import Link from "next/link";
+import BuildTableBodyRow from "@/components/BuildTableBodyRow";
 import CreatorAttribution from "@/components/CreatorAttribution";
-import SaveBuildButton from "@/components/SaveBuildButton";
 import TierBadge from "@/components/TierBadge";
 import AutoQuerySelect from "@/components/AutoQuerySelect";
 import { getDisplayNamesForOwnerIds } from "@/lib/queries/publicProfiles";
@@ -94,7 +93,7 @@ export default async function BuildsPage({ searchParams }: { searchParams: Promi
   });
 
   const filterOptions: { value: string; label: string }[] = [
-    { value: "all", label: "All builds" },
+    { value: "all", label: "All Builds" },
     ...classKeys.map((k) => ({ value: `class:${k}`, label: labelByClassKey.get(k) ?? k })),
     { value: "caster", label: "Caster" },
     { value: "martial", label: "Martial" },
@@ -111,12 +110,12 @@ export default async function BuildsPage({ searchParams }: { searchParams: Promi
   const visibleClassKeys = classKeys.filter(includeClass);
   const pageTitle =
     group === "caster"
-      ? "Caster builds"
+      ? "Caster Builds"
       : group === "martial"
-        ? "Martial builds"
+        ? "Martial Builds"
         : group.startsWith("class:")
-          ? `${labelByClassKey.get(group.slice("class:".length)) ?? "Class"} builds`
-          : "All builds";
+          ? `${labelByClassKey.get(group.slice("class:".length)) ?? "Class"} Builds`
+          : "All Builds";
 
   return (
     <main className="px-4 py-4 sm:px-6 lg:px-10 text-white space-y-6 sm:space-y-8">
@@ -124,7 +123,7 @@ export default async function BuildsPage({ searchParams }: { searchParams: Promi
         <h1 className="text-xl sm:text-2xl font-bold">{pageTitle}</h1>
         <AutoQuerySelect
           name="group"
-          label="Tierlist group"
+          label="Tierlist Group"
           value={group}
           clearValue="all"
           options={filterOptions}
@@ -141,7 +140,6 @@ export default async function BuildsPage({ searchParams }: { searchParams: Promi
           .col-level { width: 10%; }
           .col-rating { width: 12%; }
           .col-look { width: 10%; }
-          .col-actions { width: 25%; }
         `}
       </style>
 
@@ -159,6 +157,7 @@ export default async function BuildsPage({ searchParams }: { searchParams: Promi
             {labelByClassKey.get(classKey) ?? classKey}
           </h2>
           <div className="border border-neutral-800 rounded-lg overflow-hidden">
+            <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-sm sm:text-base">
               <thead className="bg-neutral-900">
                 <tr>
@@ -168,19 +167,18 @@ export default async function BuildsPage({ searchParams }: { searchParams: Promi
                   <th className="col-class px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
                     Class
                   </th>
-                  <th className="col-level px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
+                  <th className="col-level px-4 py-1.5 leading-snug border-b border-neutral-800 border-r border-neutral-800">
                     Level
                   </th>
                   <th className="col-rating px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
                     Rating
                   </th>
-                  <th className="col-look px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
+                  <th className="col-look px-4 py-1.5 leading-snug border-b border-neutral-800 border-r border-neutral-800">
                     LTP
                   </th>
                   <th className="px-4 py-2 border-b border-neutral-800 border-r border-neutral-800 min-w-[9rem]">
                     Creator
                   </th>
-                  <th className="col-actions px-4 py-2 border-b border-neutral-800 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -188,14 +186,14 @@ export default async function BuildsPage({ searchParams }: { searchParams: Promi
                   const stat = voteStats.get(b.id) ?? { votes: 0, rawAverage: Number(b.average_rating ?? 0) };
                   const tierData = computeTierResult(stat.rawAverage, stat.votes, globalAverage);
                   return (
-                  <tr key={b.id} className="hover:bg-neutral-900/40 transition">
-                    <td className="col-name px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
+                  <BuildTableBodyRow key={b.id} buildId={b.id} className="hover:bg-neutral-900/40 transition">
+                    <td className="col-name px-4 py-2 border-b border-neutral-800 border-r border-neutral-800 break-words">
                       {b.name}
                     </td>
                     <td className="col-class px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
                       {b.class}
                     </td>
-                    <td className="col-level px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
+                    <td className="col-level px-4 py-1.5 leading-snug border-b border-neutral-800 border-r border-neutral-800">
                       {b.level}
                     </td>
                     <td className="col-rating px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
@@ -204,7 +202,7 @@ export default async function BuildsPage({ searchParams }: { searchParams: Promi
                         <span>{tierData.weightedRating.toFixed(2)}</span>
                       </div>
                     </td>
-                    <td className="col-look px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
+                    <td className="col-look px-4 py-1.5 leading-snug border-b border-neutral-800 border-r border-neutral-800">
                       {b.look_the_part ? "✔️" : "—"}
                     </td>
                     <td className="px-4 py-2 border-b border-neutral-800 border-r border-neutral-800 align-top">
@@ -215,22 +213,12 @@ export default async function BuildsPage({ searchParams }: { searchParams: Promi
                         }
                       />
                     </td>
-                    <td className="col-actions px-4 py-2 border-b border-neutral-800 text-right">
-                      <div className="flex justify-start sm:justify-end gap-2 sm:gap-3 flex-wrap">
-                        <Link
-                          href={`/builds/${b.id}`}
-                          className="px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded text-sm"
-                        >
-                          View
-                        </Link>
-                        <SaveBuildButton buildId={b.id} />
-                      </div>
-                    </td>
-                  </tr>
+                  </BuildTableBodyRow>
                   );
                 })}
               </tbody>
             </table>
+            </div>
           </div>
         </section>
       ))}
