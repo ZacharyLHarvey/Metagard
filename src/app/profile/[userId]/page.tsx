@@ -1,10 +1,7 @@
-import type { ReactNode } from "react";
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import DeleteBuildButton from "@/components/DeleteBuildButton";
+import BuildTableBodyRow from "@/components/BuildTableBodyRow";
 import ProfileFavoritesForm from "@/components/ProfileFavoritesForm";
 import ProfileFavoritesReadOnly from "@/components/ProfileFavoritesReadOnly";
-import UnsaveSavedBuildButton from "@/components/UnsaveSavedBuildButton";
 import { getProfile } from "@/lib/queries/getProfile";
 import {
   getAllSpellsList,
@@ -128,36 +125,12 @@ export default async function UserProfilePage({ params }: Params) {
 
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">{buildsHeading}</h2>
-        <BuildTable
-          builds={ownedBuilds}
-          creatorByOwnerId={creatorByOwnerId}
-          empty={createdEmpty}
-          extraActions={
-            isOwnProfile
-              ? (b) => (
-                  <>
-                    <Link
-                      href={`/builds/${b.id}/edit`}
-                      className="px-3 py-1 bg-amber-600 hover:bg-amber-700 rounded text-sm"
-                    >
-                      Edit
-                    </Link>
-                    <DeleteBuildButton buildId={b.id} />
-                  </>
-                )
-              : undefined
-          }
-        />
+        <BuildTable builds={ownedBuilds} creatorByOwnerId={creatorByOwnerId} empty={createdEmpty} />
       </section>
 
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">{savedHeading}</h2>
-        <BuildTable
-          builds={savedBuilds}
-          creatorByOwnerId={creatorByOwnerId}
-          empty={savedEmpty}
-          trailingActions={isOwnProfile ? (b) => <UnsaveSavedBuildButton buildId={b.id} /> : undefined}
-        />
+        <BuildTable builds={savedBuilds} creatorByOwnerId={creatorByOwnerId} empty={savedEmpty} />
       </section>
     </main>
   );
@@ -167,14 +140,10 @@ function BuildTable({
   builds,
   creatorByOwnerId,
   empty,
-  extraActions,
-  trailingActions,
 }: {
   builds: BuildRow[];
   creatorByOwnerId: Map<string, string>;
   empty: string;
-  extraActions?: (b: BuildRow) => ReactNode;
-  trailingActions?: (b: BuildRow) => ReactNode;
 }) {
   if (builds.length === 0) {
     return <p className="text-sm text-neutral-500">{empty}</p>;
@@ -190,13 +159,12 @@ function BuildTable({
             <th className="px-4 py-2 border-b border-neutral-800">Class</th>
             <th className="px-4 py-2 border-b border-neutral-800">Level</th>
             <th className="px-4 py-2 border-b border-neutral-800 min-w-[9rem]">Creator</th>
-            <th className="px-4 py-2 border-b border-neutral-800 text-right">Actions</th>
           </tr>
         </thead>
         <tbody>
           {builds.map((b) => (
-            <tr key={b.id} className="hover:bg-neutral-900/40">
-              <td className="px-4 py-2 border-b border-neutral-800">{b.name}</td>
+            <BuildTableBodyRow key={b.id} buildId={b.id} className="hover:bg-neutral-900/40">
+              <td className="px-4 py-2 border-b border-neutral-800 break-words">{b.name}</td>
               <td className="px-4 py-2 border-b border-neutral-800">{b.class}</td>
               <td className="px-4 py-2 border-b border-neutral-800">{b.level}</td>
               <td className="px-4 py-2 border-b border-neutral-800 align-top">
@@ -207,19 +175,7 @@ function BuildTable({
                   }
                 />
               </td>
-              <td className="px-4 py-2 border-b border-neutral-800 text-right">
-                <div className="flex justify-start sm:justify-end flex-wrap gap-2">
-                  <Link
-                    href={`/builds/${b.id}`}
-                    className="px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded text-sm"
-                  >
-                    View
-                  </Link>
-                  {extraActions ? extraActions(b) : null}
-                  {trailingActions ? trailingActions(b) : null}
-                </div>
-              </td>
-            </tr>
+            </BuildTableBodyRow>
           ))}
         </tbody>
       </table>

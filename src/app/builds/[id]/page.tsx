@@ -5,6 +5,8 @@ import BuildInfoSection from "@/components/BuildInfoSection";
 import BuildRatingSection from "@/components/BuildRatingSection";
 import BuildSpellDetails from "@/components/BuildSpellDetails";
 import CloneBuildButton from "@/components/CloneBuildButton";
+import SaveBuildButton from "@/components/SaveBuildButton";
+import UnsaveSavedBuildButton from "@/components/UnsaveSavedBuildButton";
 import TierBadge from "@/components/TierBadge";
 import { getGlobalAverageRating, getNumericEntityVoteStats } from "@/lib/queries/ratingStats";
 import { getProfile } from "@/lib/queries/getProfile";
@@ -13,6 +15,7 @@ import {
   getBuildSpellSelections,
   getCatalogSpellsForClass,
   getClassEquipment,
+  isBuildSavedByCurrentUser,
 } from "@/lib/queries/spellbook";
 import CreatorAttribution from "@/components/CreatorAttribution";
 import { getDisplayNamesForOwnerIds } from "@/lib/queries/publicProfiles";
@@ -54,6 +57,8 @@ export default async function BuildDetailsPage({ params, searchParams }: Params)
   const canAct = Boolean(profile);
   const profileOwnerId = profile && "id" in profile && profile.id != null ? String(profile.id) : null;
   const canManageBuild = profileOwnerId != null && profileOwnerId === build.owner_id;
+  const isSaved =
+    canAct && !canManageBuild ? await isBuildSavedByCurrentUser(buildId) : false;
   const martial = isMartialClass(build.class);
   const equipment = martial ? await getClassEquipment(build.class) : null;
   const creatorMap = await getDisplayNamesForOwnerIds([build.owner_id]);
@@ -80,6 +85,10 @@ export default async function BuildDetailsPage({ params, searchParams }: Params)
             <Link href={`/builds/${build.id}/edit`} className="px-3 py-2 bg-amber-600 rounded text-sm sm:text-base">
               Edit Spells
             </Link>
+          </div>
+        ) : canAct ? (
+          <div className="flex flex-wrap gap-2 [&_button]:px-3 [&_button]:py-2 [&_button]:text-sm [&_button]:sm:text-base">
+            {isSaved ? <UnsaveSavedBuildButton buildId={build.id} /> : <SaveBuildButton buildId={build.id} />}
           </div>
         ) : null}
       </div>

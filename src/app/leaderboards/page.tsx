@@ -1,4 +1,5 @@
 import Link from "next/link";
+import BuildTableBodyRow from "@/components/BuildTableBodyRow";
 import CreatorAttribution from "@/components/CreatorAttribution";
 import TierBadge from "@/components/TierBadge";
 import AutoQuerySelect from "@/components/AutoQuerySelect";
@@ -220,7 +221,7 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
                 </thead>
                 <tbody>
                   {builds.slice(0, 25).map((b, i) => (
-                    <tr key={b.id} className="hover:bg-neutral-900/40">
+                    <BuildTableBodyRow key={b.id} buildId={b.id} className="hover:bg-neutral-900/40">
                       <td className="px-4 py-2 border-b border-neutral-800 text-neutral-500">{i + 1}</td>
                       <td className="px-4 py-2 border-b border-neutral-800">
                         <Link href={`/builds/${b.id}`} className="text-blue-400 hover:underline">
@@ -245,7 +246,7 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
                         {Number(b.weighted_rating ?? 0).toFixed(2)}
                       </td>
                       <td className="px-4 py-2 border-b border-neutral-800">{Number(b.ratings_count ?? 0)}</td>
-                    </tr>
+                    </BuildTableBodyRow>
                   ))}
                 </tbody>
               </table>
@@ -272,7 +273,7 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
                       </thead>
                       <tbody>
                         {byClassLevel.get(key)!.slice(0, 10).map((b, i) => (
-                          <tr key={b.id} className="hover:bg-neutral-900/40">
+                          <BuildTableBodyRow key={b.id} buildId={b.id} className="hover:bg-neutral-900/40">
                             <td className="px-4 py-2 border-b border-neutral-800 text-neutral-500">{i + 1}</td>
                             <td className="px-4 py-2 border-b border-neutral-800">
                               <Link href={`/builds/${b.id}`} className="text-blue-400 hover:underline truncate">
@@ -293,7 +294,7 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
                             <td className="px-4 py-2 border-b border-neutral-800">
                               {Number(b.weighted_rating ?? 0).toFixed(2)}
                             </td>
-                          </tr>
+                          </BuildTableBodyRow>
                         ))}
                       </tbody>
                     </table>

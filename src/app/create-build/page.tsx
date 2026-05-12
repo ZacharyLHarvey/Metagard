@@ -1,7 +1,14 @@
+import { redirect } from "next/navigation";
 import CreateBuildForm from "@/components/CreateBuildForm";
+import { getProfileCached } from "@/lib/queries/getProfileCached";
 import { getCatalogClasses } from "@/lib/queries/spellbook";
 
 export default async function CreateBuildPage() {
+  const profile = await getProfileCached();
+  if (!profile) {
+    redirect("/login");
+  }
+
   const classes = await getCatalogClasses();
   const classNames = classes.map((c) => c.name);
 
