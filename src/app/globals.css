@@ -97,37 +97,3 @@ html[data-theme="light"] textarea {
   }
 }
 
-@media (max-width: 768px) {
-  table {
-    width: 100% !important;
-    table-layout: fixed !important;
-  }
-
-  thead {
-    display: none;
-  }
-
-  tbody,
-  tr,
-  td {
-    display: block;
-    width: 100%;
-  }
-
-  tr {
-    border-bottom: 1px solid rgb(38 38 38);
-  }
-
-  td {
-    text-align: left !important;
-    white-space: normal !important;
-    word-break: break-word;
-    padding-left: 0.75rem !important;
-    padding-right: 0.75rem !important;
-  }
-
-  .min-w-\[32rem\],
-  .min-w-\[18rem\] {
-    min-width: 0 !important;
-  }
-}

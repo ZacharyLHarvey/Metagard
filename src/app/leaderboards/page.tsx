@@ -207,6 +207,7 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
               <h2 className="text-lg font-semibold mb-3">Top builds (global)</h2>
             </div>
             <div className="border border-neutral-800 rounded-lg overflow-hidden">
+              <div className="overflow-x-auto">
               <table className="w-full text-sm border-collapse table-fixed">
                 <thead className="bg-neutral-900">
                   <tr>
@@ -248,6 +249,7 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
           </section>
 
@@ -258,6 +260,7 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
                 <div key={key} className="border border-neutral-800 rounded-lg p-3 sm:p-4">
                   <h3 className="font-medium text-neutral-200 mb-2">{key}</h3>
                   <div className="border border-neutral-800 rounded-lg overflow-hidden">
+                    <div className="overflow-x-auto">
                     <table className="w-full text-sm border-collapse table-fixed">
                       <thead className="bg-neutral-900">
                         <tr>
@@ -294,6 +297,7 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
                         ))}
                       </tbody>
                     </table>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -311,6 +315,7 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
             </Link>
           </div>
           <div className="border border-neutral-800 rounded-lg overflow-hidden">
+            <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse table-fixed">
               <thead className="bg-neutral-900">
                 <tr>
@@ -350,6 +355,7 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
                   ))}
               </tbody>
             </table>
+            </div>
           </div>
         </section>
       ) : null}
@@ -363,6 +369,7 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
             </Link>
           </div>
           <div className="border border-neutral-800 rounded-lg overflow-hidden">
+            <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse table-fixed">
               <thead className="bg-neutral-900">
                 <tr>
@@ -392,6 +399,7 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         </section>
       ) : null}
@@ -413,6 +421,7 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
             options={BATTLEGAME_TYPES.map((type) => ({ value: type, label: type }))}
           />
           <div className="border border-neutral-800 rounded-lg overflow-hidden">
+            <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse table-fixed">
               <thead className="bg-neutral-900">
                 <tr>
@@ -449,6 +458,7 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         </section>
       ) : null}
@@ -462,6 +472,7 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
             </Link>
           </div>
           <div className="border border-neutral-800 rounded-lg overflow-hidden">
+            <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse table-fixed">
               <thead className="bg-neutral-900">
                 <tr>
@@ -498,6 +509,7 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         </section>
       ) : null}
@@ -511,6 +523,7 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
             </Link>
           </div>
           <div className="border border-neutral-800 rounded-lg overflow-hidden">
+            <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse table-fixed">
               <thead className="bg-neutral-900">
                 <tr>
@@ -547,6 +560,7 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         </section>
       ) : null}
@@ -560,6 +574,7 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
             </Link>
           </div>
           <div className="border border-neutral-800 rounded-lg overflow-hidden">
+            <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse table-fixed">
               <thead className="bg-neutral-900">
                 <tr>
@@ -596,6 +611,7 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         </section>
       ) : null}

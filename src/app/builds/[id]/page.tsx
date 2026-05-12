@@ -99,6 +99,7 @@ export default async function BuildDetailsPage({ params, searchParams }: Params)
       {martial ? (
         <section className="border border-neutral-800 rounded-lg overflow-hidden">
           <h3 className="px-4 py-2 bg-neutral-900 border-b border-neutral-800 font-semibold">Equipment</h3>
+          <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <tbody>
               <tr>
@@ -115,6 +116,7 @@ export default async function BuildDetailsPage({ params, searchParams }: Params)
               </tr>
             </tbody>
           </table>
+          </div>
         </section>
       ) : null}
 

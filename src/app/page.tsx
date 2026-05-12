@@ -40,6 +40,7 @@ export default async function Home() {
         <h2 className="text-xl font-semibold mb-4">My Builds</h2>
 
         <div className="border border-neutral-800 rounded-lg overflow-hidden">
+          <div className="overflow-x-auto">
           <table className="home-my-builds w-full text-left border-collapse">
             <thead className="bg-neutral-900">
               <tr>
@@ -92,6 +93,7 @@ export default async function Home() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       </section>
 
@@ -100,6 +102,7 @@ export default async function Home() {
         <h2 className="text-xl font-semibold mb-4">Saved Builds</h2>
 
         <div className="border border-neutral-800 rounded-lg overflow-hidden">
+          <div className="overflow-x-auto">
           <table className="home-saved-builds w-full text-left border-collapse">
             <thead className="bg-neutral-900">
               <tr>
@@ -157,6 +160,7 @@ export default async function Home() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       </section>
 

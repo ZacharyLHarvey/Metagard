@@ -339,9 +339,11 @@ export default function BuildSpellDetails({
                 </span>
               </button>
               {!collapsedKeys.has("ltp") ? (
+                <div className="overflow-x-auto">
                 <table className="mt-2 w-full text-left border-collapse">
                   <tbody>{renderLookThePartRows()}</tbody>
                 </table>
+                </div>
               ) : null}
             </section>
           ) : null}
@@ -365,12 +367,14 @@ export default function BuildSpellDetails({
                       </span>
                     </button>
                     {!collapsed ? (
+                      <div className="overflow-x-auto">
                       <table className="mt-2 w-full text-left border-collapse">
                         <tbody>
                           {renderUnresolvedRowsForLevel(level)}
                           {rows.map((selection) => renderSelectionRow(selection))}
                         </tbody>
                       </table>
+                      </div>
                     ) : null}
                   </section>
                 );
@@ -392,9 +396,11 @@ export default function BuildSpellDetails({
                     </span>
                   </button>
                   {!collapsedKeys.has("martial-unresolved") ? (
+                    <div className="overflow-x-auto">
                     <table className="mt-2 w-full text-left border-collapse">
                       <tbody>{renderAllUnresolvedPickOneRows()}</tbody>
                     </table>
+                    </div>
                   ) : null}
                 </section>
               ) : null}
@@ -415,9 +421,11 @@ export default function BuildSpellDetails({
                       </span>
                     </button>
                     {!collapsed ? (
+                      <div className="overflow-x-auto">
                       <table className="mt-2 w-full text-left border-collapse">
                         <tbody>{rows.map((selection) => renderSelectionRow(selection))}</tbody>
                       </table>
+                      </div>
                     ) : null}
                   </section>
                 );

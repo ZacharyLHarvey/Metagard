@@ -50,6 +50,7 @@ export default async function MonstersLeaderboardPage() {
       <p className="text-sm text-neutral-400 max-w-2xl">Monsters ranked by tier, weighted rating, and vote count.</p>
 
       <div className="border border-neutral-800 rounded-lg overflow-hidden">
+        <div className="overflow-x-auto">
         <table className="w-full text-sm border-collapse table-fixed">
           <thead className="bg-neutral-900">
             <tr>
@@ -86,6 +87,7 @@ export default async function MonstersLeaderboardPage() {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
     </main>
   );

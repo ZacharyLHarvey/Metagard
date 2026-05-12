@@ -52,6 +52,7 @@ export default async function CustomClassesLeaderboardPage() {
       </p>
 
       <div className="border border-neutral-800 rounded-lg overflow-hidden">
+        <div className="overflow-x-auto">
         <table className="w-full text-sm border-collapse table-fixed">
           <thead className="bg-neutral-900">
             <tr>
@@ -88,6 +89,7 @@ export default async function CustomClassesLeaderboardPage() {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
     </main>
   );

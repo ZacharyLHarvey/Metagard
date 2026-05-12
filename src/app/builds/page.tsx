@@ -159,6 +159,7 @@ export default async function BuildsPage({ searchParams }: { searchParams: Promi
             {labelByClassKey.get(classKey) ?? classKey}
           </h2>
           <div className="border border-neutral-800 rounded-lg overflow-hidden">
+            <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-sm sm:text-base">
               <thead className="bg-neutral-900">
                 <tr>
@@ -231,6 +232,7 @@ export default async function BuildsPage({ searchParams }: { searchParams: Promi
                 })}
               </tbody>
             </table>
+            </div>
           </div>
         </section>
       ))}

@@ -181,7 +181,8 @@ function BuildTable({
   }
 
   return (
-    <div className="border border-neutral-800 rounded-lg overflow-x-auto">
+    <div className="border border-neutral-800 rounded-lg overflow-hidden">
+      <div className="overflow-x-auto">
       <table className="w-full text-left text-sm border-collapse">
         <thead className="bg-neutral-900">
           <tr>
@@ -222,6 +223,7 @@ function BuildTable({
           ))}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }
