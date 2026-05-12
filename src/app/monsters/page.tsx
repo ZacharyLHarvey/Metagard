@@ -26,7 +26,7 @@ export default async function MonstersPage() {
       <div className="flex justify-between items-center flex-wrap gap-4">
         <h1 className="text-2xl font-bold">Monsters</h1>
         <Link href="/monsters/new" className="px-3 py-2 bg-blue-600 rounded text-sm">
-          Create monster
+          Create Monster
         </Link>
       </div>
       <ul className="border border-neutral-800 rounded-lg divide-y divide-neutral-800">

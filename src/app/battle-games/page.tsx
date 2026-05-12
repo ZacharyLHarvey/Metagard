@@ -37,7 +37,7 @@ export default async function BattlegamesPage({ searchParams }: { searchParams: 
       <div className="flex justify-between items-center flex-wrap gap-4">
         <h1 className="text-2xl font-bold">Battlegames</h1>
         <Link href="/battlegames/new" className="px-3 py-2 bg-blue-600 rounded text-sm">
-          Create battlegame
+          Create Battlegame
         </Link>
       </div>
       <AutoQuerySelect

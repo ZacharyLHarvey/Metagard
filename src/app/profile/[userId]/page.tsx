@@ -78,8 +78,8 @@ export default async function UserProfilePage({ params }: Params) {
     )
   ).sort((a, b) => a.localeCompare(b));
 
-  const profileTitle = isOwnProfile ? "Your profile" : `${displayName}'s Profile`;
-  const buildsHeading = isOwnProfile ? "My builds" : `${displayName}'s Builds`;
+  const profileTitle = isOwnProfile ? "Your Profile" : `${displayName}'s Profile`;
+  const buildsHeading = isOwnProfile ? "My Builds" : `${displayName}'s Builds`;
   const savedHeading = isOwnProfile ? "Saved Builds" : `${displayName}'s Saved Builds`;
   const createdEmpty = isOwnProfile
     ? "You have not created any builds yet."

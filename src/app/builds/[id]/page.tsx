@@ -142,7 +142,7 @@ export default async function BuildDetailsPage({ params, searchParams }: Params)
       />
 
       <section className="rounded-lg border border-neutral-800 p-4 space-y-3">
-        <p className="text-sm text-neutral-400">Rate this build</p>
+        <p className="text-sm text-neutral-400">Rate This Build</p>
         <BuildRatingSection buildId={buildId} canRate={canAct} initialMyRating={myRating} />
       </section>
 

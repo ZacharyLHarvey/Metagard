@@ -17,15 +17,15 @@ export default function ProfileFavoritesReadOnly({
       <p className="text-sm text-neutral-500">Catalog favorites stored on this profile.</p>
       <dl className="space-y-3 text-sm">
         <div>
-          <dt className="text-neutral-400">Favorite class</dt>
+          <dt className="text-neutral-400">Favorite Class</dt>
           <dd className="text-neutral-200 mt-0.5">{favoriteClass.trim() || "—"}</dd>
         </div>
         <div>
-          <dt className="text-neutral-400">Favorite battlegame</dt>
+          <dt className="text-neutral-400">Favorite Battlegame</dt>
           <dd className="text-neutral-200 mt-0.5">{favoriteBattleGame.trim() || "—"}</dd>
         </div>
         <div>
-          <dt className="text-neutral-400">Favorite spell</dt>
+          <dt className="text-neutral-400">Favorite Spell</dt>
           <dd className="text-neutral-200 mt-0.5">{favoriteSpell.trim() || "—"}</dd>
         </div>
       </dl>

@@ -390,7 +390,7 @@ export default function BuildSpellDetails({
                     onClick={() => toggleSectionCollapse("martial-unresolved")}
                     aria-expanded={!collapsedKeys.has("martial-unresolved")}
                   >
-                    <h3 className="text-lg font-semibold text-amber-200">Required martial picks</h3>
+                    <h3 className="text-lg font-semibold text-amber-200">Required Martial Picks</h3>
                     <span className="shrink-0 text-neutral-500 text-sm" aria-hidden>
                       {collapsedKeys.has("martial-unresolved") ? "▶" : "▼"}
                     </span>

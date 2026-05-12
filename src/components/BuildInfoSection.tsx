@@ -35,7 +35,7 @@ export default function BuildInfoSection({
       {!collapsed ? (
         <div className="mt-4 space-y-3 text-sm text-neutral-300">
           <section className="rounded-lg border border-neutral-800 p-4 bg-neutral-900/30 space-y-1">
-            <p className="text-neutral-500 font-medium">Playstyle</p>
+            <p className="text-neutral-500 font-medium">Play Style</p>
             <p className="text-xs text-neutral-400">
               How this build is meant to approach fights, objectives, and battlefield movement.
             </p>

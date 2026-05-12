@@ -16,6 +16,15 @@ function hasArchetype(selected: Set<string>, name: string) {
   return selected.has(name);
 }
 
+/** Multiply the leading uses count in `N/Per…` (e.g. `1/Life Charge x3` → `2/Life Charge x3`). */
+function multiplyLeadingSlashFrequency(frequency: string, factor: number): string {
+  const m = frequency.match(/^(\d+)(\/.*)$/);
+  if (!m) return frequency;
+  const n = Number(m[1]);
+  if (!Number.isFinite(n)) return frequency;
+  return `${n * factor}${m[2]}`;
+}
+
 export function buildSelectedSpellNameSet(
   purchasedById: Record<number, number>,
   spells: SpellRow[]
@@ -190,6 +199,16 @@ export function computeDisplayRuleOverrides(
     if (!Number.isNaN(parsed)) {
       frequency = `${parsed * purchasedCount}/${rest.join("/")}`;
     }
+  }
+
+  // Druid Summoner: each Enchantment purchased gets double the listed uses (1/Life → 2/Life, etc.).
+  if (
+    frequency &&
+    hasArchetype(selectedSpellNames, "Summoner") &&
+    spell.type === "Enchantment" &&
+    !frequency.includes("Unlimited")
+  ) {
+    frequency = multiplyLeadingSlashFrequency(frequency, 2);
   }
 
   // Common remote-style archetype frequency/range adjustments.

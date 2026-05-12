@@ -38,7 +38,7 @@ export default async function SpellsPage({ searchParams }: { searchParams: Promi
       sections.push({ title: k, rows: map.get(k)! });
     }
   } else {
-    sections.push({ title: "All spells", rows: filtered });
+    sections.push({ title: "All Spells", rows: filtered });
   }
 
   return (
@@ -58,7 +58,7 @@ export default async function SpellsPage({ searchParams }: { searchParams: Promi
             ]}
           />
           <Link href="/leaderboards/spells" className="text-sm text-blue-400 underline">
-            Leaderboard
+            Spell Leaderboard
           </Link>
         </div>
       </div>

@@ -38,7 +38,7 @@ export default async function SpellLeaderboardPage({ searchParams }: { searchPar
   return (
     <main className="p-10 text-white space-y-6">
       <div className="flex flex-wrap gap-4 items-baseline justify-between">
-        <h1 className="text-2xl font-bold">Spell leaderboard</h1>
+        <h1 className="text-2xl font-bold">Spell Leaderboard</h1>
         <div className="flex items-center gap-3 flex-wrap">
           <AutoQuerySelect
             name="group"
@@ -52,7 +52,7 @@ export default async function SpellLeaderboardPage({ searchParams }: { searchPar
             ]}
           />
           <Link href="/leaderboards" className="text-sm text-blue-400 hover:underline">
-            ← Build leaderboards
+            ← Build Leaderboards
           </Link>
         </div>
       </div>

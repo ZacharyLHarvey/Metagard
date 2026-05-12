@@ -8,9 +8,9 @@ export default async function ClassLeaderboardPage() {
   return (
     <main className="p-10 text-white space-y-6">
       <div className="flex flex-wrap gap-4 items-baseline justify-between">
-        <h1 className="text-2xl font-bold">Class leaderboard</h1>
+        <h1 className="text-2xl font-bold">Class Leaderboard</h1>
         <Link href="/leaderboards" className="text-sm text-blue-400 hover:underline">
-          ← Main leaderboards
+          ← Main Leaderboards
         </Link>
       </div>
       <p className="text-sm text-neutral-400 max-w-2xl">

@@ -94,7 +94,7 @@ export default async function BuildsPage({ searchParams }: { searchParams: Promi
   });
 
   const filterOptions: { value: string; label: string }[] = [
-    { value: "all", label: "All builds" },
+    { value: "all", label: "All Builds" },
     ...classKeys.map((k) => ({ value: `class:${k}`, label: labelByClassKey.get(k) ?? k })),
     { value: "caster", label: "Caster" },
     { value: "martial", label: "Martial" },
@@ -111,12 +111,12 @@ export default async function BuildsPage({ searchParams }: { searchParams: Promi
   const visibleClassKeys = classKeys.filter(includeClass);
   const pageTitle =
     group === "caster"
-      ? "Caster builds"
+      ? "Caster Builds"
       : group === "martial"
-        ? "Martial builds"
+        ? "Martial Builds"
         : group.startsWith("class:")
-          ? `${labelByClassKey.get(group.slice("class:".length)) ?? "Class"} builds`
-          : "All builds";
+          ? `${labelByClassKey.get(group.slice("class:".length)) ?? "Class"} Builds`
+          : "All Builds";
 
   return (
     <main className="px-4 py-4 sm:px-6 lg:px-10 text-white space-y-6 sm:space-y-8">
@@ -124,7 +124,7 @@ export default async function BuildsPage({ searchParams }: { searchParams: Promi
         <h1 className="text-xl sm:text-2xl font-bold">{pageTitle}</h1>
         <AutoQuerySelect
           name="group"
-          label="Tierlist group"
+          label="Tierlist Group"
           value={group}
           clearValue="all"
           options={filterOptions}

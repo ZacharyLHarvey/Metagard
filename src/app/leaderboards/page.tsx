@@ -188,14 +188,14 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
           value={lb}
           clearValue="all"
           options={[
-            { value: "all", label: "ALL" },
+            { value: "all", label: "All" },
             { value: "builds", label: "Builds" },
             { value: "spells", label: "Spells" },
             { value: "classes", label: "Classes" },
             { value: "battle-games", label: "Battlegames" },
             { value: "monsters", label: "Monsters" },
-            { value: "custom-classes", label: "Custom classes" },
-            { value: "custom-spells", label: "Custom spells" },
+            { value: "custom-classes", label: "Custom Classes" },
+            { value: "custom-spells", label: "Custom Spells" },
           ]}
           preserveKeys={["gameType"]}
         />
@@ -204,7 +204,7 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
         <>
           <section>
             <div className="flex items-baseline justify-between gap-4 flex-wrap">
-              <h2 className="text-lg font-semibold mb-3">Top builds (global)</h2>
+              <h2 className="text-lg font-semibold mb-3">Top Builds (Global)</h2>
             </div>
             <div className="border border-neutral-800 rounded-lg overflow-hidden">
               <div className="overflow-x-auto">
@@ -311,7 +311,7 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
           <div className="flex items-baseline justify-between flex-wrap gap-4">
             <h2 className="text-lg font-semibold">Spells</h2>
             <Link href="/leaderboards/spells" className="text-sm text-blue-400 hover:underline">
-              Open spell leaderboard →
+              Open Spell Leaderboard →
             </Link>
           </div>
           <div className="border border-neutral-800 rounded-lg overflow-hidden">
@@ -365,7 +365,7 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
           <div className="flex items-baseline justify-between flex-wrap gap-4">
             <h2 className="text-lg font-semibold">Classes</h2>
             <Link href="/leaderboards/classes" className="text-sm text-blue-400 hover:underline">
-              Open class leaderboard →
+              Open Class Leaderboard →
             </Link>
           </div>
           <div className="border border-neutral-800 rounded-lg overflow-hidden">
@@ -409,7 +409,7 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
           <div className="flex items-baseline justify-between flex-wrap gap-4">
             <h2 className="text-lg font-semibold">Battlegames</h2>
             <Link href="/leaderboards/battlegames" className="text-sm text-blue-400 hover:underline">
-              Open battlegames leaderboard →
+              Open Battlegames Leaderboard →
             </Link>
           </div>
           <AutoQuerySelect
@@ -468,7 +468,7 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
           <div className="flex items-baseline justify-between flex-wrap gap-4">
             <h2 className="text-lg font-semibold">Monsters</h2>
             <Link href="/leaderboards/monsters" className="text-sm text-blue-400 hover:underline">
-              Open monsters leaderboard →
+              Open Monsters Leaderboard →
             </Link>
           </div>
           <div className="border border-neutral-800 rounded-lg overflow-hidden">
@@ -517,9 +517,9 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
       {showCustomClasses ? (
         <section className="space-y-3">
           <div className="flex items-baseline justify-between flex-wrap gap-4">
-            <h2 className="text-lg font-semibold">Custom classes</h2>
+            <h2 className="text-lg font-semibold">Custom Classes</h2>
             <Link href="/leaderboards/custom-classes" className="text-sm text-blue-400 hover:underline">
-              Open custom classes leaderboard →
+              Open Custom Classes Leaderboard →
             </Link>
           </div>
           <div className="border border-neutral-800 rounded-lg overflow-hidden">
@@ -528,7 +528,7 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
               <thead className="bg-neutral-900">
                 <tr>
                   <th className="px-4 py-2 text-left border-b border-neutral-800 w-12">#</th>
-                  <th className="px-4 py-2 text-left border-b border-neutral-800">Custom class</th>
+                  <th className="px-4 py-2 text-left border-b border-neutral-800">Custom Class</th>
                   <th className="px-4 py-2 text-left border-b border-neutral-800 w-20">Tier</th>
                   <th className="px-4 py-2 text-left border-b border-neutral-800 w-24">WR</th>
                   <th className="px-4 py-2 text-left border-b border-neutral-800 w-20">Votes</th>
@@ -568,9 +568,9 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
       {showCustomSpells ? (
         <section className="space-y-3">
           <div className="flex items-baseline justify-between flex-wrap gap-4">
-            <h2 className="text-lg font-semibold">Custom spells</h2>
+            <h2 className="text-lg font-semibold">Custom Spells</h2>
             <Link href="/leaderboards/custom-spells" className="text-sm text-blue-400 hover:underline">
-              Open custom spells leaderboard →
+              Open Custom Spells Leaderboard →
             </Link>
           </div>
           <div className="border border-neutral-800 rounded-lg overflow-hidden">
@@ -579,7 +579,7 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
               <thead className="bg-neutral-900">
                 <tr>
                   <th className="px-4 py-2 text-left border-b border-neutral-800 w-12">#</th>
-                  <th className="px-4 py-2 text-left border-b border-neutral-800">Custom spell</th>
+                  <th className="px-4 py-2 text-left border-b border-neutral-800">Custom Spell</th>
                   <th className="px-4 py-2 text-left border-b border-neutral-800 w-20">Tier</th>
                   <th className="px-4 py-2 text-left border-b border-neutral-800 w-24">WR</th>
                   <th className="px-4 py-2 text-left border-b border-neutral-800 w-20">Votes</th>

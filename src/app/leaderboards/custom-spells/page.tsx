@@ -42,9 +42,9 @@ export default async function CustomSpellsLeaderboardPage() {
   return (
     <main className="p-10 text-white space-y-6">
       <div className="flex flex-wrap gap-4 items-baseline justify-between">
-        <h1 className="text-2xl font-bold">Custom spells leaderboard</h1>
+        <h1 className="text-2xl font-bold">Custom Spells Leaderboard</h1>
         <Link href="/leaderboards" className="text-sm text-blue-400 hover:underline">
-          ← Main leaderboards
+          ← Main Leaderboards
         </Link>
       </div>
       <p className="text-sm text-neutral-400 max-w-2xl">Custom spells ranked by tier, weighted rating, and vote count.</p>
@@ -55,7 +55,7 @@ export default async function CustomSpellsLeaderboardPage() {
           <thead className="bg-neutral-900">
             <tr>
               <th className="px-4 py-2 text-left border-b border-neutral-800 w-12">#</th>
-              <th className="px-4 py-2 text-left border-b border-neutral-800">Custom spell</th>
+              <th className="px-4 py-2 text-left border-b border-neutral-800">Custom Spell</th>
               <th className="px-4 py-2 text-left border-b border-neutral-800 w-20">Tier</th>
               <th className="px-4 py-2 text-left border-b border-neutral-800 w-24">WR</th>
               <th className="px-4 py-2 text-left border-b border-neutral-800 w-20">Votes</th>

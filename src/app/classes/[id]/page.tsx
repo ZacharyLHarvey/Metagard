@@ -40,7 +40,7 @@ export default async function ClassDetailPage({ params }: Params) {
       </p>
 
       <section className="border border-neutral-800 rounded-lg p-4">
-        <p className="text-sm text-neutral-400 mb-2">Rate this class</p>
+        <p className="text-sm text-neutral-400 mb-2">Rate This Class</p>
         <EntityRatingButtons
           postUrl={`/api/classes/${classId}/rating`}
           canRate={Boolean(profileId)}

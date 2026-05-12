@@ -79,15 +79,15 @@ export default function NewMonsterPage() {
           />
         </div>
         <div>
-          <label className="block text-sm text-neutral-400 mb-1">Monster type</label>
+          <label className="block text-sm text-neutral-400 mb-1">Monster Type</label>
           <input className="w-full px-3 py-2.5 bg-neutral-800 border border-neutral-700 rounded" value={monsterType} onChange={(e) => setMonsterType(e.target.value)} />
         </div>
         <div>
-          <label className="block text-sm text-neutral-400 mb-1">Threat level</label>
+          <label className="block text-sm text-neutral-400 mb-1">Threat Level</label>
           <input className="w-full px-3 py-2.5 bg-neutral-800 border border-neutral-700 rounded" value={threatLevel} onChange={(e) => setThreatLevel(e.target.value)} />
         </div>
         <div>
-          <label className="block text-sm text-neutral-400 mb-1">Armor points</label>
+          <label className="block text-sm text-neutral-400 mb-1">Armor Points</label>
           <input className="w-full px-3 py-2.5 bg-neutral-800 border border-neutral-700 rounded" value={armorPoints} onChange={(e) => setArmorPoints(e.target.value)} />
         </div>
         <div>

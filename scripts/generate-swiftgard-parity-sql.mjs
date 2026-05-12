@@ -120,12 +120,19 @@ function flattenMartialList(className, list, out) {
   }
 }
 
+/** UTF-8 smart quotes mis-decoded as Greek/currency (e.g. "Song of X" incants in upstream data). */
+function normalizeCorruptedCurlyQuotes(s) {
+  if (s == null || s === undefined) return s;
+  return String(s).replace(/ΓÇ£/g, '"').replace(/ΓÇ¥/g, '"');
+}
+
 function spellInsertValues(spell) {
+  const fix = normalizeCorruptedCurlyQuotes;
   return `(${spell.id}, ${qStr(spell.name)}, ${qStr(spell.type)}, ${qStr(spell.school)}, ${qStr(
     spell.range
-  )}, ${qStr(spell.materials)}, ${qStr(spell.incantation)}, ${qStr(spell.effect)}, ${qStr(
-    spell.limitation
-  )}, ${qStr(spell.note)})`;
+  )}, ${qStr(fix(spell.materials))}, ${qStr(fix(spell.incantation))}, ${qStr(fix(spell.effect))}, ${qStr(
+    fix(spell.limitation)
+  )}, ${qStr(fix(spell.note))})`;
 }
 
 function parseArgs(argv) {
