@@ -157,7 +157,7 @@ function BuildTable({
           <tr>
             <th className="px-4 py-2 border-b border-neutral-800">Name</th>
             <th className="px-4 py-2 border-b border-neutral-800">Class</th>
-            <th className="px-4 py-2 border-b border-neutral-800">Level</th>
+            <th className="px-4 py-1.5 leading-snug border-b border-neutral-800">Level</th>
             <th className="px-4 py-2 border-b border-neutral-800 min-w-[9rem]">Creator</th>
           </tr>
         </thead>
@@ -166,7 +166,7 @@ function BuildTable({
             <BuildTableBodyRow key={b.id} buildId={b.id} className="hover:bg-neutral-900/40">
               <td className="px-4 py-2 border-b border-neutral-800 break-words">{b.name}</td>
               <td className="px-4 py-2 border-b border-neutral-800">{b.class}</td>
-              <td className="px-4 py-2 border-b border-neutral-800">{b.level}</td>
+              <td className="px-4 py-1.5 leading-snug border-b border-neutral-800">{b.level}</td>
               <td className="px-4 py-2 border-b border-neutral-800 align-top">
                 <CreatorAttribution
                   ownerId={b.owner_id}

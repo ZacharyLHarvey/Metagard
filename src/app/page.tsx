@@ -47,7 +47,7 @@ export default async function Home() {
                 <th className="col-class px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
                   Class
                 </th>
-                <th className="col-level px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
+                <th className="col-level px-4 py-1.5 leading-snug border-b border-neutral-800 border-r border-neutral-800">
                   Level
                 </th>
               </tr>
@@ -62,7 +62,7 @@ export default async function Home() {
                   <td className="col-class px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
                     {b.class}
                   </td>
-                  <td className="col-level px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
+                  <td className="col-level px-4 py-1.5 leading-snug border-b border-neutral-800 border-r border-neutral-800">
                     {b.level}
                   </td>
                 </BuildTableBodyRow>
@@ -88,7 +88,7 @@ export default async function Home() {
                 <th className="col-class px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
                   Class
                 </th>
-                <th className="col-level px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
+                <th className="col-level px-4 py-1.5 leading-snug border-b border-neutral-800 border-r border-neutral-800">
                   Level
                 </th>
                 <th className="col-creator px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
@@ -106,7 +106,7 @@ export default async function Home() {
                   <td className="col-class px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
                     {b.class}
                   </td>
-                  <td className="col-level px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
+                  <td className="col-level px-4 py-1.5 leading-snug border-b border-neutral-800 border-r border-neutral-800">
                     {b.level}
                   </td>
                   <td className="col-creator px-4 py-2 border-b border-neutral-800 border-r border-neutral-800 align-top">

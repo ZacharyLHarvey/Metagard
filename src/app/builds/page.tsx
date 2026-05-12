@@ -167,13 +167,13 @@ export default async function BuildsPage({ searchParams }: { searchParams: Promi
                   <th className="col-class px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
                     Class
                   </th>
-                  <th className="col-level px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
+                  <th className="col-level px-4 py-1.5 leading-snug border-b border-neutral-800 border-r border-neutral-800">
                     Level
                   </th>
                   <th className="col-rating px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
                     Rating
                   </th>
-                  <th className="col-look px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
+                  <th className="col-look px-4 py-1.5 leading-snug border-b border-neutral-800 border-r border-neutral-800">
                     LTP
                   </th>
                   <th className="px-4 py-2 border-b border-neutral-800 border-r border-neutral-800 min-w-[9rem]">
@@ -193,7 +193,7 @@ export default async function BuildsPage({ searchParams }: { searchParams: Promi
                     <td className="col-class px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
                       {b.class}
                     </td>
-                    <td className="col-level px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
+                    <td className="col-level px-4 py-1.5 leading-snug border-b border-neutral-800 border-r border-neutral-800">
                       {b.level}
                     </td>
                     <td className="col-rating px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
@@ -202,7 +202,7 @@ export default async function BuildsPage({ searchParams }: { searchParams: Promi
                         <span>{tierData.weightedRating.toFixed(2)}</span>
                       </div>
                     </td>
-                    <td className="col-look px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
+                    <td className="col-look px-4 py-1.5 leading-snug border-b border-neutral-800 border-r border-neutral-800">
                       {b.look_the_part ? "✔️" : "—"}
                     </td>
                     <td className="px-4 py-2 border-b border-neutral-800 border-r border-neutral-800 align-top">
