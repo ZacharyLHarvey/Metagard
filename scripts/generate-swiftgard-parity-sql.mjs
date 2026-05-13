@@ -87,6 +87,9 @@ function emitMartialArray(className, spellLevel, sourceType, optionGroup, isLtp,
   if (!Array.isArray(items)) return;
   for (const item of items) {
     if (item && typeof item.id === "number" && Array.isArray(item.pickOne)) {
+      // Parent row (e.g. Hunter archetype) must exist in class_spell_rules so the catalog
+      // and nested option_group "80:pickOne" can resolve to a selected catalog_rule id.
+      pushRuleRow(out, className, spellLevel, item, sourceType, optionGroup, isLtp);
       for (const child of item.pickOne) {
         pushRuleRow(
           out,

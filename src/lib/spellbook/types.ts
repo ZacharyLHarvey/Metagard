@@ -19,6 +19,13 @@ export type BuildRow = {
   tier?: string | null;
   tier_rank?: number | null;
   created_at: string;
+  /** Caster sideboard: spell IDs only; empty for martial builds. */
+  sideboard_spell_ids?: number[];
+  /** Denormalized from saved_builds (see DB triggers). */
+  save_count?: number;
+  /** Incremented when another build is inserted with cloned_from_build_id = this id. */
+  clone_count?: number;
+  cloned_from_build_id?: number | null;
 };
 
 export type ClassRow = {

@@ -10,6 +10,7 @@ import type {
   ClassRow,
   SpellRow,
 } from "@/lib/spellbook/types";
+import { isCasterClass } from "@/lib/spellbook/casterBudget";
 import { buildMartialAutoSelections, isMartialClass } from "@/lib/spellbook/martial";
 
 function toNumberOrNull(value: unknown): number | null {
@@ -279,6 +280,133 @@ export async function getCatalogSpellsForClass(className: string, maxLevel: numb
     if (levelA !== levelB) return levelA - levelB;
     return a.name.localeCompare(b.name);
   });
+}
+
+/** Canonical spell rows from `public.spells` (for archetype grants not on the class catalog). */
+export async function getSpellsByIds(ids: number[]): Promise<SpellRow[]> {
+  const unique = [...new Set(ids.filter((n) => Number.isFinite(n)))];
+  if (unique.length === 0) return [];
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("spells").select("*").in("id", unique);
+  if (error || !data?.length) return [];
+
+  const out: SpellRow[] = [];
+  for (const row of data as Array<Record<string, unknown>>) {
+    const normalized = normalizeSpellRow(row);
+    if (normalized) out.push(normalized);
+  }
+  return out;
+}
+
+/** Normalize DB value for `builds.sideboard_spell_ids` (Postgres bigint[] → number[]). */
+export function normalizeSideboardSpellIds(raw: unknown): number[] {
+  if (raw == null) return [];
+  if (!Array.isArray(raw)) return [];
+  const out: number[] = [];
+  for (const x of raw) {
+    const n = typeof x === "number" ? x : Number(x);
+    if (Number.isFinite(n)) out.push(n);
+  }
+  return out;
+}
+
+/** Order spell rows to match `ids` (first occurrence wins; unknown ids skipped). */
+export function orderSpellsByIds(ids: number[], spells: SpellRow[]): SpellRow[] {
+  const byId = new Map<number, SpellRow>();
+  for (const s of spells) {
+    if (!byId.has(s.id)) byId.set(s.id, s);
+  }
+  const out: SpellRow[] = [];
+  const seen = new Set<number>();
+  for (const id of ids) {
+    if (seen.has(id)) continue;
+    seen.add(id);
+    const row = byId.get(id);
+    if (row) out.push(row);
+  }
+  return out;
+}
+
+function dedupeSideboardIds(ids: number[]): number[] {
+  const out: number[] = [];
+  const seen = new Set<number>();
+  for (const id of ids) {
+    if (!Number.isFinite(id) || seen.has(id)) continue;
+    seen.add(id);
+    out.push(id);
+  }
+  return out;
+}
+
+export async function updateBuildSideboard(buildId: number, spellIds: number[]) {
+  const userId = await getCurrentUserId();
+  if (!userId) throw new Error("Unauthorized");
+
+  const supabase = await createClient();
+  const { data: build } = await supabase
+    .from("builds")
+    .select("id,class,level,owner_id")
+    .eq("id", buildId)
+    .single();
+
+  if (!build || String((build as { owner_id?: unknown }).owner_id ?? "") !== userId) {
+    throw new Error("Forbidden");
+  }
+
+  const className = String((build as { class?: unknown }).class ?? "");
+  if (!isCasterClass(className)) {
+    throw new Error("Sideboard is only available for caster builds");
+  }
+
+  const maxLevel = Number((build as { level?: unknown }).level ?? 1);
+  const catalog = await getCatalogSpellsForClass(className, maxLevel);
+  const allowed = new Set(catalog.map((s) => s.id));
+  const cleaned = dedupeSideboardIds(spellIds).filter((id) => allowed.has(id));
+
+  const { error } = await supabase
+    .from("builds")
+    .update({ sideboard_spell_ids: cleaned })
+    .eq("id", buildId)
+    .eq("owner_id", userId);
+  if (error) throw error;
+}
+
+/**
+ * Drop sideboard IDs that are no longer on the class catalog at the build's current level.
+ * No-op for martial builds.
+ */
+export async function pruneBuildSideboardToCatalog(buildId: number) {
+  const userId = await getCurrentUserId();
+  if (!userId) throw new Error("Unauthorized");
+
+  const supabase = await createClient();
+  const { data: build } = await supabase
+    .from("builds")
+    .select("id,class,level,owner_id,sideboard_spell_ids")
+    .eq("id", buildId)
+    .single();
+
+  if (!build || String((build as { owner_id?: unknown }).owner_id ?? "") !== userId) {
+    throw new Error("Forbidden");
+  }
+
+  const className = String((build as { class?: unknown }).class ?? "");
+  if (!isCasterClass(className)) return;
+
+  const maxLevel = Number((build as { level?: unknown }).level ?? 1);
+  const catalog = await getCatalogSpellsForClass(className, maxLevel);
+  const allowed = new Set(catalog.map((s) => s.id));
+  const current = normalizeSideboardSpellIds((build as { sideboard_spell_ids?: unknown }).sideboard_spell_ids);
+  const filtered = current.filter((id) => allowed.has(id));
+  if (filtered.length === current.length && filtered.every((id, i) => id === current[i])) return;
+
+  const { error } = await supabase
+    .from("builds")
+    .update({ sideboard_spell_ids: filtered })
+    .eq("id", buildId)
+    .eq("owner_id", userId);
+  if (error) throw error;
 }
 
 export async function getMyBuilds() {
@@ -691,6 +819,8 @@ export async function cloneBuild(sourceBuildId: number) {
       synergy: source.synergy ?? null,
       enemies: source.enemies ?? null,
       recommended_gear: source.recommended_gear ?? null,
+      sideboard_spell_ids: normalizeSideboardSpellIds(source.sideboard_spell_ids),
+      cloned_from_build_id: sourceBuildId,
     })
     .select("id")
     .single();

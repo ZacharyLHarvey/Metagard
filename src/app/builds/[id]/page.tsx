@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import BuildCommentsSection from "@/components/BuildCommentsSection";
 import BuildInfoSection from "@/components/BuildInfoSection";
 import BuildRatingSection from "@/components/BuildRatingSection";
+import BuildSideboardSection from "@/components/BuildSideboardSection";
 import BuildSpellDetails from "@/components/BuildSpellDetails";
 import CloneBuildButton from "@/components/CloneBuildButton";
 import SaveBuildButton from "@/components/SaveBuildButton";
@@ -15,14 +16,29 @@ import {
   getBuildSpellSelections,
   getCatalogSpellsForClass,
   getClassEquipment,
+  getSpellsByIds,
   isBuildSavedByCurrentUser,
+  normalizeSideboardSpellIds,
+  orderSpellsByIds,
 } from "@/lib/queries/spellbook";
 import CreatorAttribution from "@/components/CreatorAttribution";
 import { getDisplayNamesForOwnerIds } from "@/lib/queries/publicProfiles";
 import { getMyBuildRating } from "@/lib/queries/social";
 import { computeTierResult } from "@/lib/tier";
 import { isMartialClass } from "@/lib/spellbook/martial";
+import { isCasterClass } from "@/lib/spellbook/casterBudget";
+import {
+  applyMartialArchetypeEquipmentOverrides,
+  selectedMartialArchetypeSpells,
+} from "@/lib/spellbook/martialEquipment";
+import {
+  buildArchetypeGrantExtraSelections,
+  collectGrantedSpellIdsForArchetypes,
+  flattenArchetypeGrantDescriptors,
+  mergeGrantSpellsIntoCatalog,
+} from "@/lib/spellbook/archetypeGrantedSpells";
 import type { BuildSpellDisplayMode } from "@/components/BuildSpellDetails";
+import type { SpellRow } from "@/lib/spellbook/types";
 
 type Params = {
   params: Promise<{ id: string }>;
@@ -45,6 +61,17 @@ export default async function BuildDetailsPage({ params, searchParams }: Params)
     getProfile(),
   ]);
 
+  const archetypes = selectedMartialArchetypeSpells(selections, spells);
+  const archetypeNames = archetypes.map((a) => a.name);
+  const grantIds = collectGrantedSpellIdsForArchetypes(archetypeNames);
+  const fetchedGrants = grantIds.length > 0 ? await getSpellsByIds(grantIds) : [];
+  const grantDescriptors = flattenArchetypeGrantDescriptors(archetypeNames);
+  const spellsForView = mergeGrantSpellsIntoCatalog(spells, fetchedGrants, grantDescriptors);
+  const extraArchetypeSelections =
+    archetypeNames.length > 0
+      ? buildArchetypeGrantExtraSelections(buildId, selections, spells, fetchedGrants, archetypeNames)
+      : [];
+
   const profileId = profile && "id" in profile && profile.id != null ? String(profile.id) : null;
   const myRating = profileId ? await getMyBuildRating(buildId, profileId) : null;
   const [globalAverage, voteStats] = await Promise.all([
@@ -60,9 +87,26 @@ export default async function BuildDetailsPage({ params, searchParams }: Params)
   const isSaved =
     canAct && !canManageBuild ? await isBuildSavedByCurrentUser(buildId) : false;
   const martial = isMartialClass(build.class);
-  const equipment = martial ? await getClassEquipment(build.class) : null;
+  const baseEquipment = martial ? await getClassEquipment(build.class) : null;
+  const equipment =
+    martial && baseEquipment
+      ? applyMartialArchetypeEquipmentOverrides(
+          baseEquipment,
+          selectedMartialArchetypeSpells(selections, spells)
+        )
+      : null;
   const creatorMap = await getDisplayNamesForOwnerIds([build.owner_id]);
   const creatorName = build.owner_id ? (creatorMap.get(build.owner_id) ?? "Player") : "Player";
+
+  const caster = isCasterClass(build.class);
+  let sideboardSpellsOrdered: SpellRow[] = [];
+  if (caster) {
+    const rawIds = normalizeSideboardSpellIds(build.sideboard_spell_ids);
+    if (rawIds.length > 0) {
+      const rows = await getSpellsByIds(rawIds);
+      sideboardSpellsOrdered = orderSpellsByIds(rawIds, rows);
+    }
+  }
 
   return (
     <main className="px-4 py-4 sm:px-6 lg:px-10 text-white space-y-5 sm:space-y-6 max-w-6xl">
@@ -76,6 +120,17 @@ export default async function BuildDetailsPage({ params, searchParams }: Params)
           <div className="mt-2">
             <CreatorAttribution ownerId={build.owner_id} displayName={creatorName} />
           </div>
+          <section className="mt-3 text-sm text-neutral-400 space-y-1" aria-label="Usage statistics">
+            <p className="text-neutral-500 font-medium">Usage Stats</p>
+            <p>
+              Saves:{" "}
+              <span className="text-neutral-200 tabular-nums">{Math.max(0, Number(build.save_count ?? 0))}</span>
+            </p>
+            <p>
+              Clones:{" "}
+              <span className="text-neutral-200 tabular-nums">{Math.max(0, Number(build.clone_count ?? 0))}</span>
+            </p>
+          </section>
         </div>
         {canManageBuild ? (
           <div className="flex flex-wrap gap-2">
@@ -131,10 +186,12 @@ export default async function BuildDetailsPage({ params, searchParams }: Params)
 
       <BuildSpellDetails
         selections={selections}
-        spells={spells}
+        spells={spellsForView}
+        extraSelections={extraArchetypeSelections}
         className={build.class}
         lookThePart={build.look_the_part}
         display={display}
+        spellbookTipsEnabled={profile?.spellbook_tips_enabled !== false}
       />
       {martial ? (
         <p className="text-xs text-neutral-400">
@@ -149,6 +206,13 @@ export default async function BuildDetailsPage({ params, searchParams }: Params)
         enemies={build.enemies}
         recommendedGear={build.recommended_gear}
       />
+
+      {caster ? (
+        <BuildSideboardSection
+          spells={sideboardSpellsOrdered}
+          spellbookTipsEnabled={profile?.spellbook_tips_enabled !== false}
+        />
+      ) : null}
 
       <section className="rounded-lg border border-neutral-800 p-4 space-y-3">
         <p className="text-sm text-neutral-400">Rate This Build</p>

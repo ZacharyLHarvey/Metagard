@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/server/supabaseServer";
-import { refreshMartialBuildSelections } from "@/lib/queries/spellbook";
+import { pruneBuildSideboardToCatalog, refreshMartialBuildSelections } from "@/lib/queries/spellbook";
 
 type Params = {
   params: Promise<{ id: string }>;
@@ -47,6 +47,11 @@ export async function PATCH(request: Request, context: Params) {
       .eq("owner_id", user.id);
     if (error) throw error;
     await refreshMartialBuildSelections(buildId);
+    try {
+      await pruneBuildSideboardToCatalog(buildId);
+    } catch (pruneErr) {
+      console.error("pruneBuildSideboardToCatalog:", pruneErr);
+    }
 
     return NextResponse.json({ ok: true });
   } catch (error) {
