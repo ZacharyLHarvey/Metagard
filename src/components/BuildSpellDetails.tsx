@@ -5,19 +5,18 @@ import type { BuildSpellSelectionRow, SpellRow } from "@/lib/spellbook/types";
 import {
   buildSelectedSpellNameSet,
   computeDisplayRuleOverrides,
-  evaluateSpellRules,
 } from "@/lib/spellbook/rules";
-import { findSpellForSelection } from "@/lib/spellbook/selection";
-import { isMartialClass } from "@/lib/spellbook/martial";
-import { catalogRuleKey } from "@/lib/spellbook/selection";
-import { getPickOneGroups } from "@/lib/spellbook/martial";
+import { catalogRuleKey, findSpellForSelection } from "@/lib/spellbook/selection";
+import { getPickOneGroups, getPickTwoOfThreeGroups, ARCHER_LTP_SPECIALTY_PICK_ONE_GROUP_KEY } from "@/lib/spellbook/martial";
+import { mergeViewDisplaySpellSelectionRows, partitionViewBuildSpellDisplayRows } from "@/lib/spellbook/viewBuildSpellSelections";
 import AutoQuerySelect from "@/components/AutoQuerySelect";
 import SpellDetailModal from "@/components/spellbook/SpellDetailModal";
 import TipsAlert from "@/components/spellbook/TipsAlert";
 
 export type BuildSpellDisplayMode = "level" | "type" | "school";
 
-const LONG_PRESS_MS = 450;
+/** Long-press (ms) to open spell detail modal; base 450 + 30%. */
+const LONG_PRESS_MS = 585;
 
 function SpellRowTouchCell({
   spell,
@@ -100,18 +99,6 @@ function SpellRowLongPressWrap({
   );
 }
 
-/** View build page: omit selections that are blocked by an active archetype (edit page still shows them). */
-function isSelectionHiddenByArchetypeOnView(
-  selection: BuildSpellSelectionRow,
-  spells: SpellRow[],
-  selectedSpellNames: Set<string>
-): boolean {
-  if (selection.purchased <= 0) return false;
-  const spell = findSpellForSelection(spells, selection);
-  if (!spell) return false;
-  return evaluateSpellRules(spell, selectedSpellNames).restricted;
-}
-
 type Props = {
   selections: BuildSpellSelectionRow[];
   spells: SpellRow[];
@@ -122,6 +109,8 @@ type Props = {
   display: BuildSpellDisplayMode;
   /** When false, hides the long-press hint banner (modal still works). Matches edit-build. */
   spellbookTipsEnabled?: boolean;
+  /** Build spell circle cap for unresolved pick-two warnings (same as build level). */
+  buildMaxLevel?: number;
 };
 
 export default function BuildSpellDetails({
@@ -132,6 +121,7 @@ export default function BuildSpellDetails({
   lookThePart,
   display,
   spellbookTipsEnabled = true,
+  buildMaxLevel = 6,
 }: Props) {
   const [selectedSpell, setSelectedSpell] = useState<SpellRow | null>(null);
   const [showTypeSchool, setShowTypeSchool] = useState(false);
@@ -171,41 +161,32 @@ export default function BuildSpellDetails({
     () => buildSelectedSpellNameSet(purchasedBySpellId, spells),
     [purchasedBySpellId, spells]
   );
-  const visibleSelections = useMemo(
-    () =>
-      selections.filter(
-        (s) => !isSelectionHiddenByArchetypeOnView(s, spells, selectedSpellNames)
-      ),
-    [selections, spells, selectedSpellNames]
-  );
   const displaySelections = useMemo(
-    () => [...visibleSelections, ...extraSelections],
-    [visibleSelections, extraSelections]
+    () => mergeViewDisplaySpellSelectionRows(selections, extraSelections, spells),
+    [selections, extraSelections, spells]
   );
-  const { lookThePartSelections, groupedSelections } = useMemo(() => {
-    const showLtpSection = isMartialClass(className) && lookThePart;
-    const ltpRows: BuildSpellSelectionRow[] = [];
+  const { lookThePartSelections, mainRowsForSpellTables } = useMemo(() => {
+    const { lookThePartRows, mainRows } = partitionViewBuildSpellDisplayRows(
+      displaySelections,
+      spells,
+      { className, lookThePart, selectedSpellNames }
+    );
+    return {
+      lookThePartSelections: lookThePartRows,
+      mainRowsForSpellTables: mainRows,
+    };
+  }, [displaySelections, spells, className, lookThePart, selectedSpellNames]);
+  const groupedSelections = useMemo(() => {
     const byLevel = new Map<number, BuildSpellSelectionRow[]>();
-    for (const selection of displaySelections) {
-      const spell = findSpellForSelection(spells, selection);
-      const isLtpSpell = Boolean(
-        spell && (spell.is_look_the_part || spell.source_type === "look_the_part")
-      );
-      if (showLtpSection && isLtpSpell) {
-        ltpRows.push(selection);
-        continue;
-      }
+    for (const selection of mainRowsForSpellTables) {
       const level = selection.spell_level;
       if (!byLevel.has(level)) byLevel.set(level, []);
       byLevel.get(level)!.push(selection);
     }
-    return {
-      lookThePartSelections: ltpRows,
-      groupedSelections: [...byLevel.entries()]
-        .sort((a, b) => a[0] - b[0])
-        .map(([level, rows]) => ({ level, rows })),
-    };
-  }, [displaySelections, spells, className, lookThePart]);
+    return [...byLevel.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .map(([level, rows]) => ({ level, rows }));
+  }, [mainRowsForSpellTables]);
   const unresolvedPickOneByLevel = useMemo(() => {
     const selectedRuleIds = new Set<number>();
     for (const selection of selections) {
@@ -213,7 +194,10 @@ export default function BuildSpellDetails({
       const rid = Number(selection.selection_group.slice(4));
       if (Number.isFinite(rid)) selectedRuleIds.add(rid);
     }
-    const groups = getPickOneGroups(spells, className, selectedRuleIds);
+    let groups = getPickOneGroups(spells, className, selectedRuleIds);
+    if (className === "Archer" && selectedSpellNames.has("Sniper")) {
+      groups = groups.filter((g) => g.groupKey !== ARCHER_LTP_SPECIALTY_PICK_ONE_GROUP_KEY);
+    }
     const unresolved = groups.filter((g) => {
       if (!g.requiredForMartial) return false;
       return !g.options.some(
@@ -230,7 +214,38 @@ export default function BuildSpellDetails({
       byLevel.get(group.level)!.push(group);
     }
     return byLevel;
-  }, [selections, spells, className]);
+  }, [selections, spells, className, selectedSpellNames]);
+  const hasUnresolvedPickOne = useMemo(() => {
+    for (const arr of unresolvedPickOneByLevel.values()) {
+      if (arr.length > 0) return true;
+    }
+    return false;
+  }, [unresolvedPickOneByLevel]);
+  const unresolvedPickTwoByLevel = useMemo(() => {
+    const selectedRuleIds = new Set<number>();
+    for (const selection of selections) {
+      if (!selection.selection_group?.startsWith("csr:") || selection.purchased <= 0) continue;
+      const rid = Number(selection.selection_group.slice(4));
+      if (Number.isFinite(rid)) selectedRuleIds.add(rid);
+    }
+    const groups = getPickTwoOfThreeGroups(spells, className, selectedRuleIds);
+    const unresolved = groups.filter((g) => {
+      if (!g.requiredForMartial) return false;
+      if (g.level > buildMaxLevel) return false;
+      const count = g.options.filter((opt) => {
+        const rid = opt.catalog_rule_id;
+        if (rid == null) return false;
+        return selections.some((s) => s.selection_group === catalogRuleKey(rid) && s.purchased > 0);
+      }).length;
+      return count < 2;
+    });
+    const byLevel = new Map<number, typeof unresolved>();
+    for (const group of unresolved) {
+      if (!byLevel.has(group.level)) byLevel.set(group.level, []);
+      byLevel.get(group.level)!.push(group);
+    }
+    return byLevel;
+  }, [selections, spells, className, buildMaxLevel]);
   const levelSections = useMemo(() => {
     const byLevel = new Map<number, BuildSpellSelectionRow[]>();
     for (const group of groupedSelections) {
@@ -239,32 +254,32 @@ export default function BuildSpellDetails({
     for (const level of unresolvedPickOneByLevel.keys()) {
       if (!byLevel.has(level)) byLevel.set(level, []);
     }
+    for (const level of unresolvedPickTwoByLevel.keys()) {
+      if (!byLevel.has(level)) byLevel.set(level, []);
+    }
     return [...byLevel.entries()]
       .sort((a, b) => a[0] - b[0])
       .map(([level, rows]) => ({ level, rows }))
       .filter(
         ({ level, rows }) =>
-          rows.length > 0 || (unresolvedPickOneByLevel.get(level)?.length ?? 0) > 0
+          rows.length > 0 ||
+          (unresolvedPickOneByLevel.get(level)?.length ?? 0) > 0 ||
+          (unresolvedPickTwoByLevel.get(level)?.length ?? 0) > 0
       );
-  }, [groupedSelections, unresolvedPickOneByLevel]);
+  }, [groupedSelections, unresolvedPickOneByLevel, unresolvedPickTwoByLevel]);
 
-  const hasUnresolvedPickOne = useMemo(() => {
-    for (const arr of unresolvedPickOneByLevel.values()) {
+  const hasUnresolvedPickTwo = useMemo(() => {
+    for (const arr of unresolvedPickTwoByLevel.values()) {
       if (arr.length > 0) return true;
     }
     return false;
-  }, [unresolvedPickOneByLevel]);
+  }, [unresolvedPickTwoByLevel]);
 
   const groupedByAttribute = useMemo(() => {
     if (display === "level") return [];
-    const showLtpSection = isMartialClass(className) && lookThePart;
     const map = new Map<string, BuildSpellSelectionRow[]>();
-    for (const selection of displaySelections) {
+    for (const selection of mainRowsForSpellTables) {
       const spell = findSpellForSelection(spells, selection);
-      const isLtpSpell = Boolean(
-        spell && (spell.is_look_the_part || spell.source_type === "look_the_part")
-      );
-      if (showLtpSection && isLtpSpell) continue;
       const key =
         display === "type" ? (spell?.type ?? "—") : (spell?.school ?? "—");
       if (!map.has(key)) map.set(key, []);
@@ -282,18 +297,18 @@ export default function BuildSpellDetails({
       .sort((a, b) => a[0].localeCompare(b[0]))
       .map(([title, rows]) => ({ title, rows }))
       .filter((s) => s.rows.length > 0);
-  }, [display, displaySelections, spells, className, lookThePart]);
+  }, [display, mainRowsForSpellTables, spells]);
 
   const showEmptyMessage =
     lookThePartSelections.length === 0 &&
     (display === "level"
       ? levelSections.length === 0
-      : !hasUnresolvedPickOne && groupedByAttribute.length === 0);
+      : !hasUnresolvedPickOne && !hasUnresolvedPickTwo && groupedByAttribute.length === 0);
 
   function renderSelectionRow(selection: BuildSpellSelectionRow) {
     const spell = findSpellForSelection(spells, selection);
     const ruleDisplay = spell
-      ? computeDisplayRuleOverrides(spell, selectedSpellNames, selection.purchased)
+      ? computeDisplayRuleOverrides(spell, selectedSpellNames, selection.purchased, className)
       : { frequency: null, range: null };
     return (
       <tr key={selection.id}>
@@ -328,7 +343,7 @@ export default function BuildSpellDetails({
     return lookThePartSelections.map((selection) => {
       const spell = findSpellForSelection(spells, selection);
       const ruleDisplay = spell
-        ? computeDisplayRuleOverrides(spell, selectedSpellNames, selection.purchased)
+        ? computeDisplayRuleOverrides(spell, selectedSpellNames, selection.purchased, className)
         : { frequency: null, range: null };
       return (
         <tr key={selection.id}>
@@ -375,6 +390,21 @@ export default function BuildSpellDetails({
     ));
   }
 
+  function renderUnresolvedPickTwoRowsForLevel(level: number) {
+    return (unresolvedPickTwoByLevel.get(level) ?? []).map((group, idx) => (
+      <tr key={`warn-p2-${level}-${idx}`}>
+        <td className="pl-8 pr-4 py-2 border-b border-neutral-800">
+          <p className="font-medium text-amber-300">⚠️ Pick two of three in edit mode</p>
+          {group.options.map((opt) => (
+            <SpellRowLongPressWrap key={opt.catalog_rule_id ?? opt.name} spell={opt} onOpenDetail={setSelectedSpell}>
+              <p className="text-sm text-neutral-300">{displayNameWithTypeTag(opt, opt.name, 1)}</p>
+            </SpellRowLongPressWrap>
+          ))}
+        </td>
+      </tr>
+    ));
+  }
+
   function renderAllUnresolvedPickOneRows() {
     const rows: ReactElement[] = [];
     for (const [level, groups] of [...unresolvedPickOneByLevel.entries()].sort((a, b) => a[0] - b[0])) {
@@ -385,6 +415,30 @@ export default function BuildSpellDetails({
             <td className="pl-8 pr-4 py-2 border-b border-neutral-800">
               <p className="font-medium text-amber-300">
                 ⚠️ Pick one in edit mode (level {level})
+              </p>
+              {group.options.map((opt) => (
+                <SpellRowLongPressWrap key={opt.catalog_rule_id ?? opt.name} spell={opt} onOpenDetail={setSelectedSpell}>
+                  <p className="text-sm text-neutral-300">{displayNameWithTypeTag(opt, opt.name, 1)}</p>
+                </SpellRowLongPressWrap>
+              ))}
+            </td>
+          </tr>
+        );
+      }
+    }
+    return rows;
+  }
+
+  function renderAllUnresolvedPickTwoRows() {
+    const rows: ReactElement[] = [];
+    for (const [level, groups] of [...unresolvedPickTwoByLevel.entries()].sort((a, b) => a[0] - b[0])) {
+      for (let idx = 0; idx < groups.length; idx++) {
+        const group = groups[idx];
+        rows.push(
+          <tr key={`warn-p2-alt-${level}-${idx}`}>
+            <td className="pl-8 pr-4 py-2 border-b border-neutral-800">
+              <p className="font-medium text-amber-300">
+                ⚠️ Pick two of three in edit mode (level {level})
               </p>
               {group.options.map((opt) => (
                 <SpellRowLongPressWrap key={opt.catalog_rule_id ?? opt.name} spell={opt} onOpenDetail={setSelectedSpell}>
@@ -492,6 +546,7 @@ export default function BuildSpellDetails({
                       <table className="mt-2 w-full text-left border-collapse">
                         <tbody>
                           {renderUnresolvedRowsForLevel(level)}
+                          {renderUnresolvedPickTwoRowsForLevel(level)}
                           {rows.map((selection) => renderSelectionRow(selection))}
                         </tbody>
                       </table>
@@ -503,7 +558,7 @@ export default function BuildSpellDetails({
             </>
           ) : (
             <>
-              {hasUnresolvedPickOne ? (
+              {hasUnresolvedPickOne || hasUnresolvedPickTwo ? (
                 <section className="border border-neutral-800 rounded-lg p-3 sm:p-4">
                   <button
                     type="button"
@@ -519,7 +574,10 @@ export default function BuildSpellDetails({
                   {!collapsedKeys.has("martial-unresolved") ? (
                     <div className="overflow-x-auto">
                     <table className="mt-2 w-full text-left border-collapse">
-                      <tbody>{renderAllUnresolvedPickOneRows()}</tbody>
+                      <tbody>
+                        {renderAllUnresolvedPickOneRows()}
+                        {renderAllUnresolvedPickTwoRows()}
+                      </tbody>
                     </table>
                     </div>
                   ) : null}

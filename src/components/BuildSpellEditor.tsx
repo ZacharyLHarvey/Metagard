@@ -22,8 +22,19 @@ import {
   selectionKeyForCatalogSpell,
   selectionKeyFromRow,
 } from "@/lib/spellbook/selection";
-import { buildMartialAutoSelections, isMartialClass } from "@/lib/spellbook/martial";
-import { getPickOneGroups } from "@/lib/spellbook/martial";
+import {
+  ARCHER_LTP_SPECIALTY_PICK_ONE_GROUP_KEY,
+  buildMartialAutoSelections,
+  getPickTwoOfThreeGroups,
+  isLookThePartPickOneGroup,
+  isMartialClass,
+  isPickTwoOfThreeSpell,
+  getPickOneGroups,
+} from "@/lib/spellbook/martial";
+import { SNIPER_LTP_MEND_SELECTION_GROUP } from "@/lib/spellbook/archetypeGrantedSpells";
+
+/** Long-press (ms) to open spell detail modal; base 450 + 30%. */
+const LONG_PRESS_MS = 585;
 
 type Props = {
   buildId: number;
@@ -35,6 +46,8 @@ type Props = {
   spellbookTipsEnabled: boolean;
   spells: SpellRow[];
   initialSelections: BuildSpellSelectionRow[];
+  /** Synthetic archetype-grant rows (view-only); not persisted from this editor. */
+  extraSelections?: BuildSpellSelectionRow[];
 };
 
 type Selection = {
@@ -50,6 +63,18 @@ function purchasedBySpellIdFromMap(map: Record<string, Selection>) {
   const m: Record<number, number> = {};
   for (const sel of Object.values(map)) {
     m[sel.spell_id] = (m[sel.spell_id] ?? 0) + sel.purchased;
+  }
+  return m;
+}
+
+function mergePurchasedBySpellId(
+  map: Record<string, Selection>,
+  extras: BuildSpellSelectionRow[]
+): Record<number, number> {
+  const m = purchasedBySpellIdFromMap(map);
+  for (const row of extras) {
+    if (row.purchased <= 0) continue;
+    m[row.spell_id] = (m[row.spell_id] ?? 0) + row.purchased;
   }
   return m;
 }
@@ -87,6 +112,7 @@ export default function BuildSpellEditor({
   spellbookTipsEnabled,
   spells,
   initialSelections,
+  extraSelections = [],
 }: Props) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
@@ -97,6 +123,8 @@ export default function BuildSpellEditor({
   const [showMaterials, setShowMaterials] = useState(false);
   const [ruleWarning, setRuleWarning] = useState<string>("");
   const [collapsedLevels, setCollapsedLevels] = useState<Set<number>>(() => new Set());
+  /** Collapsed section keys (e.g. "ltp"); empty set = all expanded — matches view-build spell details. */
+  const [collapsedSectionKeys, setCollapsedSectionKeys] = useState<Set<string>>(() => new Set());
 
   const [selectionMap, setSelectionMap] = useState<Record<string, Selection>>(() => {
     const martial = isMartialClass(className);
@@ -169,7 +197,10 @@ export default function BuildSpellEditor({
     }
     return out;
   }, [selectionMap, spells, maxLevel]);
-  const purchasedBySpellId = useMemo(() => purchasedBySpellIdFromMap(selectionMap), [selectionMap]);
+  const purchasedBySpellId = useMemo(
+    () => mergePurchasedBySpellId(selectionMap, extraSelections),
+    [selectionMap, extraSelections]
+  );
   const pointsSpent = useMemo(
     () => pointsSpentForMap(selectionMap, spells),
     [selectionMap, spells]
@@ -178,6 +209,23 @@ export default function BuildSpellEditor({
   const selectedSpellNames = useMemo(
     () => buildSelectedSpellNameSet(purchasedBySpellId, spells),
     [purchasedBySpellId, spells]
+  );
+  const hideArcherSniperLtpPickOne = className === "Archer" && selectedSpellNames.has("Sniper");
+  const visibleArchetypeGrants = useMemo(
+    () =>
+      extraSelections.filter(
+        (s) => s.purchased > 0 && s.selection_group !== SNIPER_LTP_MEND_SELECTION_GROUP
+      ),
+    [extraSelections]
+  );
+  const lookThePartMendGrantRows = useMemo(
+    () =>
+      hideArcherSniperLtpPickOne && lookThePart
+        ? extraSelections.filter(
+            (s) => s.purchased > 0 && s.selection_group === SNIPER_LTP_MEND_SELECTION_GROUP
+          )
+        : [],
+    [extraSelections, hideArcherSniperLtpPickOne, lookThePart]
   );
   const pickOneGroups = useMemo(() => {
     const selectedRuleIds = new Set<number>();
@@ -188,6 +236,78 @@ export default function BuildSpellEditor({
     }
     return getPickOneGroups(spells, className, selectedRuleIds);
   }, [spells, className, selectionMap]);
+
+  const pickTwoOfThreeGroups = useMemo(() => {
+    const selectedRuleIds = new Set<number>();
+    for (const [key, value] of Object.entries(selectionMap)) {
+      if (!key.startsWith("csr:") || value.purchased <= 0) continue;
+      const id = Number(key.slice(4));
+      if (Number.isFinite(id)) selectedRuleIds.add(id);
+    }
+    return getPickTwoOfThreeGroups(spells, className, selectedRuleIds);
+  }, [spells, className, selectionMap]);
+
+  const pickOneGroupsForUI = useMemo(
+    () =>
+      hideArcherSniperLtpPickOne
+        ? pickOneGroups.filter((g) => g.groupKey !== ARCHER_LTP_SPECIALTY_PICK_ONE_GROUP_KEY)
+        : pickOneGroups,
+    [pickOneGroups, hideArcherSniperLtpPickOne]
+  );
+
+  const lookThePartPickOneGroups = useMemo(
+    () => pickOneGroupsForUI.filter((g) => isLookThePartPickOneGroup(g)),
+    [pickOneGroupsForUI]
+  );
+
+  const lookThePartPickOneRuleIds = useMemo(() => {
+    const s = new Set<number>();
+    for (const g of lookThePartPickOneGroups) {
+      for (const opt of g.options) {
+        if (opt.catalog_rule_id != null) s.add(opt.catalog_rule_id);
+      }
+    }
+    return s;
+  }, [lookThePartPickOneGroups]);
+
+  const lookThePartRows = useMemo(() => {
+    if (!isMartialClass(className) || !lookThePart) return [];
+    const out: { mapKey: string; spell: SpellRow; purchased: number }[] = [];
+    for (const [mapKey, sel] of Object.entries(selectionMap)) {
+      if (sel.purchased <= 0) continue;
+      const spell = findSpellForSelection(spells, sel);
+      if (!spell) continue;
+      if (
+        hideArcherSniperLtpPickOne &&
+        spell.option_group === "archer:look_the_part"
+      ) {
+        continue;
+      }
+      const isLtp = Boolean(spell.is_look_the_part || spell.source_type === "look_the_part");
+      if (!isLtp) continue;
+      const rid = spell.catalog_rule_id;
+      if (rid != null && lookThePartPickOneRuleIds.has(rid)) continue;
+      out.push({ mapKey, spell, purchased: sel.purchased });
+    }
+    out.sort((a, b) => a.spell.name.localeCompare(b.spell.name));
+    return out;
+  }, [selectionMap, spells, className, lookThePart, lookThePartPickOneRuleIds, hideArcherSniperLtpPickOne]);
+
+  function toggleSectionCollapse(sectionKey: string) {
+    setCollapsedSectionKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(sectionKey)) next.delete(sectionKey);
+      else next.add(sectionKey);
+      return next;
+    });
+  }
+
+  function displaySpellTitle(spell: SpellRow, purchased: number) {
+    const type = spell.type ?? null;
+    const tag = type === "Archetype" ? "Archetype" : type === "Trait" ? "Trait" : null;
+    if (tag) return `${spell.name} - (${tag})`;
+    return `${purchased}x ${spell.name}`;
+  }
 
   function increment(spell: SpellRow, level: number) {
     if (martial) return;
@@ -251,7 +371,7 @@ export default function BuildSpellEditor({
     setSelectionMap((prev) => {
       const next = { ...prev };
       const groupOptions =
-        pickOneGroups.find((g) => g.groupKey === groupKey)?.options ?? [];
+        pickOneGroupsForUI.find((g) => g.groupKey === groupKey)?.options ?? [];
       for (const option of groupOptions) {
         if (option.catalog_rule_id == null) continue;
         const key = catalogRuleKey(option.catalog_rule_id);
@@ -273,10 +393,40 @@ export default function BuildSpellEditor({
     });
   }
 
+  function togglePickTwoOfThree(groupOptions: SpellRow[], catalogRuleId: number, checked: boolean) {
+    setSelectionMap((prev) => {
+      const key = catalogRuleKey(catalogRuleId);
+      const next = { ...prev };
+      if (!checked) {
+        delete next[key];
+        return next;
+      }
+      const selectedInGroup = groupOptions.filter(
+        (o) =>
+          o.catalog_rule_id != null &&
+          prev[catalogRuleKey(o.catalog_rule_id)]?.purchased > 0
+      );
+      if (selectedInGroup.length >= 2) return prev;
+      const opt = groupOptions.find((o) => o.catalog_rule_id === catalogRuleId);
+      if (!opt) return prev;
+      next[key] = {
+        spell_id: opt.id,
+        spell_level: opt.level ?? 1,
+        purchased: 1,
+        experienced: 0,
+        selection_group: key,
+        chosen: true,
+      };
+      return next;
+    });
+  }
+
   async function saveSelections() {
     setSaving(true);
     setError("");
-    const payload = Object.values(selectionMap);
+    const payload = Object.values(selectionMap).filter(
+      (s) => !s.selection_group?.startsWith("archetype-grant:")
+    );
 
     const response = await fetch(`/api/builds/${buildId}/spells`, {
       method: "PUT",
@@ -297,7 +447,7 @@ export default function BuildSpellEditor({
   }
 
   function startLongPress(spell: SpellRow) {
-    const timeout = setTimeout(() => setSelectedSpell(spell), 450);
+    const timeout = setTimeout(() => setSelectedSpell(spell), LONG_PRESS_MS);
     return timeout;
   }
 
@@ -359,7 +509,164 @@ export default function BuildSpellEditor({
         </div>
       </div>
 
-      {pickOneGroups.length > 0 ? (
+      {martial &&
+      lookThePart &&
+      (lookThePartRows.length > 0 ||
+        lookThePartPickOneGroups.length > 0 ||
+        lookThePartMendGrantRows.length > 0) ? (
+        <section className="border border-neutral-800 rounded-lg p-3 sm:p-4">
+          <button
+            type="button"
+            className="flex w-full items-center justify-between gap-3 text-left rounded-md px-1 py-2 -mx-1 hover:bg-neutral-800/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            onClick={() => toggleSectionCollapse("ltp")}
+            aria-expanded={!collapsedSectionKeys.has("ltp")}
+          >
+            <h2 className="text-lg font-semibold">Look the Part</h2>
+            <span className="shrink-0 text-neutral-500 text-sm" aria-hidden>
+              {collapsedSectionKeys.has("ltp") ? "▶" : "▼"}
+            </span>
+          </button>
+          {!collapsedSectionKeys.has("ltp") ? (
+            <div className="space-y-2 mt-2">
+              {lookThePartPickOneGroups.map((group, idx) => {
+                const chosen = group.options.find((opt) =>
+                  opt.catalog_rule_id != null && selectionMap[catalogRuleKey(opt.catalog_rule_id)]?.purchased > 0
+                );
+                return (
+                  <div key={group.groupKey} className="rounded border border-neutral-800 p-3">
+                    <p className="text-sm text-neutral-300">
+                      {group.optionalMartialArchetype
+                        ? "Optional (Martial Archetype): Pick One Look the Part Ability:"
+                        : "Pick One Look the Part Ability:"}
+                    </p>
+                    <p className="text-xs text-neutral-500 mb-2">
+                      {group.requiredForMartial ? "Required for martial builds." : "Optional choice."}
+                    </p>
+                    <select
+                      className="w-full px-3 py-2 bg-neutral-800 border border-neutral-700 rounded text-sm"
+                      value={chosen?.catalog_rule_id != null ? String(chosen.catalog_rule_id) : ""}
+                      onChange={(e) => choosePickOne(group.groupKey, Number(e.target.value))}
+                    >
+                      <option value="">Select One</option>
+                      {group.options.map((opt) => (
+                        <option key={opt.catalog_rule_id ?? `${opt.id}-${idx}`} value={opt.catalog_rule_id ?? ""}>
+                          {opt.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                );
+              })}
+              {lookThePartMendGrantRows.map((row) => {
+                const spell = findSpellForSelection(spells, row);
+                const purchased = row.purchased;
+                const evaluated = spell ? evaluateSpellRules(spell, selectedSpellNames) : null;
+                const display = spell
+                  ? computeDisplayRuleOverrides(spell, selectedSpellNames, purchased, className)
+                  : { frequency: null, range: null };
+                let longPressTimeout: ReturnType<typeof setTimeout> | null = null;
+                return (
+                  <div
+                    key={row.id}
+                    className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded border p-2 sm:p-3 ${
+                      evaluated?.restricted ? "border-red-800 bg-red-950/20" : "border-neutral-800"
+                    }`}
+                    onMouseDown={() => {
+                      if (spell) longPressTimeout = startLongPress(spell);
+                    }}
+                    onMouseUp={() => {
+                      if (longPressTimeout) clearTimeout(longPressTimeout);
+                    }}
+                    onMouseLeave={() => {
+                      if (longPressTimeout) clearTimeout(longPressTimeout);
+                    }}
+                    onTouchStart={() => {
+                      if (spell) longPressTimeout = startLongPress(spell);
+                    }}
+                    onTouchEnd={() => {
+                      if (longPressTimeout) clearTimeout(longPressTimeout);
+                    }}
+                  >
+                    <div>
+                      <p className="font-medium">
+                        {spell ? displaySpellTitle(spell, purchased) : `Spell #${row.spell_id}`}
+                      </p>
+                      {spell ? (
+                        <p className="text-xs text-neutral-400">
+                          {showTypeSchool && spell.type ? `${spell.type}` : ""}
+                          {showTypeSchool && spell.school ? ` (${spell.school})` : ""}
+                        </p>
+                      ) : null}
+                      {display.frequency ? (
+                        <p className="text-xs text-neutral-500 mt-1">{display.frequency}</p>
+                      ) : null}
+                      {evaluated?.restricted && evaluated.reason ? (
+                        <p className="text-xs text-red-300 mt-1">{evaluated.reason}</p>
+                      ) : null}
+                      {showIncantation && spell?.incantation ? (
+                        <p className="text-xs text-neutral-500 whitespace-pre-wrap mt-1">{spell.incantation}</p>
+                      ) : null}
+                      {showMaterials && spell?.materials ? (
+                        <p className="text-xs text-neutral-500 mt-1">({spell.materials})</p>
+                      ) : null}
+                    </div>
+                  </div>
+                );
+              })}
+              {lookThePartRows.map(({ mapKey, spell, purchased }) => {
+                const evaluated = evaluateSpellRules(spell, selectedSpellNames);
+                const display = computeDisplayRuleOverrides(spell, selectedSpellNames, purchased, className);
+                let longPressTimeout: ReturnType<typeof setTimeout> | null = null;
+                return (
+                  <div
+                    key={mapKey}
+                    className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded border p-2 sm:p-3 ${
+                      evaluated.restricted ? "border-red-800 bg-red-950/20" : "border-neutral-800"
+                    }`}
+                    onMouseDown={() => {
+                      longPressTimeout = startLongPress(spell);
+                    }}
+                    onMouseUp={() => {
+                      if (longPressTimeout) clearTimeout(longPressTimeout);
+                    }}
+                    onMouseLeave={() => {
+                      if (longPressTimeout) clearTimeout(longPressTimeout);
+                    }}
+                    onTouchStart={() => {
+                      longPressTimeout = startLongPress(spell);
+                    }}
+                    onTouchEnd={() => {
+                      if (longPressTimeout) clearTimeout(longPressTimeout);
+                    }}
+                  >
+                    <div>
+                      <p className="font-medium">{displaySpellTitle(spell, purchased)}</p>
+                      <p className="text-xs text-neutral-400">
+                        {showTypeSchool && spell.type ? `${spell.type}` : ""}
+                        {showTypeSchool && spell.school ? ` (${spell.school})` : ""}
+                      </p>
+                      {display.frequency ? (
+                        <p className="text-xs text-neutral-500 mt-1">{display.frequency}</p>
+                      ) : null}
+                      {evaluated.restricted && evaluated.reason ? (
+                        <p className="text-xs text-red-300 mt-1">{evaluated.reason}</p>
+                      ) : null}
+                      {showIncantation && spell.incantation ? (
+                        <p className="text-xs text-neutral-500 whitespace-pre-wrap mt-1">{spell.incantation}</p>
+                      ) : null}
+                      {showMaterials && spell.materials ? (
+                        <p className="text-xs text-neutral-500 mt-1">({spell.materials})</p>
+                      ) : null}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : null}
+        </section>
+      ) : null}
+
+      {pickOneGroupsForUI.length > 0 || pickTwoOfThreeGroups.length > 0 ? (
         <div className="hidden" />
       ) : null}
 
@@ -405,12 +712,16 @@ export default function BuildSpellEditor({
           {!collapsed ? (
           <div className="space-y-2 mt-2">
             {(grouped[level] ?? [])
-              .filter((spell) => !pickOneGroups.some((g) => g.options.some((o) => o.catalog_rule_id === spell.catalog_rule_id)))
+              .filter((spell) => spell.source_type !== "archetype_grant")
+              .filter((spell) => !isPickTwoOfThreeSpell(spell))
+              .filter((spell) =>
+                !pickOneGroups.some((g) => g.options.some((o) => o.catalog_rule_id === spell.catalog_rule_id))
+              )
               .map((spell) => {
               const key = selectionKeyForCatalogSpell(spell);
               const purchased = selectionMap[key]?.purchased ?? 0;
               const evaluated = evaluateSpellRules(spell, selectedSpellNames);
-              const display = computeDisplayRuleOverrides(spell, selectedSpellNames, purchased);
+              const display = computeDisplayRuleOverrides(spell, selectedSpellNames, purchased, className);
               let longPressTimeout: ReturnType<typeof setTimeout> | null = null;
               return (
                 <div
@@ -475,8 +786,8 @@ export default function BuildSpellEditor({
                 </div>
               );
             })}
-            {pickOneGroups
-              .filter((g) => g.level === level)
+            {pickOneGroupsForUI
+              .filter((g) => g.level === level && !isLookThePartPickOneGroup(g))
               .map((group, idx) => {
                 const chosen = group.options.find((opt) =>
                   opt.catalog_rule_id != null && selectionMap[catalogRuleKey(opt.catalog_rule_id)]?.purchased > 0
@@ -507,18 +818,127 @@ export default function BuildSpellEditor({
                   </div>
                 );
               })}
+            {pickTwoOfThreeGroups
+              .filter((g) => g.level === level)
+              .map((group) => {
+                const selectedCount = group.options.filter(
+                  (opt) =>
+                    opt.catalog_rule_id != null &&
+                    selectionMap[catalogRuleKey(opt.catalog_rule_id)]?.purchased > 0
+                ).length;
+                return (
+                  <div key={group.groupKey} className="rounded border border-neutral-800 p-3 ml-3 sm:ml-6">
+                    <p className="text-sm text-neutral-300">Pick two of three abilities for this level:</p>
+                    <p className="text-xs text-neutral-500 mb-2">
+                      {group.requiredForMartial
+                        ? "Select exactly two. Required for martial builds."
+                        : "Select exactly two (optional group)."}
+                    </p>
+                    <ul className="space-y-2">
+                      {group.options.map((opt) => {
+                        const rid = opt.catalog_rule_id;
+                        if (rid == null) return null;
+                        const key = catalogRuleKey(rid);
+                        const on = (selectionMap[key]?.purchased ?? 0) > 0;
+                        return (
+                          <li key={key} className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              id={`p23-${level}-${rid}`}
+                              checked={on}
+                              disabled={!on && selectedCount >= 2}
+                              onChange={(e) =>
+                                togglePickTwoOfThree(group.options, rid, e.target.checked)
+                              }
+                              className="rounded border-neutral-600"
+                            />
+                            <label htmlFor={`p23-${level}-${rid}`} className="text-sm text-neutral-200 cursor-pointer">
+                              {opt.name}
+                            </label>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                );
+              })}
           </div>
           ) : null}
         </section>
         );
       })}
 
+      {visibleArchetypeGrants.length > 0 ? (
+        <section className="border border-neutral-800 rounded-lg p-3 sm:p-4">
+          <h2 className="text-lg font-semibold mb-2">Archetype abilities</h2>
+          <p className="text-xs text-neutral-500 mb-3">
+            Granted by your archetype selection. Shown for reference; not saved as extra spell rows.
+          </p>
+          <div className="space-y-2">
+            {visibleArchetypeGrants.map((row) => {
+              const spell = findSpellForSelection(spells, row);
+              const purchased = row.purchased;
+              const evaluated = spell ? evaluateSpellRules(spell, selectedSpellNames) : null;
+              const display = spell
+                ? computeDisplayRuleOverrides(spell, selectedSpellNames, purchased, className)
+                : { frequency: null, range: null };
+              let longPressTimeout: ReturnType<typeof setTimeout> | null = null;
+              return (
+                <div
+                  key={row.id}
+                  className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded border p-2 sm:p-3 ${
+                    evaluated?.restricted ? "border-red-800 bg-red-950/20" : "border-neutral-800"
+                  }`}
+                  onMouseDown={() => {
+                    if (spell) longPressTimeout = startLongPress(spell);
+                  }}
+                  onMouseUp={() => {
+                    if (longPressTimeout) clearTimeout(longPressTimeout);
+                  }}
+                  onMouseLeave={() => {
+                    if (longPressTimeout) clearTimeout(longPressTimeout);
+                  }}
+                  onTouchStart={() => {
+                    if (spell) longPressTimeout = startLongPress(spell);
+                  }}
+                  onTouchEnd={() => {
+                    if (longPressTimeout) clearTimeout(longPressTimeout);
+                  }}
+                >
+                  <div>
+                    <p className="font-medium">{spell ? displaySpellTitle(spell, purchased) : `Spell #${row.spell_id}`}</p>
+                    {spell ? (
+                      <p className="text-xs text-neutral-400">
+                        {showTypeSchool && spell.type ? `${spell.type}` : ""}
+                        {showTypeSchool && spell.school ? ` (${spell.school})` : ""}
+                      </p>
+                    ) : null}
+                    {display.frequency ? (
+                      <p className="text-xs text-neutral-500 mt-1">{display.frequency}</p>
+                    ) : null}
+                    {evaluated?.restricted && evaluated.reason ? (
+                      <p className="text-xs text-red-300 mt-1">{evaluated.reason}</p>
+                    ) : null}
+                    {showIncantation && spell?.incantation ? (
+                      <p className="text-xs text-neutral-500 whitespace-pre-wrap mt-1">{spell.incantation}</p>
+                    ) : null}
+                    {showMaterials && spell?.materials ? (
+                      <p className="text-xs text-neutral-500 mt-1">({spell.materials})</p>
+                    ) : null}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
+
       <div className="flex flex-wrap items-center gap-3">
         <button
           onClick={saveSelections}
           disabled={
             saving ||
-            pickOneGroups.some(
+            pickOneGroupsForUI.some(
               (g) =>
                 g.requiredForMartial &&
                 !g.options.some(
@@ -526,7 +946,16 @@ export default function BuildSpellEditor({
                     opt.catalog_rule_id != null &&
                     selectionMap[catalogRuleKey(opt.catalog_rule_id)]?.purchased > 0
                 )
-            )
+            ) ||
+            pickTwoOfThreeGroups.some((g) => {
+              if (!g.requiredForMartial) return false;
+              const n = g.options.filter(
+                (opt) =>
+                  opt.catalog_rule_id != null &&
+                  selectionMap[catalogRuleKey(opt.catalog_rule_id)]?.purchased > 0
+              ).length;
+              return n < 2;
+            })
           }
           className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded"
         >

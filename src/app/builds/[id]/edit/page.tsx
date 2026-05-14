@@ -6,9 +6,17 @@ import {
   getBuildById,
   getBuildSpellSelections,
   getCatalogSpellsForClass,
+  getSpellsByIds,
   normalizeSideboardSpellIds,
 } from "@/lib/queries/spellbook";
 import { isCasterClass } from "@/lib/spellbook/casterBudget";
+import {
+  buildArchetypeGrantExtraSelections,
+  collectGrantedSpellIdsForArchetypes,
+  flattenArchetypeGrantDescriptors,
+  mergeGrantSpellsIntoCatalog,
+} from "@/lib/spellbook/archetypeGrantedSpells";
+import { selectedMartialArchetypeSpells } from "@/lib/spellbook/martialEquipment";
 
 type Params = {
   params: Promise<{ id: string }>;
@@ -29,6 +37,29 @@ export default async function EditBuildPage({ params }: Params) {
     getBuildSpellSelections(buildId),
   ]);
 
+  const archetypes = selectedMartialArchetypeSpells(selections, spells);
+  const archetypeNames = archetypes.map((a) => a.name);
+  const grantIds = collectGrantedSpellIdsForArchetypes(archetypeNames);
+  const fetchedGrants = grantIds.length > 0 ? await getSpellsByIds(grantIds) : [];
+  const grantDescriptors = flattenArchetypeGrantDescriptors(archetypeNames);
+  const spellsForEditor = mergeGrantSpellsIntoCatalog(
+    spells,
+    fetchedGrants,
+    grantDescriptors,
+    build.look_the_part
+  );
+  const extraArchetypeSelections =
+    archetypeNames.length > 0
+      ? buildArchetypeGrantExtraSelections(
+          buildId,
+          selections,
+          spells,
+          fetchedGrants,
+          archetypeNames,
+          build.look_the_part
+        )
+      : [];
+
   const sideboardIds = normalizeSideboardSpellIds(build.sideboard_spell_ids);
   const showSideboard = isCasterClass(build.class);
 
@@ -45,13 +76,14 @@ export default async function EditBuildPage({ params }: Params) {
         maxLevel={build.level}
         lookThePart={build.look_the_part}
         spellbookTipsEnabled={spellbookTipsEnabled}
-        spells={spells}
+        spells={spellsForEditor}
         initialSelections={selections}
+        extraSelections={extraArchetypeSelections}
       />
       {showSideboard ? (
         <BuildSideboardEditor
           buildId={buildId}
-          catalogSpells={spells}
+          catalogSpells={spellsForEditor}
           initialSideboardIds={sideboardIds}
           selections={selections}
           spellbookTipsEnabled={spellbookTipsEnabled}
