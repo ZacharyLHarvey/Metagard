@@ -34,6 +34,13 @@ export function isPickOneSpell(spell: SpellRow): boolean {
   );
 }
 
+export function isPickTwoOfThreeSpell(spell: SpellRow): boolean {
+  return spell.source_type === "pick_two_of_three";
+}
+
+/** Pick-one group key for Archer Look the Part specialty arrows (Sniper replaces this with Mend grant). */
+export const ARCHER_LTP_SPECIALTY_PICK_ONE_GROUP_KEY = "opt:archer:look_the_part" as const;
+
 export function pickOneGroupKey(spell: SpellRow): string | null {
   if (!isPickOneSpell(spell)) return null;
   if (spell.option_group) return `opt:${spell.option_group}`;
@@ -48,6 +55,8 @@ function parentRuleIdFromOptionGroup(group: string | null | undefined): number |
 }
 
 function includeMartialSpell(spell: SpellRow, lookThePart: boolean) {
+  if (spell.source_type === "archetype_grant") return false;
+  if (spell.source_type === "pick_two_of_three") return false;
   if (isPickOneSpell(spell)) return false;
   if (spell.is_look_the_part) return lookThePart;
   if (spell.source_type === "look_the_part") return lookThePart;
@@ -61,7 +70,20 @@ export type PickOneGroup = {
   options: SpellRow[];
   optionalMartialArchetype: boolean;
   requiredForMartial: boolean;
+  /** How many options must be chosen (default 1 for pick-one; 2 for pick-two-of-three). */
+  requiredPicks?: number;
 };
+
+export function pickTwoOfThreeGroupKey(spell: SpellRow): string | null {
+  if (!isPickTwoOfThreeSpell(spell)) return null;
+  return `lvl:${spell.level ?? 1}:pick_two_of_three`;
+}
+
+/** True when every option in the group is a Look the Part catalog row (e.g. Archer LtP pick-one). */
+export function isLookThePartPickOneGroup(group: PickOneGroup): boolean {
+  if (group.options.length === 0) return false;
+  return group.options.every((s) => Boolean(s.is_look_the_part || s.source_type === "look_the_part"));
+}
 
 export function getPickOneGroups(
   spells: SpellRow[],
@@ -93,6 +115,41 @@ export function getPickOneGroups(
       options: sorted,
       optionalMartialArchetype,
       requiredForMartial: martial && !optionalMartialArchetype,
+    };
+  });
+}
+
+export function getPickTwoOfThreeGroups(
+  spells: SpellRow[],
+  className: string,
+  selectedRuleIds: Set<number>
+): PickOneGroup[] {
+  const martial = isMartialClass(className);
+  const grouped = new Map<string, SpellRow[]>();
+  for (const spell of spells) {
+    const key = pickTwoOfThreeGroupKey(spell);
+    if (!key) continue;
+    if (
+      spell.source_type === "optional_pick_one_nested_pickOne" &&
+      !selectedRuleIds.has(parentRuleIdFromOptionGroup(spell.option_group) ?? -1)
+    ) {
+      continue;
+    }
+    if (!grouped.has(key)) grouped.set(key, []);
+    grouped.get(key)!.push(spell);
+  }
+
+  return [...grouped.entries()].map(([groupKey, options]) => {
+    const sorted = [...options].sort((a, b) => a.name.localeCompare(b.name));
+    const level = sorted[0]?.level ?? 1;
+    const optionalMartialArchetype = martial && sorted.every((s) => s.type === "Archetype");
+    return {
+      groupKey,
+      level,
+      options: sorted,
+      optionalMartialArchetype,
+      requiredForMartial: martial && !optionalMartialArchetype,
+      requiredPicks: 2,
     };
   });
 }
@@ -149,5 +206,27 @@ export function buildMartialAutoSelections(
     });
   }
 
-  return [...base, ...pickOneSelections];
+  const pickTwoGroups = getPickTwoOfThreeGroups(spells, className, selectedRuleIds);
+  const pickTwoSelections: BuildSpellSelectionInput[] = [];
+  for (const group of pickTwoGroups) {
+    const chosenOpts = group.options.filter((opt) => {
+      const rid = opt.catalog_rule_id;
+      if (rid == null) return false;
+      return priorSelections.some((sel) => sel.selection_group === catalogRuleKey(rid) && sel.purchased > 0);
+    });
+    for (const opt of chosenOpts.slice(0, 2)) {
+      if (opt.catalog_rule_id == null) continue;
+      pickTwoSelections.push({
+        build_id: 0,
+        spell_id: opt.id,
+        spell_level: opt.level ?? 1,
+        purchased: 1,
+        experienced: 0,
+        selection_group: catalogRuleKey(opt.catalog_rule_id),
+        chosen: true,
+      });
+    }
+  }
+
+  return [...base, ...pickOneSelections, ...pickTwoSelections];
 }

@@ -4,6 +4,7 @@ import BuildCommentsSection from "@/components/BuildCommentsSection";
 import BuildInfoSection from "@/components/BuildInfoSection";
 import BuildRatingSection from "@/components/BuildRatingSection";
 import BuildSideboardSection from "@/components/BuildSideboardSection";
+import ArcherArrowTotalsSection from "@/components/ArcherArrowTotalsSection";
 import BuildSpellDetails from "@/components/BuildSpellDetails";
 import CloneBuildButton from "@/components/CloneBuildButton";
 import SaveBuildButton from "@/components/SaveBuildButton";
@@ -66,10 +67,22 @@ export default async function BuildDetailsPage({ params, searchParams }: Params)
   const grantIds = collectGrantedSpellIdsForArchetypes(archetypeNames);
   const fetchedGrants = grantIds.length > 0 ? await getSpellsByIds(grantIds) : [];
   const grantDescriptors = flattenArchetypeGrantDescriptors(archetypeNames);
-  const spellsForView = mergeGrantSpellsIntoCatalog(spells, fetchedGrants, grantDescriptors);
+  const spellsForView = mergeGrantSpellsIntoCatalog(
+    spells,
+    fetchedGrants,
+    grantDescriptors,
+    build.look_the_part
+  );
   const extraArchetypeSelections =
     archetypeNames.length > 0
-      ? buildArchetypeGrantExtraSelections(buildId, selections, spells, fetchedGrants, archetypeNames)
+      ? buildArchetypeGrantExtraSelections(
+          buildId,
+          selections,
+          spells,
+          fetchedGrants,
+          archetypeNames,
+          build.look_the_part
+        )
       : [];
 
   const profileId = profile && "id" in profile && profile.id != null ? String(profile.id) : null;
@@ -192,7 +205,17 @@ export default async function BuildDetailsPage({ params, searchParams }: Params)
         lookThePart={build.look_the_part}
         display={display}
         spellbookTipsEnabled={profile?.spellbook_tips_enabled !== false}
+        buildMaxLevel={build.level}
       />
+      {build.class === "Archer" ? (
+        <ArcherArrowTotalsSection
+          selections={selections}
+          extraSelections={extraArchetypeSelections}
+          spells={spellsForView}
+          lookThePart={build.look_the_part}
+          className={build.class}
+        />
+      ) : null}
       {martial ? (
         <p className="text-xs text-neutral-400">
           Martial class build: abilities are auto-assigned by class/level. Look The Part grants class-specific LTP ability only.

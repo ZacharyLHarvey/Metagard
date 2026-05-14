@@ -188,10 +188,12 @@ export function evaluateSpellRules(
 export function computeDisplayRuleOverrides(
   spell: SpellRow,
   selectedSpellNames: Set<string>,
-  purchasedCount: number
+  purchasedCount: number,
+  buildClassName?: string | null
 ): DisplayRuleResult {
   let frequency = formatSpellFrequency(spell.frequency) ?? spell.frequency;
   let range = spell.range;
+  const cls = buildClassName ?? null;
 
   if (frequency && purchasedCount > 1 && frequency.includes("/")) {
     const [lhs, ...rest] = frequency.split("/");
@@ -201,31 +203,72 @@ export function computeDisplayRuleOverrides(
     }
   }
 
+  const canMultiplyLeading = Boolean(frequency && !frequency.includes("Unlimited"));
+
   // Druid Summoner: each Enchantment purchased gets double the listed uses (1/Life → 2/Life, etc.).
   if (
     frequency &&
+    canMultiplyLeading &&
     hasArchetype(selectedSpellNames, "Summoner") &&
-    spell.type === "Enchantment" &&
-    !frequency.includes("Unlimited")
+    spell.type === "Enchantment"
   ) {
     frequency = multiplyLeadingSlashFrequency(frequency, 2);
   }
   if (
     frequency &&
+    canMultiplyLeading &&
     hasArchetype(selectedSpellNames, "Warder") &&
-    spell.school === "Protection" &&
-    !frequency.includes("Unlimited")
+    spell.school === "Protection"
+  ) {
+    frequency = multiplyLeadingSlashFrequency(frequency, 2);
+  }
+  // Bard Dervish: each Verbal purchased gives double the uses.
+  if (
+    frequency &&
+    canMultiplyLeading &&
+    hasArchetype(selectedSpellNames, "Dervish") &&
+    spell.type === "Verbal"
+  ) {
+    frequency = multiplyLeadingSlashFrequency(frequency, 2);
+  }
+  // Bard Legend: each Extension purchased gives double the uses.
+  if (
+    frequency &&
+    canMultiplyLeading &&
+    hasArchetype(selectedSpellNames, "Legend") &&
+    spell.type === "Meta-Magic" &&
+    spell.name === "Extension"
+  ) {
+    frequency = multiplyLeadingSlashFrequency(frequency, 2);
+  }
+  // Wizard Warlock: Verbals in Death and Flame schools only.
+  if (
+    frequency &&
+    canMultiplyLeading &&
+    hasArchetype(selectedSpellNames, "Warlock") &&
+    spell.type === "Verbal" &&
+    (spell.school === "Death" || spell.school === "Flame")
   ) {
     frequency = multiplyLeadingSlashFrequency(frequency, 2);
   }
 
-  // Common remote-style archetype frequency/range adjustments.
+  // School / type charge suffixes (Priest replaces Meta-Magic before Medium appends to Spirit non-MM).
   if (hasArchetype(selectedSpellNames, "Necromancer") && spell.school === "Death") {
     frequency = `${frequency ?? ""} Charge x3`.trim();
   }
   if (hasArchetype(selectedSpellNames, "Priest") && spell.type === "Meta-Magic") {
     frequency = `${frequency ?? "1/Life"} Charge x3`.trim();
   }
+  if (
+    hasArchetype(selectedSpellNames, "Medium") &&
+    spell.school === "Spirit" &&
+    spell.type !== "Meta-Magic" &&
+    frequency &&
+    !frequency.includes("Unlimited")
+  ) {
+    frequency = `${frequency} Charge x3`.trim();
+  }
+
   if (hasArchetype(selectedSpellNames, "Battlemage") && spell.name === "Ambulant") {
     frequency = "Unlimited";
   }
@@ -244,6 +287,34 @@ export function computeDisplayRuleOverrides(
   }
   if (hasArchetype(selectedSpellNames, "Spy") && ["Shadow Step", "Blink"].includes(spell.name)) {
     frequency = `${frequency ?? ""} Charge x3`.trim();
+  }
+
+  if (hasArchetype(selectedSpellNames, "Evoker") && spell.name === "Elemental Barrage") {
+    frequency = `${frequency ?? ""} Charge x10`.trim();
+  }
+
+  if (cls === "Archer" && hasArchetype(selectedSpellNames, "Artificer")) {
+    if (spell.name === "Mend") {
+      frequency = "2/Life Charge x3 (ex)";
+    } else if (spell.name === "Greater Mend") {
+      frequency = "2/Refresh Charge x10 (ex)";
+    }
+  }
+
+  if (cls === "Scout" && hasArchetype(selectedSpellNames, "Hunter")) {
+    if (spell.name === "Hold Person") {
+      frequency = "1/Life Charge x3 (m)";
+    } else if (spell.name === "Pinning Arrow") {
+      frequency = "2 Arrows / Unlimited (ex)";
+    }
+  }
+
+  if (cls === "Archer" && hasArchetype(selectedSpellNames, "Sniper")) {
+    if (spell.type === "Specialty Arrow") {
+      frequency = "1 Arrow/Life Charge x3";
+    } else if (spell.name === "Momentum") {
+      frequency = "Unlimited (ex) (Ambulant)";
+    }
   }
 
   return { frequency, range };

@@ -1,6 +1,9 @@
 import { findSpellForSelection } from "@/lib/spellbook/selection";
 import type { BuildSpellSelectionRow, SpellRow } from "@/lib/spellbook/types";
 
+/** Synthetic selection_group for Sniper + Look the Part Mend grant (shown in LtP section, not persisted). */
+export const SNIPER_LTP_MEND_SELECTION_GROUP = "archetype-grant:Sniper:ltp-mend" as const;
+
 function catalogHasSpellAtLevel(catalogSpells: SpellRow[], spellId: number, spellLevel: number): boolean {
   return catalogSpells.some((s) => s.id === spellId && (s.level ?? 1) === spellLevel);
 }
@@ -9,6 +12,8 @@ export type ArchetypeGrantedSpellDescriptor = {
   spellId: number;
   spellLevel: number;
   displayFrequency?: string;
+  /** When true, only include this grant if the build has Look the Part enabled. */
+  requiresLookThePart?: boolean;
 };
 
 /** Archetype name (spell name) -> granted abilities for view-build display only. */
@@ -16,6 +21,10 @@ const ARCHETYPE_GRANTED_SPELLS: Record<string, ArchetypeGrantedSpellDescriptor[]
   Apex: [
     { spellId: 98, spellLevel: 6, displayFrequency: "1/Life (ex)" },
     { spellId: 136, spellLevel: 6, displayFrequency: "1/Life (ex)" },
+  ],
+  Sniper: [
+    { spellId: 100, spellLevel: 6, displayFrequency: "Unlimited (ex) (Ambulant)" },
+    { spellId: 98, spellLevel: 1, displayFrequency: "1/Life", requiresLookThePart: true },
   ],
 };
 
@@ -49,13 +58,15 @@ export function flattenArchetypeGrantDescriptors(archetypeNames: string[]): Flat
 export function mergeGrantSpellsIntoCatalog(
   catalogSpells: SpellRow[],
   fetchedGrantSpells: SpellRow[],
-  descriptors: FlatArchetypeGrantDescriptor[]
+  descriptors: FlatArchetypeGrantDescriptor[],
+  lookThePart = false
 ): SpellRow[] {
   const merged = [...catalogSpells];
   const hasRow = (spellId: number, spellLevel: number) =>
     merged.some((s) => s.id === spellId && (s.level ?? 1) === spellLevel);
 
   for (const d of descriptors) {
+    if (d.requiresLookThePart && !lookThePart) continue;
     if (hasRow(d.spellId, d.spellLevel)) continue;
     const base = fetchedGrantSpells.find((s) => s.id === d.spellId);
     if (!base) continue;
@@ -64,7 +75,7 @@ export function mergeGrantSpellsIntoCatalog(
       level: d.spellLevel,
       frequency: d.displayFrequency ?? base.frequency,
       catalog_rule_id: undefined,
-      source_type: undefined,
+      source_type: "archetype_grant",
       option_group: undefined,
       is_look_the_part: undefined,
     });
@@ -86,7 +97,8 @@ export function buildArchetypeGrantExtraSelections(
   realSelections: BuildSpellSelectionRow[],
   catalogSpells: SpellRow[],
   fetchedGrantSpells: SpellRow[],
-  archetypeNames: string[]
+  archetypeNames: string[],
+  lookThePart = false
 ): BuildSpellSelectionRow[] {
   const ownedNames = new Set<string>();
   for (const sel of realSelections) {
@@ -100,8 +112,9 @@ export function buildArchetypeGrantExtraSelections(
   const out: BuildSpellSelectionRow[] = [];
   let virtualId = -1;
   for (const d of descriptors) {
+    if (d.requiresLookThePart && !lookThePart) continue;
     const name = spellNameById.get(d.spellId);
-    if (name && ownedNames.has(name)) continue;
+    if (name && !d.requiresLookThePart && ownedNames.has(name)) continue;
     if (catalogHasSpellAtLevel(catalogSpells, d.spellId, d.spellLevel)) continue;
     out.push({
       id: virtualId,
@@ -110,7 +123,8 @@ export function buildArchetypeGrantExtraSelections(
       spell_level: d.spellLevel,
       purchased: 1,
       experienced: 0,
-      selection_group: `archetype-grant:${d.archetype}`,
+      selection_group:
+        d.requiresLookThePart && d.archetype === "Sniper" ? SNIPER_LTP_MEND_SELECTION_GROUP : `archetype-grant:${d.archetype}`,
       chosen: true,
       metadata: {},
     });
