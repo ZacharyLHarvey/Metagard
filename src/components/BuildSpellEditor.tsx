@@ -25,6 +25,9 @@ import {
 import { buildMartialAutoSelections, isMartialClass } from "@/lib/spellbook/martial";
 import { getPickOneGroups } from "@/lib/spellbook/martial";
 
+/** Long-press (ms) to open spell detail modal; base 450 + 30%. */
+const LONG_PRESS_MS = 585;
+
 type Props = {
   buildId: number;
   className: string;
@@ -297,7 +300,7 @@ export default function BuildSpellEditor({
   }
 
   function startLongPress(spell: SpellRow) {
-    const timeout = setTimeout(() => setSelectedSpell(spell), 450);
+    const timeout = setTimeout(() => setSelectedSpell(spell), LONG_PRESS_MS);
     return timeout;
   }
 

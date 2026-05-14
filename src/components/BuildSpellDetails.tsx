@@ -17,7 +17,8 @@ import TipsAlert from "@/components/spellbook/TipsAlert";
 
 export type BuildSpellDisplayMode = "level" | "type" | "school";
 
-const LONG_PRESS_MS = 450;
+/** Long-press (ms) to open spell detail modal; base 450 + 30%. */
+const LONG_PRESS_MS = 585;
 
 function SpellRowTouchCell({
   spell,

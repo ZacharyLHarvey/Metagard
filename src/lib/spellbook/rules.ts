@@ -210,6 +210,14 @@ export function computeDisplayRuleOverrides(
   ) {
     frequency = multiplyLeadingSlashFrequency(frequency, 2);
   }
+  if (
+    frequency &&
+    hasArchetype(selectedSpellNames, "Warder") &&
+    spell.school === "Protection" &&
+    !frequency.includes("Unlimited")
+  ) {
+    frequency = multiplyLeadingSlashFrequency(frequency, 2);
+  }
 
   // Common remote-style archetype frequency/range adjustments.
   if (hasArchetype(selectedSpellNames, "Necromancer") && spell.school === "Death") {
@@ -217,6 +225,9 @@ export function computeDisplayRuleOverrides(
   }
   if (hasArchetype(selectedSpellNames, "Priest") && spell.type === "Meta-Magic") {
     frequency = `${frequency ?? "1/Life"} Charge x3`.trim();
+  }
+  if (hasArchetype(selectedSpellNames, "Battlemage") && spell.name === "Ambulant") {
+    frequency = "Unlimited";
   }
   if (hasArchetype(selectedSpellNames, "Infernal") && spell.name === "Flame Blade") {
     frequency = `${frequency ?? ""} Charge x5`.trim();
