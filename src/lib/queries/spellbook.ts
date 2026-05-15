@@ -12,6 +12,7 @@ import type {
 } from "@/lib/spellbook/types";
 import { isCasterClass } from "@/lib/spellbook/casterBudget";
 import { buildMartialAutoSelections, isMartialClass } from "@/lib/spellbook/martial";
+import { validateExperiencedState } from "@/lib/spellbook/experienced";
 
 function toNumberOrNull(value: unknown): number | null {
   if (typeof value === "number" && Number.isFinite(value)) return value;
@@ -590,6 +591,24 @@ export async function upsertBuildSpellSelections(buildId: number, selections: Bu
   }
 
   if (effectiveSelections.length === 0) return;
+
+  const spellsForExperienced = await getCatalogSpellsForClass(
+    String((ownedBuild as { class?: unknown }).class ?? ""),
+    Number((ownedBuild as { level?: unknown }).level ?? 1)
+  );
+  const rowsForValidate: BuildSpellSelectionRow[] = effectiveSelections.map((s) => ({
+    id: 0,
+    build_id: buildId,
+    spell_id: s.spell_id,
+    spell_level: s.spell_level,
+    purchased: s.purchased,
+    experienced: s.experienced,
+    selection_group: s.selection_group,
+    chosen: s.chosen,
+    metadata: s.metadata ?? {},
+  }));
+  const ev = validateExperiencedState(rowsForValidate, spellsForExperienced);
+  if (!ev.ok) throw new Error(ev.message);
 
   const payload = effectiveSelections.map((s) => ({
     build_id: buildId,

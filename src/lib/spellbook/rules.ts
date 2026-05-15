@@ -1,4 +1,5 @@
 import { formatSpellFrequency } from "@/lib/spellbook/formatFrequency";
+import type { ExperiencedChargeSuffix } from "@/lib/spellbook/experienced";
 import type { SpellRow } from "@/lib/spellbook/types";
 
 type RuleResult = {
@@ -11,6 +12,25 @@ export type DisplayRuleResult = {
   frequency: string | null;
   range: string | null;
 };
+
+export type ComputeDisplayRuleOptions = {
+  experiencedChargeSuffix?: ExperiencedChargeSuffix | null;
+};
+
+/** If frequency already has a Charge x# clause, replace it with Experienced's; otherwise append. */
+function applyExperiencedChargeToFrequency(
+  frequency: string | null,
+  experiencedChargeSuffix: ExperiencedChargeSuffix
+): string {
+  const suffix = experiencedChargeSuffix;
+  if (!frequency || !frequency.trim()) return suffix;
+  const trimmed = frequency.trim();
+  // Avoid matching "Charge" inside e.g. "Recharge"
+  const chargeFragment = /(?<![a-zA-Z])Charge\s+x\d+/gi;
+  const replaced = trimmed.replace(chargeFragment, suffix);
+  if (replaced !== trimmed) return replaced;
+  return `${trimmed} ${suffix}`;
+}
 
 function hasArchetype(selected: Set<string>, name: string) {
   return selected.has(name);
@@ -189,7 +209,8 @@ export function computeDisplayRuleOverrides(
   spell: SpellRow,
   selectedSpellNames: Set<string>,
   purchasedCount: number,
-  buildClassName?: string | null
+  buildClassName?: string | null,
+  options?: ComputeDisplayRuleOptions | null
 ): DisplayRuleResult {
   let frequency = formatSpellFrequency(spell.frequency) ?? spell.frequency;
   let range = spell.range;
@@ -315,6 +336,11 @@ export function computeDisplayRuleOverrides(
     } else if (spell.name === "Momentum") {
       frequency = "Unlimited (ex) (Ambulant)";
     }
+  }
+
+  const expSuffix = options?.experiencedChargeSuffix;
+  if (expSuffix) {
+    frequency = applyExperiencedChargeToFrequency(frequency, expSuffix);
   }
 
   return { frequency, range };

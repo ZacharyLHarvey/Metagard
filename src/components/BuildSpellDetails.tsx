@@ -6,8 +6,11 @@ import {
   buildSelectedSpellNameSet,
   computeDisplayRuleOverrides,
 } from "@/lib/spellbook/rules";
-import { catalogRuleKey, findSpellForSelection } from "@/lib/spellbook/selection";
+import { catalogRuleKey, findSpellForSelection, selectionKeyFromRow } from "@/lib/spellbook/selection";
 import { getPickOneGroups, getPickTwoOfThreeGroups, ARCHER_LTP_SPECIALTY_PICK_ONE_GROUP_KEY } from "@/lib/spellbook/martial";
+import {
+  buildExperiencedChargeSuffixByTargetKey,
+} from "@/lib/spellbook/experienced";
 import { mergeViewDisplaySpellSelectionRows, partitionViewBuildSpellDisplayRows } from "@/lib/spellbook/viewBuildSpellSelections";
 import AutoQuerySelect from "@/components/AutoQuerySelect";
 import SpellDetailModal from "@/components/spellbook/SpellDetailModal";
@@ -140,13 +143,19 @@ export default function BuildSpellDetails({
     });
   }
 
-  function displayNameWithTypeTag(spell: SpellRow | null | undefined, fallbackName: string, purchased: number) {
+  function displayNameWithTypeTag(
+    spell: SpellRow | null | undefined,
+    fallbackName: string,
+    purchased: number,
+    opts?: { isExperiencedTarget?: boolean }
+  ) {
     const type = spell?.type ?? null;
+    const name = spell?.name ?? fallbackName;
     const isArchetype = type === "Archetype";
     const isTrait = type === "Trait";
     const tag = isArchetype ? "Archetype" : isTrait ? "Trait" : null;
-    const name = spell?.name ?? fallbackName;
     if (tag) return `${name} - (${tag})`;
+    if (opts?.isExperiencedTarget) return `${purchased}x ${name} - (Experienced)`;
     return `${purchased}x ${name}`;
   }
 
@@ -160,6 +169,10 @@ export default function BuildSpellDetails({
   const selectedSpellNames = useMemo(
     () => buildSelectedSpellNameSet(purchasedBySpellId, spells),
     [purchasedBySpellId, spells]
+  );
+  const experiencedSuffixByTargetKey = useMemo(
+    () => buildExperiencedChargeSuffixByTargetKey(selections, spells),
+    [selections, spells]
   );
   const displaySelections = useMemo(
     () => mergeViewDisplaySpellSelectionRows(selections, extraSelections, spells),
@@ -307,8 +320,16 @@ export default function BuildSpellDetails({
 
   function renderSelectionRow(selection: BuildSpellSelectionRow) {
     const spell = findSpellForSelection(spells, selection);
+    const rowKey = selectionKeyFromRow(selection);
+    const expSuffix = experiencedSuffixByTargetKey.get(rowKey);
     const ruleDisplay = spell
-      ? computeDisplayRuleOverrides(spell, selectedSpellNames, selection.purchased, className)
+      ? computeDisplayRuleOverrides(
+          spell,
+          selectedSpellNames,
+          selection.purchased,
+          className,
+          expSuffix ? { experiencedChargeSuffix: expSuffix } : undefined
+        )
       : { frequency: null, range: null };
     return (
       <tr key={selection.id}>
@@ -318,7 +339,9 @@ export default function BuildSpellDetails({
           onOpenDetail={setSelectedSpell}
         >
           <p className="font-medium">
-            {displayNameWithTypeTag(spell, `Spell #${selection.spell_id}`, selection.purchased)}
+            {displayNameWithTypeTag(spell, `Spell #${selection.spell_id}`, selection.purchased, {
+              isExperiencedTarget: experiencedSuffixByTargetKey.has(rowKey),
+            })}
           </p>
           <p className="text-xs text-neutral-400">
             {showTypeSchool && spell?.type ? `${spell.type}` : ""}
@@ -342,8 +365,16 @@ export default function BuildSpellDetails({
   function renderLookThePartRows() {
     return lookThePartSelections.map((selection) => {
       const spell = findSpellForSelection(spells, selection);
+      const rowKey = selectionKeyFromRow(selection);
+      const expSuffix = experiencedSuffixByTargetKey.get(rowKey);
       const ruleDisplay = spell
-        ? computeDisplayRuleOverrides(spell, selectedSpellNames, selection.purchased, className)
+        ? computeDisplayRuleOverrides(
+            spell,
+            selectedSpellNames,
+            selection.purchased,
+            className,
+            expSuffix ? { experiencedChargeSuffix: expSuffix } : undefined
+          )
         : { frequency: null, range: null };
       return (
         <tr key={selection.id}>
@@ -353,7 +384,9 @@ export default function BuildSpellDetails({
             onOpenDetail={setSelectedSpell}
           >
             <p className="font-medium">
-              {displayNameWithTypeTag(spell, `Spell #${selection.spell_id}`, selection.purchased)}
+              {displayNameWithTypeTag(spell, `Spell #${selection.spell_id}`, selection.purchased, {
+                isExperiencedTarget: experiencedSuffixByTargetKey.has(rowKey),
+              })}
             </p>
             <p className="text-xs text-neutral-400">
               {showTypeSchool && spell?.type ? `${spell.type}` : ""}

@@ -32,6 +32,15 @@ import {
   getPickOneGroups,
 } from "@/lib/spellbook/martial";
 import { SNIPER_LTP_MEND_SELECTION_GROUP } from "@/lib/spellbook/archetypeGrantedSpells";
+import {
+  buildExperiencedChargeSuffixByTargetKey,
+  collectAllExperiencedTargetKeys,
+  EXPERIENCED_TARGET_KEYS,
+  isExperiencedCatalogSpell,
+  listExperiencedPickerOptions,
+  readExperiencedTargetKeys,
+  validateExperiencedState,
+} from "@/lib/spellbook/experienced";
 
 /** Long-press (ms) to open spell detail modal; base 450 + 30%. */
 const LONG_PRESS_MS = 585;
@@ -57,6 +66,7 @@ type Selection = {
   experienced: number;
   selection_group: string | null;
   chosen: boolean;
+  metadata?: Record<string, unknown>;
 };
 
 function purchasedBySpellIdFromMap(map: Record<string, Selection>) {
@@ -166,6 +176,7 @@ export default function BuildSpellEditor({
         experienced: s.experienced,
         selection_group: s.selection_group,
         chosen: s.chosen,
+        metadata: s.metadata && typeof s.metadata === "object" ? { ...s.metadata } : {},
       };
     }
     return base;
@@ -210,6 +221,45 @@ export default function BuildSpellEditor({
     () => buildSelectedSpellNameSet(purchasedBySpellId, spells),
     [purchasedBySpellId, spells]
   );
+
+  type ExperiencedPickerOpen = {
+    experiencedMapKey: string;
+    nextPurchased: number;
+    spell: SpellRow;
+    level: number;
+  };
+  const [experiencedPicker, setExperiencedPicker] = useState<ExperiencedPickerOpen | null>(null);
+
+  const selectionsAsRowsForExperienced = useMemo((): BuildSpellSelectionRow[] => {
+    return Object.values(selectionMap).map((s) => ({
+      id: 0,
+      build_id: buildId,
+      spell_id: s.spell_id,
+      spell_level: s.spell_level,
+      purchased: s.purchased,
+      experienced: s.experienced,
+      selection_group: s.selection_group,
+      chosen: s.chosen,
+      metadata: s.metadata ?? {},
+    }));
+  }, [selectionMap, buildId]);
+
+  const experiencedSuffixByTargetKey = useMemo(
+    () => buildExperiencedChargeSuffixByTargetKey(selectionsAsRowsForExperienced, spells),
+    [selectionsAsRowsForExperienced, spells]
+  );
+
+  const experiencedStateValid = useMemo(
+    () => validateExperiencedState(selectionsAsRowsForExperienced, spells),
+    [selectionsAsRowsForExperienced, spells]
+  );
+
+  const experiencedPickerOptions = useMemo(() => {
+    if (!experiencedPicker) return [];
+    const exclude = collectAllExperiencedTargetKeys(selectionsAsRowsForExperienced, spells);
+    return listExperiencedPickerOptions(selectionsAsRowsForExperienced, spells, exclude);
+  }, [experiencedPicker, selectionsAsRowsForExperienced, spells]);
+
   const hideArcherSniperLtpPickOne = className === "Archer" && selectedSpellNames.has("Sniper");
   const visibleArchetypeGrants = useMemo(
     () =>
@@ -302,11 +352,50 @@ export default function BuildSpellEditor({
     });
   }
 
-  function displaySpellTitle(spell: SpellRow, purchased: number) {
+  function mapAcceptsBudget(nextMap: Record<string, Selection>, nonCasterSpellLevel: number): boolean {
+    const spentAfter = pointsSpentForMap(nextMap, spells);
+    if (spentAfter > totalBudget) return false;
+    if (caster) {
+      if (!casterCascadeBudgetHolds(nextMap, spells, maxLevel, casterLtpBonus)) return false;
+    } else if (!martial) {
+      const spentThisLevelAfter = pointsSpentAtSpellLevel(nextMap, spells, nonCasterSpellLevel);
+      if (spentThisLevelAfter > POINTS_PER_SPELL_LEVEL) return false;
+    }
+    return true;
+  }
+
+  function displaySpellTitle(spell: SpellRow, purchased: number, opts?: { isExperiencedTarget?: boolean }) {
     const type = spell.type ?? null;
-    const tag = type === "Archetype" ? "Archetype" : type === "Trait" ? "Trait" : null;
-    if (tag) return `${spell.name} - (${tag})`;
+    if (type === "Archetype") return `${spell.name} - (Archetype)`;
+    if (type === "Trait") return `${spell.name} - (Trait)`;
+    if (opts?.isExperiencedTarget) return `${purchased}x ${spell.name} - (Experienced)`;
     return `${purchased}x ${spell.name}`;
+  }
+
+  function applyExperiencedTargetChoice(picker: ExperiencedPickerOpen, targetKey: string) {
+    setSelectionMap((prev) => {
+      const cur = prev[picker.experiencedMapKey];
+      const group =
+        picker.spell.catalog_rule_id != null ? catalogRuleKey(picker.spell.catalog_rule_id) : null;
+      const prevKeys = readExperiencedTargetKeys(cur?.metadata);
+      const nextRow: Selection = {
+        spell_id: picker.spell.id,
+        spell_level: picker.level,
+        purchased: picker.nextPurchased,
+        experienced: cur?.experienced ?? 0,
+        selection_group: cur?.selection_group ?? group,
+        chosen: true,
+        metadata: {
+          ...(cur?.metadata ?? {}),
+          [EXPERIENCED_TARGET_KEYS]: [...prevKeys, targetKey],
+        },
+      };
+      return {
+        ...prev,
+        [picker.experiencedMapKey]: nextRow,
+      };
+    });
+    setExperiencedPicker(null);
   }
 
   function increment(spell: SpellRow, level: number) {
@@ -321,29 +410,52 @@ export default function BuildSpellEditor({
     const max = spell.max ?? 99;
     const group =
       spell.catalog_rule_id != null ? catalogRuleKey(spell.catalog_rule_id) : null;
+    const existing = selectionMap[key];
+    const nextPurchased = Math.min((existing?.purchased ?? 0) + 1, max);
+    if (nextPurchased === (existing?.purchased ?? 0)) return;
+
+    if (isExperiencedCatalogSpell(spell)) {
+      const nextMap: Record<string, Selection> = {
+        ...selectionMap,
+        [key]: {
+          spell_id: spell.id,
+          spell_level: level,
+          purchased: nextPurchased,
+          experienced: existing?.experienced ?? 0,
+          selection_group: existing?.selection_group ?? group,
+          chosen: true,
+          metadata: { ...(existing?.metadata ?? {}) },
+        },
+      };
+      if (!mapAcceptsBudget(nextMap, level)) {
+        setRuleWarning("Not enough points or circle budget for this purchase.");
+        return;
+      }
+      setExperiencedPicker({
+        experiencedMapKey: key,
+        nextPurchased,
+        spell,
+        level,
+      });
+      return;
+    }
 
     setSelectionMap((prev) => {
-      const existing = prev[key];
-      const purchased = Math.min((existing?.purchased ?? 0) + 1, max);
+      const ex = prev[key];
+      const purchased = Math.min((ex?.purchased ?? 0) + 1, max);
       const nextMap = {
         ...prev,
         [key]: {
           spell_id: spell.id,
           spell_level: level,
           purchased,
-          experienced: existing?.experienced ?? 0,
-          selection_group: existing?.selection_group ?? group,
+          experienced: ex?.experienced ?? 0,
+          selection_group: ex?.selection_group ?? group,
           chosen: purchased > 0,
+          metadata: { ...(ex?.metadata ?? {}) },
         },
       };
-      const spentAfter = pointsSpentForMap(nextMap, spells);
-      if (spentAfter > totalBudget) return prev;
-      if (caster) {
-        if (!casterCascadeBudgetHolds(nextMap, spells, maxLevel, casterLtpBonus)) return prev;
-      } else {
-        const spentThisLevelAfter = pointsSpentAtSpellLevel(nextMap, spells, level);
-        if (spentThisLevelAfter > POINTS_PER_SPELL_LEVEL) return prev;
-      }
+      if (!mapAcceptsBudget(nextMap, level)) return prev;
       return nextMap;
     });
   }
@@ -360,9 +472,19 @@ export default function BuildSpellEditor({
         delete next[key];
         return next;
       }
+      let metadata: Record<string, unknown> = { ...(existing.metadata ?? {}) };
+      if (isExperiencedCatalogSpell(spell)) {
+        const keys = readExperiencedTargetKeys(metadata);
+        keys.pop();
+        if (keys.length === 0) {
+          delete metadata[EXPERIENCED_TARGET_KEYS];
+        } else {
+          metadata = { ...metadata, [EXPERIENCED_TARGET_KEYS]: keys };
+        }
+      }
       return {
         ...prev,
-        [key]: { ...existing, purchased },
+        [key]: { ...existing, purchased, metadata },
       };
     });
   }
@@ -387,6 +509,7 @@ export default function BuildSpellEditor({
           experienced: 0,
           selection_group: key,
           chosen: true,
+          metadata: {},
         };
       }
       return next;
@@ -416,6 +539,7 @@ export default function BuildSpellEditor({
         experienced: 0,
         selection_group: key,
         chosen: true,
+        metadata: {},
       };
       return next;
     });
@@ -424,9 +548,23 @@ export default function BuildSpellEditor({
   async function saveSelections() {
     setSaving(true);
     setError("");
-    const payload = Object.values(selectionMap).filter(
-      (s) => !s.selection_group?.startsWith("archetype-grant:")
-    );
+    if (!experiencedStateValid.ok) {
+      setError(experiencedStateValid.message);
+      setSaving(false);
+      return;
+    }
+    const payload = Object.values(selectionMap)
+      .filter((s) => !s.selection_group?.startsWith("archetype-grant:"))
+      .map((s) => ({
+        build_id: buildId,
+        spell_id: s.spell_id,
+        spell_level: s.spell_level,
+        purchased: s.purchased,
+        experienced: s.experienced,
+        selection_group: s.selection_group,
+        chosen: s.chosen,
+        metadata: s.metadata ?? {},
+      }));
 
     const response = await fetch(`/api/builds/${buildId}/spells`, {
       method: "PUT",
@@ -458,6 +596,54 @@ export default function BuildSpellEditor({
         message="Long Press a Spell Row to View Detailed Spell Text, Restrictions, and Notes"
       />
       <SpellDetailModal spell={selectedSpell} onClose={() => setSelectedSpell(null)} />
+      {experiencedPicker ? (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="experienced-picker-title"
+        >
+          <div className="w-full max-w-md rounded-lg border border-neutral-700 bg-neutral-900 p-4 shadow-xl">
+            <h2 id="experienced-picker-title" className="text-lg font-semibold text-white">
+              Choose verbal for Experienced
+            </h2>
+            <p className="mt-2 text-sm text-neutral-400">
+              Pick one per-Life or per-Refresh Verbal (circle 4 or below) on this build. Each verbal can only be chosen once.
+            </p>
+            {experiencedPickerOptions.length === 0 ? (
+              <p className="mt-3 text-sm text-amber-200">
+                No eligible verbals on this build. Add a qualifying Verbal before purchasing Experienced.
+              </p>
+            ) : (
+              <ul className="mt-3 max-h-64 space-y-1 overflow-y-auto">
+                {experiencedPickerOptions.map((opt) => (
+                  <li key={opt.targetKey}>
+                    <button
+                      type="button"
+                      className="w-full rounded border border-neutral-700 px-3 py-2 text-left text-sm text-neutral-100 hover:bg-neutral-800"
+                      onClick={() => applyExperiencedTargetChoice(experiencedPicker, opt.targetKey)}
+                    >
+                      {opt.spell.name}
+                      <span className="block text-xs text-neutral-500">
+                        Circle {opt.spell.level ?? "—"} · {opt.spell.school ?? "—"}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                className="rounded bg-neutral-700 px-3 py-2 text-sm"
+                onClick={() => setExperiencedPicker(null)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
       {ruleWarning ? (
         <div className="rounded border border-amber-800 bg-amber-950/30 p-3 text-sm text-amber-200">
           <div className="flex items-start justify-between gap-3">
@@ -560,9 +746,17 @@ export default function BuildSpellEditor({
               {lookThePartMendGrantRows.map((row) => {
                 const spell = findSpellForSelection(spells, row);
                 const purchased = row.purchased;
+                const rowKey = selectionKeyFromRow(row);
+                const expSuffix = experiencedSuffixByTargetKey.get(rowKey);
                 const evaluated = spell ? evaluateSpellRules(spell, selectedSpellNames) : null;
                 const display = spell
-                  ? computeDisplayRuleOverrides(spell, selectedSpellNames, purchased, className)
+                  ? computeDisplayRuleOverrides(
+                      spell,
+                      selectedSpellNames,
+                      purchased,
+                      className,
+                      expSuffix ? { experiencedChargeSuffix: expSuffix } : undefined
+                    )
                   : { frequency: null, range: null };
                 let longPressTimeout: ReturnType<typeof setTimeout> | null = null;
                 return (
@@ -589,7 +783,11 @@ export default function BuildSpellEditor({
                   >
                     <div>
                       <p className="font-medium">
-                        {spell ? displaySpellTitle(spell, purchased) : `Spell #${row.spell_id}`}
+                        {spell
+                          ? displaySpellTitle(spell, purchased, {
+                              isExperiencedTarget: experiencedSuffixByTargetKey.has(rowKey),
+                            })
+                          : `Spell #${row.spell_id}`}
                       </p>
                       {spell ? (
                         <p className="text-xs text-neutral-400">
@@ -615,7 +813,14 @@ export default function BuildSpellEditor({
               })}
               {lookThePartRows.map(({ mapKey, spell, purchased }) => {
                 const evaluated = evaluateSpellRules(spell, selectedSpellNames);
-                const display = computeDisplayRuleOverrides(spell, selectedSpellNames, purchased, className);
+                const expSuffix = experiencedSuffixByTargetKey.get(mapKey);
+                const display = computeDisplayRuleOverrides(
+                  spell,
+                  selectedSpellNames,
+                  purchased,
+                  className,
+                  expSuffix ? { experiencedChargeSuffix: expSuffix } : undefined
+                );
                 let longPressTimeout: ReturnType<typeof setTimeout> | null = null;
                 return (
                   <div
@@ -640,7 +845,11 @@ export default function BuildSpellEditor({
                     }}
                   >
                     <div>
-                      <p className="font-medium">{displaySpellTitle(spell, purchased)}</p>
+                      <p className="font-medium">
+                        {displaySpellTitle(spell, purchased, {
+                          isExperiencedTarget: experiencedSuffixByTargetKey.has(mapKey),
+                        })}
+                      </p>
                       <p className="text-xs text-neutral-400">
                         {showTypeSchool && spell.type ? `${spell.type}` : ""}
                         {showTypeSchool && spell.school ? ` (${spell.school})` : ""}
@@ -721,7 +930,14 @@ export default function BuildSpellEditor({
               const key = selectionKeyForCatalogSpell(spell);
               const purchased = selectionMap[key]?.purchased ?? 0;
               const evaluated = evaluateSpellRules(spell, selectedSpellNames);
-              const display = computeDisplayRuleOverrides(spell, selectedSpellNames, purchased, className);
+              const expSuffix = experiencedSuffixByTargetKey.get(key);
+              const display = computeDisplayRuleOverrides(
+                spell,
+                selectedSpellNames,
+                purchased,
+                className,
+                expSuffix ? { experiencedChargeSuffix: expSuffix } : undefined
+              );
               let longPressTimeout: ReturnType<typeof setTimeout> | null = null;
               return (
                 <div
@@ -746,7 +962,11 @@ export default function BuildSpellEditor({
                   }}
                 >
                   <div>
-                    <p className="font-medium">{spell.name}</p>
+                    <p className="font-medium">
+                      {displaySpellTitle(spell, purchased, {
+                        isExperiencedTarget: experiencedSuffixByTargetKey.has(key),
+                      })}
+                    </p>
                     <p className="text-xs text-neutral-400">
                       {martial ? "" : `Cost ${evaluated.adjustedCost}`}
                       {showTypeSchool && spell.type ? ` - ${spell.type}` : ""}
@@ -878,9 +1098,17 @@ export default function BuildSpellEditor({
             {visibleArchetypeGrants.map((row) => {
               const spell = findSpellForSelection(spells, row);
               const purchased = row.purchased;
+              const rowKey = selectionKeyFromRow(row);
+              const expSuffix = experiencedSuffixByTargetKey.get(rowKey);
               const evaluated = spell ? evaluateSpellRules(spell, selectedSpellNames) : null;
               const display = spell
-                ? computeDisplayRuleOverrides(spell, selectedSpellNames, purchased, className)
+                ? computeDisplayRuleOverrides(
+                    spell,
+                    selectedSpellNames,
+                    purchased,
+                    className,
+                    expSuffix ? { experiencedChargeSuffix: expSuffix } : undefined
+                  )
                 : { frequency: null, range: null };
               let longPressTimeout: ReturnType<typeof setTimeout> | null = null;
               return (
@@ -906,7 +1134,13 @@ export default function BuildSpellEditor({
                   }}
                 >
                   <div>
-                    <p className="font-medium">{spell ? displaySpellTitle(spell, purchased) : `Spell #${row.spell_id}`}</p>
+                    <p className="font-medium">
+                      {spell
+                        ? displaySpellTitle(spell, purchased, {
+                            isExperiencedTarget: experiencedSuffixByTargetKey.has(rowKey),
+                          })
+                        : `Spell #${row.spell_id}`}
+                    </p>
                     {spell ? (
                       <p className="text-xs text-neutral-400">
                         {showTypeSchool && spell.type ? `${spell.type}` : ""}
@@ -938,6 +1172,7 @@ export default function BuildSpellEditor({
           onClick={saveSelections}
           disabled={
             saving ||
+            !experiencedStateValid.ok ||
             pickOneGroupsForUI.some(
               (g) =>
                 g.requiredForMartial &&
@@ -962,6 +1197,9 @@ export default function BuildSpellEditor({
           {saving ? "Saving…" : "Save Build Spells"}
         </button>
         {error ? <p className="text-sm text-red-400">{error}</p> : null}
+        {!experiencedStateValid.ok ? (
+          <p className="text-sm text-amber-300 max-w-prose">{experiencedStateValid.message}</p>
+        ) : null}
       </div>
     </div>
   );
