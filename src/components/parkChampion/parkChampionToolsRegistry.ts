@@ -4,6 +4,7 @@ import ParkChampionRandomNumberGenerator from "@/components/parkChampion/ParkCha
 import ParkChampionRandomTimeIntervalPicker from "@/components/parkChampion/ParkChampionRandomTimeIntervalPicker";
 import ParkChampionRandomWeaponPicker from "@/components/parkChampion/ParkChampionRandomWeaponPicker";
 import ParkChampionRandomClassPicker from "@/components/parkChampion/ParkChampionRandomClassPicker";
+import ParkChampionRandomSpellPicker from "@/components/parkChampion/ParkChampionRandomSpellPicker";
 
 export type ParkChampionToolDefinition = {
   id: string;
@@ -39,6 +40,11 @@ export const PARK_CHAMPION_TOOLS: ParkChampionToolDefinition[] = [
     id: "random-class-picker",
     label: "Random Class Picker",
     Component: ParkChampionRandomClassPicker,
+  },
+  {
+    id: "random-spell-picker",
+    label: "Random Spell Picker",
+    Component: ParkChampionRandomSpellPicker,
   },
 ];
 
