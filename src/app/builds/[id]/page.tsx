@@ -7,8 +7,11 @@ import BuildSideboardSection from "@/components/BuildSideboardSection";
 import ArcherArrowTotalsSection from "@/components/ArcherArrowTotalsSection";
 import BuildSpellDetails from "@/components/BuildSpellDetails";
 import CloneBuildButton from "@/components/CloneBuildButton";
-import SaveBuildButton from "@/components/SaveBuildButton";
-import UnsaveSavedBuildButton from "@/components/UnsaveSavedBuildButton";
+import {
+  BuildSaveProvider,
+  BuildSaveToggleButton,
+  BuildUsageStatsSaves,
+} from "@/components/BuildSaveProvider";
 import TierBadge from "@/components/TierBadge";
 import { getGlobalAverageRating, getNumericEntityVoteStats } from "@/lib/queries/ratingStats";
 import { getProfile } from "@/lib/queries/getProfile";
@@ -40,6 +43,7 @@ import {
 } from "@/lib/spellbook/archetypeGrantedSpells";
 import type { BuildSpellDisplayMode } from "@/components/BuildSpellDetails";
 import type { SpellRow } from "@/lib/spellbook/types";
+import type { ReactNode } from "react";
 
 type Params = {
   params: Promise<{ id: string }>;
@@ -97,8 +101,9 @@ export default async function BuildDetailsPage({ params, searchParams }: Params)
   const canAct = Boolean(profile);
   const profileOwnerId = profile && "id" in profile && profile.id != null ? String(profile.id) : null;
   const canManageBuild = profileOwnerId != null && profileOwnerId === build.owner_id;
-  const isSaved =
-    canAct && !canManageBuild ? await isBuildSavedByCurrentUser(buildId) : false;
+  const showSaveControls = canAct && !canManageBuild;
+  const isSaved = showSaveControls ? await isBuildSavedByCurrentUser(buildId) : false;
+  const initialSaveCount = Math.max(0, Number(build.save_count ?? 0));
   const martial = isMartialClass(build.class);
   const baseEquipment = martial ? await getClassEquipment(build.class) : null;
   const equipment =
@@ -121,45 +126,67 @@ export default async function BuildDetailsPage({ params, searchParams }: Params)
     }
   }
 
+  const usageStatsSection = (savesLine: ReactNode) => (
+    <section className="mt-3 text-sm text-neutral-400 space-y-1" aria-label="Usage statistics">
+      <p className="text-neutral-500 font-medium">Usage Stats</p>
+      {savesLine}
+      <p>
+        Clones:{" "}
+        <span className="text-neutral-200 tabular-nums">{Math.max(0, Number(build.clone_count ?? 0))}</span>
+      </p>
+    </section>
+  );
+
+  const buildHeaderLeft = (savesLine: ReactNode) => (
+    <div>
+      <h1 className="text-xl sm:text-2xl font-bold break-words">{build.name}</h1>
+      <p className="text-neutral-400">
+        {build.class} level {build.level} {build.look_the_part ? "- Look The Part" : ""}
+      </p>
+      {build.notes ? <p className="text-sm text-neutral-500 mt-2 whitespace-pre-wrap">{build.notes}</p> : null}
+      <div className="mt-2">
+        <CreatorAttribution ownerId={build.owner_id} displayName={creatorName} />
+      </div>
+      {usageStatsSection(savesLine)}
+    </div>
+  );
+
+  const buildHeaderActions = showSaveControls ? (
+    <div className="flex flex-wrap gap-2 [&_button]:px-3 [&_button]:py-2 [&_button]:text-sm [&_button]:sm:text-base">
+      <BuildSaveToggleButton />
+    </div>
+  ) : canManageBuild ? (
+    <div className="flex flex-wrap gap-2">
+      <Link href={`/builds/${build.id}/settings`} className="px-3 py-2 bg-neutral-700 rounded text-sm sm:text-base">
+        Settings
+      </Link>
+      <Link href={`/builds/${build.id}/edit`} className="px-3 py-2 bg-amber-600 rounded text-sm sm:text-base">
+        Edit Spells
+      </Link>
+    </div>
+  ) : null;
+
+  const staticSavesLine = (
+    <p>
+      Saves: <span className="text-neutral-200 tabular-nums">{initialSaveCount}</span>
+    </p>
+  );
+
   return (
     <main className="px-4 py-4 sm:px-6 lg:px-10 text-white space-y-5 sm:space-y-6 max-w-6xl">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold break-words">{build.name}</h1>
-          <p className="text-neutral-400">
-            {build.class} level {build.level} {build.look_the_part ? "- Look The Part" : ""}
-          </p>
-          {build.notes ? <p className="text-sm text-neutral-500 mt-2 whitespace-pre-wrap">{build.notes}</p> : null}
-          <div className="mt-2">
-            <CreatorAttribution ownerId={build.owner_id} displayName={creatorName} />
+      {showSaveControls ? (
+        <BuildSaveProvider buildId={build.id} initialSaved={isSaved} initialSaveCount={initialSaveCount}>
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            {buildHeaderLeft(<BuildUsageStatsSaves />)}
+            {buildHeaderActions}
           </div>
-          <section className="mt-3 text-sm text-neutral-400 space-y-1" aria-label="Usage statistics">
-            <p className="text-neutral-500 font-medium">Usage Stats</p>
-            <p>
-              Saves:{" "}
-              <span className="text-neutral-200 tabular-nums">{Math.max(0, Number(build.save_count ?? 0))}</span>
-            </p>
-            <p>
-              Clones:{" "}
-              <span className="text-neutral-200 tabular-nums">{Math.max(0, Number(build.clone_count ?? 0))}</span>
-            </p>
-          </section>
+        </BuildSaveProvider>
+      ) : (
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          {buildHeaderLeft(staticSavesLine)}
+          {buildHeaderActions}
         </div>
-        {canManageBuild ? (
-          <div className="flex flex-wrap gap-2">
-            <Link href={`/builds/${build.id}/settings`} className="px-3 py-2 bg-neutral-700 rounded text-sm sm:text-base">
-              Settings
-            </Link>
-            <Link href={`/builds/${build.id}/edit`} className="px-3 py-2 bg-amber-600 rounded text-sm sm:text-base">
-              Edit Spells
-            </Link>
-          </div>
-        ) : canAct ? (
-          <div className="flex flex-wrap gap-2 [&_button]:px-3 [&_button]:py-2 [&_button]:text-sm [&_button]:sm:text-base">
-            {isSaved ? <UnsaveSavedBuildButton buildId={build.id} /> : <SaveBuildButton buildId={build.id} />}
-          </div>
-        ) : null}
-      </div>
+      )}
 
       <section className="rounded-lg border border-neutral-800 p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -246,3 +273,4 @@ export default async function BuildDetailsPage({ params, searchParams }: Params)
     </main>
   );
 }
+
