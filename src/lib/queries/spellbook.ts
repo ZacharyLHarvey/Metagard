@@ -659,6 +659,11 @@ export async function refreshMartialBuildSelections(buildId: number) {
   if (error) throw error;
 }
 
+async function getBuildSaveCount(supabase: Awaited<ReturnType<typeof createClient>>, buildId: number) {
+  const { data: row } = await supabase.from("builds").select("save_count").eq("id", buildId).single();
+  return Math.max(0, Number(row?.save_count ?? 0));
+}
+
 export async function toggleSavedBuild(buildId: number) {
   const userId = await getCurrentUserId();
   if (!userId) throw new Error("Unauthorized");
@@ -673,11 +678,13 @@ export async function toggleSavedBuild(buildId: number) {
 
   if (existing) {
     await supabase.from("saved_builds").delete().eq("user_id", userId).eq("build_id", buildId);
-    return { saved: false };
+    const saveCount = await getBuildSaveCount(supabase, buildId);
+    return { saved: false, saveCount };
   }
 
   await supabase.from("saved_builds").insert({ user_id: userId, build_id: buildId });
-  return { saved: true };
+  const saveCount = await getBuildSaveCount(supabase, buildId);
+  return { saved: true, saveCount };
 }
 
 export async function getPatchNotes() {

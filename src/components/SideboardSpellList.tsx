@@ -85,7 +85,7 @@ export default function SideboardSpellList({
           const rowInner = (
             <>
               <div className="flex flex-wrap items-start gap-2 min-w-0">
-                <span className="font-medium text-neutral-100">{spell.name}</span>
+                <span className="font-medium text-foreground">{spell.name}</span>
                 {metaMagic ? (
                   <span className="text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-violet-900/60 text-violet-200 shrink-0">
                     Meta-Magic

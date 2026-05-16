@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import CreatorAttribution from "@/components/CreatorAttribution";
+import EntityCommentsSection from "@/components/EntityCommentsSection";
 import EntityRatingButtons from "@/components/EntityRatingButtons";
 import TierBadge from "@/components/TierBadge";
 import { getGlobalAverageRating, getNumericEntityVoteStats } from "@/lib/queries/ratingStats";
@@ -38,6 +39,7 @@ export default async function MonsterDetailPage({ params }: Params) {
   const stat = voteStats.get(mid) ?? { votes: 0, rawAverage: Number(m.average_rating ?? 0) };
   const tierData = computeTierResult(stat.rawAverage, stat.votes, globalAverage);
   const ownerId = typeof m.owner_id === "string" ? m.owner_id : null;
+  const canManage = profileId != null && profileId === ownerId;
   const creatorMap = await getDisplayNamesForOwnerIds([ownerId]);
   const creatorName = ownerId ? (creatorMap.get(ownerId) ?? "Player") : "Player";
 
@@ -46,7 +48,14 @@ export default async function MonsterDetailPage({ params }: Params) {
       <Link href="/monsters" className="text-sm text-blue-400 hover:underline">
         ← Monsters
       </Link>
-      <h1 className="text-2xl font-bold">{String(m.name)}</h1>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <h1 className="text-2xl font-bold">{String(m.name)}</h1>
+        {canManage ? (
+          <Link href={`/monsters/${mid}/edit`} className="px-3 py-2 bg-amber-600 rounded text-sm sm:text-base">
+            Edit
+          </Link>
+        ) : null}
+      </div>
       <p className="text-neutral-400 text-sm">
         <TierBadge tier={tierData.tier} /> · {tierData.weightedRating.toFixed(2)} · Raw ★ {stat.rawAverage.toFixed(2)} · {stat.votes} votes
       </p>
@@ -69,6 +78,11 @@ export default async function MonsterDetailPage({ params }: Params) {
           initialMyRating={myRating}
         />
       </section>
+
+      <EntityCommentsSection
+        commentsApiUrl={`/api/monsters/${mid}/comments`}
+        canComment={Boolean(profileId)}
+      />
     </main>
   );
 }

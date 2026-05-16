@@ -1,8 +1,8 @@
 import { createEntityCommentsRouteHandlers } from "@/lib/server/entityComments";
 
 const { GET, POST } = createEntityCommentsRouteHandlers({
-  table: "build_comments",
-  fkColumn: "build_id",
+  table: "monster_comments",
+  fkColumn: "monster_id",
 });
 
 export { GET, POST };
