@@ -1,5 +1,4 @@
-import { Suspense } from "react";
-import ParkChampionRandomBattlegamePicker from "@/components/ParkChampionRandomBattlegamePicker";
+import ParkChampionToolSwitcher from "@/components/parkChampion/ParkChampionToolSwitcher";
 
 export default function ParkChampionToolsPage() {
   return (
@@ -7,13 +6,11 @@ export default function ParkChampionToolsPage() {
       <header className="space-y-2">
         <h1 className="text-2xl font-bold">Park Champion Tools</h1>
         <p className="text-sm text-neutral-400">
-          Utility hub for park operations. Additional tools can be added as new sections below.
+          Utility hub for park operations. Choose a tool from the dropdown below.
         </p>
       </header>
 
-      <Suspense fallback={<p className="text-sm text-neutral-400">Loading tools…</p>}>
-        <ParkChampionRandomBattlegamePicker />
-      </Suspense>
+      <ParkChampionToolSwitcher />
     </main>
   );
 }

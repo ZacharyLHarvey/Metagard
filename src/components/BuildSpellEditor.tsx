@@ -42,8 +42,8 @@ import {
   validateExperiencedState,
 } from "@/lib/spellbook/experienced";
 
-/** Long-press (ms) to open spell detail modal; base 450 + 30%. */
-const LONG_PRESS_MS = 585;
+/** Long-press (ms) to open spell detail modal. */
+const LONG_PRESS_MS = 1000;
 
 type Props = {
   buildId: number;

@@ -4,8 +4,8 @@ import { useRef, useState, type ReactNode } from "react";
 import type { SpellRow } from "@/lib/spellbook/types";
 import SpellDetailModal from "@/components/spellbook/SpellDetailModal";
 
-/** Long-press (ms) to open spell detail modal; base 450 + 30%. */
-const LONG_PRESS_MS = 585;
+/** Long-press (ms) to open spell detail modal. */
+const LONG_PRESS_MS = 1000;
 
 function spellTitleSummary(spell: SpellRow): string {
   const eff = spell.effect?.trim() ?? "";
