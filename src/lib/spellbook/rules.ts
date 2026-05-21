@@ -8,9 +8,14 @@ type RuleResult = {
   adjustedCost: number;
 };
 
+export const ARTIFICER_MEND_WEAPON_SHIELD_TAG =
+  "Casting Mend on weapons or shields does not consume a use of Mend" as const;
+
 export type DisplayRuleResult = {
   frequency: string | null;
   range: string | null;
+  /** Optional parenthetical tag shown on the spell title (e.g. Artificer Mend note). */
+  tag: string | null;
 };
 
 /** Apply display overrides to a spell row (e.g. spell detail modal, long-press). */
@@ -234,6 +239,7 @@ export function computeDisplayRuleOverrides(
 ): DisplayRuleResult {
   let frequency = formatSpellFrequency(spell.frequency) ?? spell.frequency;
   let range = spell.range;
+  let tag: string | null = null;
   const cls = buildClassName ?? null;
 
   if (frequency && purchasedCount > 1 && frequency.includes("/")) {
@@ -340,8 +346,11 @@ export function computeDisplayRuleOverrides(
   if (cls === "Archer" && hasArchetype(selectedSpellNames, "Artificer")) {
     if (spell.name === "Mend") {
       frequency = "2/Life Charge x3 (ex)";
+      tag = ARTIFICER_MEND_WEAPON_SHIELD_TAG;
     } else if (spell.name === "Greater Mend") {
       frequency = "2/Refresh Charge x10 (ex)";
+    } else if (spell.type === "Specialty Arrow") {
+      frequency = "Unlimited (ex)";
     }
   }
 
@@ -385,5 +394,5 @@ export function computeDisplayRuleOverrides(
     frequency = stripChargeFromFrequency(frequency);
   }
 
-  return { frequency, range };
+  return { frequency, range, tag };
 }

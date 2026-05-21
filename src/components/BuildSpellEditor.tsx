@@ -9,6 +9,7 @@ import {
   buildSelectedSpellNameSet,
   applyDisplayRuleToSpell,
   computeDisplayRuleOverrides,
+  type DisplayRuleResult,
   evaluateSpellRules,
 } from "@/lib/spellbook/rules";
 import {
@@ -32,7 +33,10 @@ import {
   isPickTwoOfThreeSpell,
   getPickOneGroups,
 } from "@/lib/spellbook/martial";
-import { SNIPER_LTP_MEND_SELECTION_GROUP } from "@/lib/spellbook/archetypeGrantedSpells";
+import {
+  ARTIFICER_LTP_PINNING_SELECTION_GROUP,
+  SNIPER_LTP_MEND_SELECTION_GROUP,
+} from "@/lib/spellbook/archetypeGrantedSpells";
 import {
   buildExperiencedChargeSuffixByTargetKey,
   collectAllExperiencedTargetKeys,
@@ -262,10 +266,16 @@ export default function BuildSpellEditor({
   }, [experiencedPicker, selectionsAsRowsForExperienced, spells]);
 
   const hideArcherSniperLtpPickOne = className === "Archer" && selectedSpellNames.has("Sniper");
+  const hideArcherArtificerLtpPickOne = className === "Archer" && selectedSpellNames.has("Artificer");
+  const hideArcherArtificerPickTwo = hideArcherArtificerLtpPickOne;
+  const hideArcherLtpSpecialtyPickOne = hideArcherSniperLtpPickOne || hideArcherArtificerLtpPickOne;
   const visibleArchetypeGrants = useMemo(
     () =>
       extraSelections.filter(
-        (s) => s.purchased > 0 && s.selection_group !== SNIPER_LTP_MEND_SELECTION_GROUP
+        (s) =>
+          s.purchased > 0 &&
+          s.selection_group !== SNIPER_LTP_MEND_SELECTION_GROUP &&
+          s.selection_group !== ARTIFICER_LTP_PINNING_SELECTION_GROUP
       ),
     [extraSelections]
   );
@@ -277,6 +287,15 @@ export default function BuildSpellEditor({
           )
         : [],
     [extraSelections, hideArcherSniperLtpPickOne, lookThePart]
+  );
+  const lookThePartPinningGrantRows = useMemo(
+    () =>
+      hideArcherArtificerLtpPickOne && lookThePart
+        ? extraSelections.filter(
+            (s) => s.purchased > 0 && s.selection_group === ARTIFICER_LTP_PINNING_SELECTION_GROUP
+          )
+        : [],
+    [extraSelections, hideArcherArtificerLtpPickOne, lookThePart]
   );
   const pickOneGroups = useMemo(() => {
     const selectedRuleIds = new Set<number>();
@@ -300,10 +319,15 @@ export default function BuildSpellEditor({
 
   const pickOneGroupsForUI = useMemo(
     () =>
-      hideArcherSniperLtpPickOne
+      hideArcherLtpSpecialtyPickOne
         ? pickOneGroups.filter((g) => g.groupKey !== ARCHER_LTP_SPECIALTY_PICK_ONE_GROUP_KEY)
         : pickOneGroups,
-    [pickOneGroups, hideArcherSniperLtpPickOne]
+    [pickOneGroups, hideArcherLtpSpecialtyPickOne]
+  );
+
+  const pickTwoOfThreeGroupsForUI = useMemo(
+    () => (hideArcherArtificerPickTwo ? [] : pickTwoOfThreeGroups),
+    [pickTwoOfThreeGroups, hideArcherArtificerPickTwo]
   );
 
   const lookThePartPickOneGroups = useMemo(
@@ -329,7 +353,7 @@ export default function BuildSpellEditor({
       const spell = findSpellForSelection(spells, sel);
       if (!spell) continue;
       if (
-        hideArcherSniperLtpPickOne &&
+        hideArcherLtpSpecialtyPickOne &&
         spell.option_group === "archer:look_the_part"
       ) {
         continue;
@@ -342,7 +366,7 @@ export default function BuildSpellEditor({
     }
     out.sort((a, b) => a.spell.name.localeCompare(b.spell.name));
     return out;
-  }, [selectionMap, spells, className, lookThePart, lookThePartPickOneRuleIds, hideArcherSniperLtpPickOne]);
+  }, [selectionMap, spells, className, lookThePart, lookThePartPickOneRuleIds, hideArcherLtpSpecialtyPickOne]);
 
   function toggleSectionCollapse(sectionKey: string) {
     setCollapsedSectionKeys((prev) => {
@@ -365,11 +389,16 @@ export default function BuildSpellEditor({
     return true;
   }
 
-  function displaySpellTitle(spell: SpellRow, purchased: number, opts?: { isExperiencedTarget?: boolean }) {
+  function displaySpellTitle(
+    spell: SpellRow,
+    purchased: number,
+    opts?: { isExperiencedTarget?: boolean; displayTag?: string | null }
+  ) {
     const type = spell.type ?? null;
     if (type === "Archetype") return `${spell.name} - (Archetype)`;
     if (type === "Trait") return `${spell.name} - (Trait)`;
     if (opts?.isExperiencedTarget) return `${purchased}x ${spell.name} - (Experienced)`;
+    if (opts?.displayTag) return `${purchased}x ${spell.name} - (${opts.displayTag})`;
     return `${purchased}x ${spell.name}`;
   }
 
@@ -585,7 +614,7 @@ export default function BuildSpellEditor({
     router.refresh();
   }
 
-  function startLongPress(spell: SpellRow, display?: { frequency: string | null; range: string | null }) {
+  function startLongPress(spell: SpellRow, display?: DisplayRuleResult) {
     const detailSpell = display ? applyDisplayRuleToSpell(spell, display) : spell;
     const timeout = setTimeout(() => setSelectedSpell(detailSpell), LONG_PRESS_MS);
     return timeout;
@@ -701,7 +730,8 @@ export default function BuildSpellEditor({
       lookThePart &&
       (lookThePartRows.length > 0 ||
         lookThePartPickOneGroups.length > 0 ||
-        lookThePartMendGrantRows.length > 0) ? (
+        lookThePartMendGrantRows.length > 0 ||
+        lookThePartPinningGrantRows.length > 0) ? (
         <section className="border border-neutral-800 rounded-lg p-3 sm:p-4">
           <button
             type="button"
@@ -759,7 +789,7 @@ export default function BuildSpellEditor({
                       className,
                       expSuffix ? { experiencedChargeSuffix: expSuffix } : undefined
                     )
-                  : { frequency: null, range: null };
+                  : { frequency: null, range: null, tag: null };
                 let longPressTimeout: ReturnType<typeof setTimeout> | null = null;
                 return (
                   <div
@@ -768,7 +798,7 @@ export default function BuildSpellEditor({
                       evaluated?.restricted ? "border-red-800 bg-red-950/20" : "border-neutral-800"
                     }`}
                     onMouseDown={() => {
-                      if (spell) longPressTimeout = startLongPress(spell);
+                      if (spell) longPressTimeout = startLongPress(spell, display);
                     }}
                     onMouseUp={() => {
                       if (longPressTimeout) clearTimeout(longPressTimeout);
@@ -777,7 +807,7 @@ export default function BuildSpellEditor({
                       if (longPressTimeout) clearTimeout(longPressTimeout);
                     }}
                     onTouchStart={() => {
-                      if (spell) longPressTimeout = startLongPress(spell);
+                      if (spell) longPressTimeout = startLongPress(spell, display);
                     }}
                     onTouchEnd={() => {
                       if (longPressTimeout) clearTimeout(longPressTimeout);
@@ -788,6 +818,76 @@ export default function BuildSpellEditor({
                         {spell
                           ? displaySpellTitle(spell, purchased, {
                               isExperiencedTarget: experiencedSuffixByTargetKey.has(rowKey),
+                              displayTag: display.tag,
+                            })
+                          : `Spell #${row.spell_id}`}
+                      </p>
+                      {spell ? (
+                        <p className="text-xs text-neutral-400">
+                          {showTypeSchool && spell.type ? `${spell.type}` : ""}
+                          {showTypeSchool && spell.school ? ` (${spell.school})` : ""}
+                        </p>
+                      ) : null}
+                      {display.frequency ? (
+                        <p className="text-xs text-neutral-500 mt-1">{display.frequency}</p>
+                      ) : null}
+                      {evaluated?.restricted && evaluated.reason ? (
+                        <p className="text-xs text-red-300 mt-1">{evaluated.reason}</p>
+                      ) : null}
+                      {showIncantation && spell?.incantation ? (
+                        <p className="text-xs text-neutral-500 whitespace-pre-wrap mt-1">{spell.incantation}</p>
+                      ) : null}
+                      {showMaterials && spell?.materials ? (
+                        <p className="text-xs text-neutral-500 mt-1">({spell.materials})</p>
+                      ) : null}
+                    </div>
+                  </div>
+                );
+              })}
+              {lookThePartPinningGrantRows.map((row) => {
+                const spell = findSpellForSelection(spells, row);
+                const purchased = row.purchased;
+                const rowKey = selectionKeyFromRow(row);
+                const expSuffix = experiencedSuffixByTargetKey.get(rowKey);
+                const evaluated = spell ? evaluateSpellRules(spell, selectedSpellNames) : null;
+                const display = spell
+                  ? computeDisplayRuleOverrides(
+                      spell,
+                      selectedSpellNames,
+                      purchased,
+                      className,
+                      expSuffix ? { experiencedChargeSuffix: expSuffix } : undefined
+                    )
+                  : { frequency: null, range: null, tag: null };
+                let longPressTimeout: ReturnType<typeof setTimeout> | null = null;
+                return (
+                  <div
+                    key={row.id}
+                    className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded border p-2 sm:p-3 ${
+                      evaluated?.restricted ? "border-red-800 bg-red-950/20" : "border-neutral-800"
+                    }`}
+                    onMouseDown={() => {
+                      if (spell) longPressTimeout = startLongPress(spell, display);
+                    }}
+                    onMouseUp={() => {
+                      if (longPressTimeout) clearTimeout(longPressTimeout);
+                    }}
+                    onMouseLeave={() => {
+                      if (longPressTimeout) clearTimeout(longPressTimeout);
+                    }}
+                    onTouchStart={() => {
+                      if (spell) longPressTimeout = startLongPress(spell, display);
+                    }}
+                    onTouchEnd={() => {
+                      if (longPressTimeout) clearTimeout(longPressTimeout);
+                    }}
+                  >
+                    <div>
+                      <p className="font-medium">
+                        {spell
+                          ? displaySpellTitle(spell, purchased, {
+                              isExperiencedTarget: experiencedSuffixByTargetKey.has(rowKey),
+                              displayTag: display.tag,
                             })
                           : `Spell #${row.spell_id}`}
                       </p>
@@ -850,6 +950,7 @@ export default function BuildSpellEditor({
                       <p className="font-medium">
                         {displaySpellTitle(spell, purchased, {
                           isExperiencedTarget: experiencedSuffixByTargetKey.has(mapKey),
+                          displayTag: display.tag,
                         })}
                       </p>
                       <p className="text-xs text-neutral-400">
@@ -877,7 +978,7 @@ export default function BuildSpellEditor({
         </section>
       ) : null}
 
-      {pickOneGroupsForUI.length > 0 || pickTwoOfThreeGroups.length > 0 ? (
+      {pickOneGroupsForUI.length > 0 || pickTwoOfThreeGroupsForUI.length > 0 ? (
         <div className="hidden" />
       ) : null}
 
@@ -967,6 +1068,7 @@ export default function BuildSpellEditor({
                     <p className="font-medium">
                       {displaySpellTitle(spell, purchased, {
                         isExperiencedTarget: experiencedSuffixByTargetKey.has(key),
+                        displayTag: display.tag,
                       })}
                     </p>
                     <p className="text-xs text-neutral-400">
@@ -1040,7 +1142,7 @@ export default function BuildSpellEditor({
                   </div>
                 );
               })}
-            {pickTwoOfThreeGroups
+            {pickTwoOfThreeGroupsForUI
               .filter((g) => g.level === level)
               .map((group) => {
                 const selectedCount = group.options.filter(
@@ -1111,7 +1213,7 @@ export default function BuildSpellEditor({
                     className,
                     expSuffix ? { experiencedChargeSuffix: expSuffix } : undefined
                   )
-                : { frequency: null, range: null };
+                : { frequency: null, range: null, tag: null };
               let longPressTimeout: ReturnType<typeof setTimeout> | null = null;
               return (
                 <div
@@ -1140,6 +1242,7 @@ export default function BuildSpellEditor({
                       {spell
                         ? displaySpellTitle(spell, purchased, {
                             isExperiencedTarget: experiencedSuffixByTargetKey.has(rowKey),
+                            displayTag: display.tag,
                           })
                         : `Spell #${row.spell_id}`}
                     </p>
@@ -1184,7 +1287,7 @@ export default function BuildSpellEditor({
                     selectionMap[catalogRuleKey(opt.catalog_rule_id)]?.purchased > 0
                 )
             ) ||
-            pickTwoOfThreeGroups.some((g) => {
+            pickTwoOfThreeGroupsForUI.some((g) => {
               if (!g.requiredForMartial) return false;
               const n = g.options.filter(
                 (opt) =>
