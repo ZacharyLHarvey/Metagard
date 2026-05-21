@@ -4,6 +4,7 @@ import { useMemo, useRef, useState, type ReactElement, type ReactNode } from "re
 import type { BuildSpellSelectionRow, SpellRow } from "@/lib/spellbook/types";
 import {
   buildSelectedSpellNameSet,
+  applyDisplayRuleToSpell,
   computeDisplayRuleOverrides,
 } from "@/lib/spellbook/rules";
 import { catalogRuleKey, findSpellForSelection, selectionKeyFromRow } from "@/lib/spellbook/selection";
@@ -331,10 +332,11 @@ export default function BuildSpellDetails({
           expSuffix ? { experiencedChargeSuffix: expSuffix } : undefined
         )
       : { frequency: null, range: null };
+    const detailSpell = spell ? applyDisplayRuleToSpell(spell, ruleDisplay) : null;
     return (
       <tr key={selection.id}>
         <SpellRowTouchCell
-          spell={spell}
+          spell={detailSpell ?? spell}
           className="pl-8 pr-4 py-2 border-b border-neutral-800"
           onOpenDetail={setSelectedSpell}
         >
@@ -346,7 +348,7 @@ export default function BuildSpellDetails({
           <p className="text-xs text-neutral-400">
             {showTypeSchool && spell?.type ? `${spell.type}` : ""}
             {showTypeSchool && spell?.school ? ` (${spell.school})` : ""}
-            {showRange && ruleDisplay.range ? ` ${ruleDisplay.range}` : ""}
+            {showRange && ruleDisplay.range ? ` (${ruleDisplay.range})` : ""}
           </p>
           {ruleDisplay.frequency ? (
             <p className="text-xs text-neutral-500 mt-1">{ruleDisplay.frequency}</p>

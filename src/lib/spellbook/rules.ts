@@ -13,6 +13,15 @@ export type DisplayRuleResult = {
   range: string | null;
 };
 
+/** Apply display overrides to a spell row (e.g. spell detail modal, long-press). */
+export function applyDisplayRuleToSpell(spell: SpellRow, display: DisplayRuleResult): SpellRow {
+  return {
+    ...spell,
+    ...(display.frequency != null ? { frequency: display.frequency } : {}),
+    ...(display.range != null ? { range: display.range } : {}),
+  };
+}
+
 export type ComputeDisplayRuleOptions = {
   experiencedChargeSuffix?: ExperiencedChargeSuffix | null;
 };
@@ -34,6 +43,17 @@ function applyExperiencedChargeToFrequency(
 
 function hasArchetype(selected: Set<string>, name: string) {
   return selected.has(name);
+}
+
+/** Remove Charge x# clauses (and optional trailing modifiers like (ex)). */
+function stripChargeFromFrequency(frequency: string | null): string | null {
+  if (!frequency || !frequency.trim()) return frequency;
+  const stripped = frequency
+    .trim()
+    .replace(/(?<![a-zA-Z])Charge\s+x\d+(\s+\([^)]+\))?/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  return stripped || null;
 }
 
 /** Multiply the leading uses count in `N/Per…` (e.g. `1/Life Charge x3` → `2/Life Charge x3`). */
@@ -306,6 +326,9 @@ export function computeDisplayRuleOverrides(
     // V8.7 Marauder: Insult becomes 1/Life Charge x5 (m) (Ambulant) — match swiftgard.com wording.
     frequency = "1/Life Charge x5 (m) (Ambulant)";
   }
+  if (cls === "Warrior" && hasArchetype(selectedSpellNames, "Marauder") && spell.name === "Momentum") {
+    frequency = "Unlimited (ex) (Ambulant)";
+  }
   if (hasArchetype(selectedSpellNames, "Spy") && ["Shadow Step", "Blink"].includes(spell.name)) {
     frequency = `${frequency ?? ""} Charge x3`.trim();
   }
@@ -338,9 +361,28 @@ export function computeDisplayRuleOverrides(
     }
   }
 
+  if (cls === "Barbarian" && hasArchetype(selectedSpellNames, "Berserker") && spell.name === "Momentum") {
+    frequency = "Unlimited (ex) (Ambulant)";
+  }
+
+  if (cls === "Warrior" && hasArchetype(selectedSpellNames, "Juggernaut") && spell.name === "Greater Harden") {
+    range = "Self";
+    if (frequency && !/\(ex\)/i.test(frequency)) {
+      frequency = `${frequency.trim()} (ex)`;
+    }
+  }
+  if (cls === "Warrior" && hasArchetype(selectedSpellNames, "Juggernaut") && spell.name === "Phoenix Tears") {
+    frequency = "3/Refresh (ex) (Swift)";
+    range = "Self";
+  }
+
   const expSuffix = options?.experiencedChargeSuffix;
   if (expSuffix) {
     frequency = applyExperiencedChargeToFrequency(frequency, expSuffix);
+  }
+
+  if (cls === "Warrior" && hasArchetype(selectedSpellNames, "Marauder") && spell.name === "Ancestral Armor") {
+    frequency = stripChargeFromFrequency(frequency);
   }
 
   return { frequency, range };

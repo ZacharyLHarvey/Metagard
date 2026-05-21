@@ -1,3 +1,4 @@
+import { formatSpellFrequency } from "@/lib/spellbook/formatFrequency";
 import { findSpellForSelection } from "@/lib/spellbook/selection";
 import type { BuildSpellSelectionRow, SpellRow } from "@/lib/spellbook/types";
 
@@ -12,9 +13,25 @@ export type ArchetypeGrantedSpellDescriptor = {
   spellId: number;
   spellLevel: number;
   displayFrequency?: string;
+  /** Copy formatted frequency from a catalog spell (e.g. Harden) and append (ex). */
+  deriveDisplayFrequencyFromSpellName?: string;
+  displayRange?: string;
   /** When true, only include this grant if the build has Look the Part enabled. */
   requiresLookThePart?: boolean;
 };
+
+function frequencyWithExperiencedSuffix(base: string | null): string | null {
+  if (!base || !base.trim()) return "(ex)";
+  if (/\(ex\)/i.test(base)) return base.trim();
+  return `${base.trim()} (ex)`;
+}
+
+function resolveDerivedDisplayFrequency(catalogSpells: SpellRow[], spellName: string): string | null {
+  const source = catalogSpells.find((s) => s.name === spellName);
+  if (!source) return null;
+  const base = formatSpellFrequency(source.frequency) ?? source.frequency;
+  return frequencyWithExperiencedSuffix(base);
+}
 
 /** Archetype name (spell name) -> granted abilities for view-build display only. */
 const ARCHETYPE_GRANTED_SPELLS: Record<string, ArchetypeGrantedSpellDescriptor[]> = {
@@ -25,6 +42,23 @@ const ARCHETYPE_GRANTED_SPELLS: Record<string, ArchetypeGrantedSpellDescriptor[]
   Sniper: [
     { spellId: 100, spellLevel: 6, displayFrequency: "Unlimited (ex) (Ambulant)" },
     { spellId: 98, spellLevel: 1, displayFrequency: "1/Life", requiresLookThePart: true },
+  ],
+  Marauder: [{ spellId: 100, spellLevel: 6, displayFrequency: "Unlimited (ex) (Ambulant)" }],
+  Berserker: [{ spellId: 100, spellLevel: 6, displayFrequency: "Unlimited (ex) (Ambulant)" }],
+  Juggernaut: [
+    {
+      spellId: 69,
+      spellLevel: 1,
+      deriveDisplayFrequencyFromSpellName: "Harden",
+      displayRange: "Self",
+    },
+    {
+      spellId: 200,
+      spellLevel: 6,
+      displayFrequency: "3/Refresh (ex) (Swift)",
+      displayRange: "Self",
+    },
+    { spellId: 199, spellLevel: 6 },
   ],
 };
 
@@ -70,10 +104,14 @@ export function mergeGrantSpellsIntoCatalog(
     if (hasRow(d.spellId, d.spellLevel)) continue;
     const base = fetchedGrantSpells.find((s) => s.id === d.spellId);
     if (!base) continue;
+    const derivedFrequency = d.deriveDisplayFrequencyFromSpellName
+      ? resolveDerivedDisplayFrequency(catalogSpells, d.deriveDisplayFrequencyFromSpellName)
+      : null;
     merged.push({
       ...base,
       level: d.spellLevel,
-      frequency: d.displayFrequency ?? base.frequency,
+      frequency: d.displayFrequency ?? derivedFrequency ?? base.frequency,
+      range: d.displayRange ?? base.range,
       catalog_rule_id: undefined,
       source_type: "archetype_grant",
       option_group: undefined,

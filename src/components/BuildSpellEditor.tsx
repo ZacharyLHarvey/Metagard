@@ -7,6 +7,7 @@ import SpellDetailModal from "@/components/spellbook/SpellDetailModal";
 import TipsAlert from "@/components/spellbook/TipsAlert";
 import {
   buildSelectedSpellNameSet,
+  applyDisplayRuleToSpell,
   computeDisplayRuleOverrides,
   evaluateSpellRules,
 } from "@/lib/spellbook/rules";
@@ -584,8 +585,9 @@ export default function BuildSpellEditor({
     router.refresh();
   }
 
-  function startLongPress(spell: SpellRow) {
-    const timeout = setTimeout(() => setSelectedSpell(spell), LONG_PRESS_MS);
+  function startLongPress(spell: SpellRow, display?: { frequency: string | null; range: string | null }) {
+    const detailSpell = display ? applyDisplayRuleToSpell(spell, display) : spell;
+    const timeout = setTimeout(() => setSelectedSpell(detailSpell), LONG_PRESS_MS);
     return timeout;
   }
 
@@ -1118,7 +1120,7 @@ export default function BuildSpellEditor({
                     evaluated?.restricted ? "border-red-800 bg-red-950/20" : "border-neutral-800"
                   }`}
                   onMouseDown={() => {
-                    if (spell) longPressTimeout = startLongPress(spell);
+                    if (spell) longPressTimeout = startLongPress(spell, display);
                   }}
                   onMouseUp={() => {
                     if (longPressTimeout) clearTimeout(longPressTimeout);
@@ -1127,7 +1129,7 @@ export default function BuildSpellEditor({
                     if (longPressTimeout) clearTimeout(longPressTimeout);
                   }}
                   onTouchStart={() => {
-                    if (spell) longPressTimeout = startLongPress(spell);
+                    if (spell) longPressTimeout = startLongPress(spell, display);
                   }}
                   onTouchEnd={() => {
                     if (longPressTimeout) clearTimeout(longPressTimeout);
