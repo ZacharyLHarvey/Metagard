@@ -8,10 +8,24 @@ type RuleResult = {
   adjustedCost: number;
 };
 
+export const ARTIFICER_MEND_WEAPON_SHIELD_TAG =
+  "Casting Mend on weapons or shields does not consume a use of Mend" as const;
+
 export type DisplayRuleResult = {
   frequency: string | null;
   range: string | null;
+  /** Optional parenthetical tag shown on the spell title (e.g. Artificer Mend note). */
+  tag: string | null;
 };
+
+/** Apply display overrides to a spell row (e.g. spell detail modal, long-press). */
+export function applyDisplayRuleToSpell(spell: SpellRow, display: DisplayRuleResult): SpellRow {
+  return {
+    ...spell,
+    ...(display.frequency != null ? { frequency: display.frequency } : {}),
+    ...(display.range != null ? { range: display.range } : {}),
+  };
+}
 
 export type ComputeDisplayRuleOptions = {
   experiencedChargeSuffix?: ExperiencedChargeSuffix | null;
@@ -34,6 +48,17 @@ function applyExperiencedChargeToFrequency(
 
 function hasArchetype(selected: Set<string>, name: string) {
   return selected.has(name);
+}
+
+/** Remove Charge x# clauses (and optional trailing modifiers like (ex)). */
+function stripChargeFromFrequency(frequency: string | null): string | null {
+  if (!frequency || !frequency.trim()) return frequency;
+  const stripped = frequency
+    .trim()
+    .replace(/(?<![a-zA-Z])Charge\s+x\d+(\s+\([^)]+\))?/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  return stripped || null;
 }
 
 /** Multiply the leading uses count in `N/Per…` (e.g. `1/Life Charge x3` → `2/Life Charge x3`). */
@@ -214,6 +239,7 @@ export function computeDisplayRuleOverrides(
 ): DisplayRuleResult {
   let frequency = formatSpellFrequency(spell.frequency) ?? spell.frequency;
   let range = spell.range;
+  let tag: string | null = null;
   const cls = buildClassName ?? null;
 
   if (frequency && purchasedCount > 1 && frequency.includes("/")) {
@@ -306,6 +332,9 @@ export function computeDisplayRuleOverrides(
     // V8.7 Marauder: Insult becomes 1/Life Charge x5 (m) (Ambulant) — match swiftgard.com wording.
     frequency = "1/Life Charge x5 (m) (Ambulant)";
   }
+  if (cls === "Warrior" && hasArchetype(selectedSpellNames, "Marauder") && spell.name === "Momentum") {
+    frequency = "Unlimited (ex) (Ambulant)";
+  }
   if (hasArchetype(selectedSpellNames, "Spy") && ["Shadow Step", "Blink"].includes(spell.name)) {
     frequency = `${frequency ?? ""} Charge x3`.trim();
   }
@@ -317,8 +346,11 @@ export function computeDisplayRuleOverrides(
   if (cls === "Archer" && hasArchetype(selectedSpellNames, "Artificer")) {
     if (spell.name === "Mend") {
       frequency = "2/Life Charge x3 (ex)";
+      tag = ARTIFICER_MEND_WEAPON_SHIELD_TAG;
     } else if (spell.name === "Greater Mend") {
       frequency = "2/Refresh Charge x10 (ex)";
+    } else if (spell.type === "Specialty Arrow") {
+      frequency = "Unlimited (ex)";
     }
   }
 
@@ -338,10 +370,29 @@ export function computeDisplayRuleOverrides(
     }
   }
 
+  if (cls === "Barbarian" && hasArchetype(selectedSpellNames, "Berserker") && spell.name === "Momentum") {
+    frequency = "Unlimited (ex) (Ambulant)";
+  }
+
+  if (cls === "Warrior" && hasArchetype(selectedSpellNames, "Juggernaut") && spell.name === "Greater Harden") {
+    range = "Self";
+    if (frequency && !/\(ex\)/i.test(frequency)) {
+      frequency = `${frequency.trim()} (ex)`;
+    }
+  }
+  if (cls === "Warrior" && hasArchetype(selectedSpellNames, "Juggernaut") && spell.name === "Phoenix Tears") {
+    frequency = "3/Refresh (ex) (Swift)";
+    range = "Self";
+  }
+
   const expSuffix = options?.experiencedChargeSuffix;
   if (expSuffix) {
     frequency = applyExperiencedChargeToFrequency(frequency, expSuffix);
   }
 
-  return { frequency, range };
+  if (cls === "Warrior" && hasArchetype(selectedSpellNames, "Marauder") && spell.name === "Ancestral Armor") {
+    frequency = stripChargeFromFrequency(frequency);
+  }
+
+  return { frequency, range, tag };
 }

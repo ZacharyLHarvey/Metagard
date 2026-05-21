@@ -4,6 +4,7 @@ import { useMemo, useRef, useState, type ReactElement, type ReactNode } from "re
 import type { BuildSpellSelectionRow, SpellRow } from "@/lib/spellbook/types";
 import {
   buildSelectedSpellNameSet,
+  applyDisplayRuleToSpell,
   computeDisplayRuleOverrides,
 } from "@/lib/spellbook/rules";
 import { catalogRuleKey, findSpellForSelection, selectionKeyFromRow } from "@/lib/spellbook/selection";
@@ -147,15 +148,16 @@ export default function BuildSpellDetails({
     spell: SpellRow | null | undefined,
     fallbackName: string,
     purchased: number,
-    opts?: { isExperiencedTarget?: boolean }
+    opts?: { isExperiencedTarget?: boolean; displayTag?: string | null }
   ) {
     const type = spell?.type ?? null;
     const name = spell?.name ?? fallbackName;
     const isArchetype = type === "Archetype";
     const isTrait = type === "Trait";
-    const tag = isArchetype ? "Archetype" : isTrait ? "Trait" : null;
-    if (tag) return `${name} - (${tag})`;
+    const typeTag = isArchetype ? "Archetype" : isTrait ? "Trait" : null;
+    if (typeTag) return `${name} - (${typeTag})`;
     if (opts?.isExperiencedTarget) return `${purchased}x ${name} - (Experienced)`;
+    if (opts?.displayTag) return `${purchased}x ${name} - (${opts.displayTag})`;
     return `${purchased}x ${name}`;
   }
 
@@ -208,7 +210,10 @@ export default function BuildSpellDetails({
       if (Number.isFinite(rid)) selectedRuleIds.add(rid);
     }
     let groups = getPickOneGroups(spells, className, selectedRuleIds);
-    if (className === "Archer" && selectedSpellNames.has("Sniper")) {
+    if (
+      className === "Archer" &&
+      (selectedSpellNames.has("Sniper") || selectedSpellNames.has("Artificer"))
+    ) {
       groups = groups.filter((g) => g.groupKey !== ARCHER_LTP_SPECIALTY_PICK_ONE_GROUP_KEY);
     }
     const unresolved = groups.filter((g) => {
@@ -330,23 +335,25 @@ export default function BuildSpellDetails({
           className,
           expSuffix ? { experiencedChargeSuffix: expSuffix } : undefined
         )
-      : { frequency: null, range: null };
+      : { frequency: null, range: null, tag: null };
+    const detailSpell = spell ? applyDisplayRuleToSpell(spell, ruleDisplay) : null;
     return (
       <tr key={selection.id}>
         <SpellRowTouchCell
-          spell={spell}
+          spell={detailSpell ?? spell}
           className="pl-8 pr-4 py-2 border-b border-neutral-800"
           onOpenDetail={setSelectedSpell}
         >
           <p className="font-medium">
             {displayNameWithTypeTag(spell, `Spell #${selection.spell_id}`, selection.purchased, {
               isExperiencedTarget: experiencedSuffixByTargetKey.has(rowKey),
+              displayTag: ruleDisplay.tag,
             })}
           </p>
           <p className="text-xs text-neutral-400">
             {showTypeSchool && spell?.type ? `${spell.type}` : ""}
             {showTypeSchool && spell?.school ? ` (${spell.school})` : ""}
-            {showRange && ruleDisplay.range ? ` ${ruleDisplay.range}` : ""}
+            {showRange && ruleDisplay.range ? ` (${ruleDisplay.range})` : ""}
           </p>
           {ruleDisplay.frequency ? (
             <p className="text-xs text-neutral-500 mt-1">{ruleDisplay.frequency}</p>
@@ -375,7 +382,7 @@ export default function BuildSpellDetails({
             className,
             expSuffix ? { experiencedChargeSuffix: expSuffix } : undefined
           )
-        : { frequency: null, range: null };
+        : { frequency: null, range: null, tag: null };
       return (
         <tr key={selection.id}>
           <SpellRowTouchCell
@@ -386,6 +393,7 @@ export default function BuildSpellDetails({
             <p className="font-medium">
               {displayNameWithTypeTag(spell, `Spell #${selection.spell_id}`, selection.purchased, {
                 isExperiencedTarget: experiencedSuffixByTargetKey.has(rowKey),
+                displayTag: ruleDisplay.tag,
               })}
             </p>
             <p className="text-xs text-neutral-400">

@@ -1,20 +1,66 @@
+import { formatSpellFrequency } from "@/lib/spellbook/formatFrequency";
 import { findSpellForSelection } from "@/lib/spellbook/selection";
 import type { BuildSpellSelectionRow, SpellRow } from "@/lib/spellbook/types";
 
 /** Synthetic selection_group for Sniper + Look the Part Mend grant (shown in LtP section, not persisted). */
 export const SNIPER_LTP_MEND_SELECTION_GROUP = "archetype-grant:Sniper:ltp-mend" as const;
 
+/** Synthetic selection_group for Artificer + Look the Part Pinning Arrow grant (shown in LtP section, not persisted). */
+export const ARTIFICER_LTP_PINNING_SELECTION_GROUP = "archetype-grant:Artificer:ltp-pinning" as const;
+
 function catalogHasSpellAtLevel(catalogSpells: SpellRow[], spellId: number, spellLevel: number): boolean {
   return catalogSpells.some((s) => s.id === spellId && (s.level ?? 1) === spellLevel);
+}
+
+function catalogHasNonGrantSpellAtLevel(
+  catalogSpells: SpellRow[],
+  spellId: number,
+  spellLevel: number
+): boolean {
+  return catalogSpells.some(
+    (s) =>
+      s.id === spellId &&
+      (s.level ?? 1) === spellLevel &&
+      s.source_type !== "archetype_grant"
+  );
 }
 
 export type ArchetypeGrantedSpellDescriptor = {
   spellId: number;
   spellLevel: number;
+  purchased?: number;
   displayFrequency?: string;
+  /** Copy formatted frequency from a catalog spell (e.g. Harden) and append (ex). */
+  deriveDisplayFrequencyFromSpellName?: string;
+  displayRange?: string;
   /** When true, only include this grant if the build has Look the Part enabled. */
   requiresLookThePart?: boolean;
+  /** Still merge / create selection when catalog already has this spell id + level. */
+  allowCatalogCollision?: boolean;
+  /** Always grant even if build already purchased a catalog row with the same spell name. */
+  replaceBlockedCatalogSpells?: boolean;
+  selectionGroup?: string;
 };
+
+function frequencyWithExperiencedSuffix(base: string | null): string | null {
+  if (!base || !base.trim()) return "(ex)";
+  if (/\(ex\)/i.test(base)) return base.trim();
+  return `${base.trim()} (ex)`;
+}
+
+function resolveDerivedDisplayFrequency(catalogSpells: SpellRow[], spellName: string): string | null {
+  const source = catalogSpells.find((s) => s.name === spellName);
+  if (!source) return null;
+  const base = formatSpellFrequency(source.frequency) ?? source.frequency;
+  return frequencyWithExperiencedSuffix(base);
+}
+
+function selectionGroupForGrant(d: FlatArchetypeGrantDescriptor): string {
+  if (d.selectionGroup) return d.selectionGroup;
+  if (d.requiresLookThePart && d.archetype === "Sniper") return SNIPER_LTP_MEND_SELECTION_GROUP;
+  if (d.requiresLookThePart && d.archetype === "Artificer") return ARTIFICER_LTP_PINNING_SELECTION_GROUP;
+  return `archetype-grant:${d.archetype}`;
+}
 
 /** Archetype name (spell name) -> granted abilities for view-build display only. */
 const ARCHETYPE_GRANTED_SPELLS: Record<string, ArchetypeGrantedSpellDescriptor[]> = {
@@ -25,6 +71,60 @@ const ARCHETYPE_GRANTED_SPELLS: Record<string, ArchetypeGrantedSpellDescriptor[]
   Sniper: [
     { spellId: 100, spellLevel: 6, displayFrequency: "Unlimited (ex) (Ambulant)" },
     { spellId: 98, spellLevel: 1, displayFrequency: "1/Life", requiresLookThePart: true },
+  ],
+  Marauder: [{ spellId: 100, spellLevel: 6, displayFrequency: "Unlimited (ex) (Ambulant)" }],
+  Berserker: [{ spellId: 100, spellLevel: 6, displayFrequency: "Unlimited (ex) (Ambulant)" }],
+  Juggernaut: [
+    {
+      spellId: 69,
+      spellLevel: 1,
+      deriveDisplayFrequencyFromSpellName: "Harden",
+      displayRange: "Self",
+    },
+    {
+      spellId: 200,
+      spellLevel: 6,
+      displayFrequency: "3/Refresh (ex) (Swift)",
+      displayRange: "Self",
+    },
+    { spellId: 199, spellLevel: 6 },
+  ],
+  Artificer: [
+    {
+      spellId: 71,
+      spellLevel: 6,
+      displayFrequency: "2/Refresh Charge x10 (ex)",
+    },
+    {
+      spellId: 109,
+      spellLevel: 6,
+      purchased: 3,
+      displayFrequency: "Unlimited (ex)",
+      replaceBlockedCatalogSpells: true,
+    },
+    {
+      spellId: 106,
+      spellLevel: 6,
+      purchased: 1,
+      displayFrequency: "Unlimited (ex)",
+      replaceBlockedCatalogSpells: true,
+    },
+    {
+      spellId: 157,
+      spellLevel: 4,
+      purchased: 1,
+      displayFrequency: "Unlimited (ex)",
+      replaceBlockedCatalogSpells: true,
+    },
+    {
+      spellId: 109,
+      spellLevel: 1,
+      purchased: 1,
+      displayFrequency: "Unlimited (ex)",
+      requiresLookThePart: true,
+      allowCatalogCollision: true,
+      selectionGroup: ARTIFICER_LTP_PINNING_SELECTION_GROUP,
+    },
   ],
 };
 
@@ -62,18 +162,26 @@ export function mergeGrantSpellsIntoCatalog(
   lookThePart = false
 ): SpellRow[] {
   const merged = [...catalogSpells];
-  const hasRow = (spellId: number, spellLevel: number) =>
-    merged.some((s) => s.id === spellId && (s.level ?? 1) === spellLevel);
 
   for (const d of descriptors) {
     if (d.requiresLookThePart && !lookThePart) continue;
-    if (hasRow(d.spellId, d.spellLevel)) continue;
+    if (
+      !d.allowCatalogCollision &&
+      !d.replaceBlockedCatalogSpells &&
+      catalogHasNonGrantSpellAtLevel(merged, d.spellId, d.spellLevel)
+    ) {
+      continue;
+    }
     const base = fetchedGrantSpells.find((s) => s.id === d.spellId);
     if (!base) continue;
+    const derivedFrequency = d.deriveDisplayFrequencyFromSpellName
+      ? resolveDerivedDisplayFrequency(catalogSpells, d.deriveDisplayFrequencyFromSpellName)
+      : null;
     merged.push({
       ...base,
       level: d.spellLevel,
-      frequency: d.displayFrequency ?? base.frequency,
+      frequency: d.displayFrequency ?? derivedFrequency ?? base.frequency,
+      range: d.displayRange ?? base.range,
       catalog_rule_id: undefined,
       source_type: "archetype_grant",
       option_group: undefined,
@@ -90,7 +198,7 @@ export function mergeGrantSpellsIntoCatalog(
 
 /**
  * Synthetic selections for archetype-granted spells (view only).
- * Skips spells the build already has purchased (by resolved spell name).
+ * Skips spells the build already has purchased (by resolved spell name) unless replaceBlockedCatalogSpells.
  */
 export function buildArchetypeGrantExtraSelections(
   buildId: number,
@@ -114,17 +222,29 @@ export function buildArchetypeGrantExtraSelections(
   for (const d of descriptors) {
     if (d.requiresLookThePart && !lookThePart) continue;
     const name = spellNameById.get(d.spellId);
-    if (name && !d.requiresLookThePart && ownedNames.has(name)) continue;
-    if (catalogHasSpellAtLevel(catalogSpells, d.spellId, d.spellLevel)) continue;
+    if (
+      name &&
+      !d.requiresLookThePart &&
+      !d.replaceBlockedCatalogSpells &&
+      ownedNames.has(name)
+    ) {
+      continue;
+    }
+    if (
+      !d.allowCatalogCollision &&
+      !d.replaceBlockedCatalogSpells &&
+      catalogHasSpellAtLevel(catalogSpells, d.spellId, d.spellLevel)
+    ) {
+      continue;
+    }
     out.push({
       id: virtualId,
       build_id: buildId,
       spell_id: d.spellId,
       spell_level: d.spellLevel,
-      purchased: 1,
+      purchased: d.purchased ?? 1,
       experienced: 0,
-      selection_group:
-        d.requiresLookThePart && d.archetype === "Sniper" ? SNIPER_LTP_MEND_SELECTION_GROUP : `archetype-grant:${d.archetype}`,
+      selection_group: selectionGroupForGrant(d),
       chosen: true,
       metadata: {},
     });

@@ -1,4 +1,7 @@
-import { SNIPER_LTP_MEND_SELECTION_GROUP } from "@/lib/spellbook/archetypeGrantedSpells";
+import {
+  ARTIFICER_LTP_PINNING_SELECTION_GROUP,
+  SNIPER_LTP_MEND_SELECTION_GROUP,
+} from "@/lib/spellbook/archetypeGrantedSpells";
 import { isMartialClass } from "@/lib/spellbook/martial";
 import { buildSelectedSpellNameSet, evaluateSpellRules } from "@/lib/spellbook/rules";
 import { findSpellForSelection } from "@/lib/spellbook/selection";
@@ -38,7 +41,7 @@ export function mergeViewDisplaySpellSelectionRows(
 
 /**
  * Split merged view rows into Look the Part vs main spell tables (matches BuildSpellDetails).
- * Rows hidden for Archer Sniper + LtP (archer:look_the_part options) are omitted from both.
+ * Rows hidden for Archer Sniper/Artificer + LtP (archer:look_the_part options) are omitted from both.
  */
 export function partitionViewBuildSpellDisplayRows(
   displaySelections: BuildSpellSelectionRow[],
@@ -48,17 +51,26 @@ export function partitionViewBuildSpellDisplayRows(
   const showLtpSection = isMartialClass(opts.className) && opts.lookThePart;
   const archerSniperLtP =
     opts.className === "Archer" && opts.lookThePart && opts.selectedSpellNames.has("Sniper");
+  const archerArtificerLtP =
+    opts.className === "Archer" && opts.lookThePart && opts.selectedSpellNames.has("Artificer");
   const lookThePartRows: BuildSpellSelectionRow[] = [];
   const mainRows: BuildSpellSelectionRow[] = [];
   for (const selection of displaySelections) {
     const spell = findSpellForSelection(spells, selection);
-    if (archerSniperLtP && spell?.option_group === "archer:look_the_part") {
+    if (
+      (archerSniperLtP || archerArtificerLtP) &&
+      spell?.option_group === "archer:look_the_part"
+    ) {
       continue;
     }
     const isLtpSpell = Boolean(
       spell && (spell.is_look_the_part || spell.source_type === "look_the_part")
     );
-    if (showLtpSection && selection.selection_group === SNIPER_LTP_MEND_SELECTION_GROUP) {
+    if (
+      showLtpSection &&
+      (selection.selection_group === SNIPER_LTP_MEND_SELECTION_GROUP ||
+        selection.selection_group === ARTIFICER_LTP_PINNING_SELECTION_GROUP)
+    ) {
       lookThePartRows.push(selection);
       continue;
     }
