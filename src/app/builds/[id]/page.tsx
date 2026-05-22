@@ -15,6 +15,7 @@ import {
 import TierBadge from "@/components/TierBadge";
 import { getGlobalAverageRating, getNumericEntityVoteStats } from "@/lib/queries/ratingStats";
 import { getProfile } from "@/lib/queries/getProfile";
+import { getBuildGroupsForBuild } from "@/lib/queries/buildGroups";
 import {
   getBuildById,
   getBuildSpellSelections,
@@ -60,10 +61,11 @@ export default async function BuildDetailsPage({ params, searchParams }: Params)
   const build = await getBuildById(buildId);
   if (!build) notFound();
 
-  const [selections, spells, profile] = await Promise.all([
+  const [selections, spells, profile, buildGroups] = await Promise.all([
     getBuildSpellSelections(buildId),
     getCatalogSpellsForClass(build.class, build.level),
     getProfile(),
+    getBuildGroupsForBuild(buildId),
   ]);
 
   const archetypes = selectedMartialArchetypeSpells(selections, spells);
@@ -137,6 +139,22 @@ export default async function BuildDetailsPage({ params, searchParams }: Params)
     </section>
   );
 
+  const buildGroupsSection =
+    buildGroups.length > 0 ? (
+      <section className="mt-3 text-sm text-neutral-400 space-y-1" aria-label="Build groups">
+        <p className="text-neutral-500 font-medium">Build Groups</p>
+        <ul className="space-y-1">
+          {buildGroups.map((g) => (
+            <li key={g.id}>
+              <Link href={`/build-groups/${g.id}`} className="text-blue-400 hover:underline">
+                {g.name}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ) : null;
+
   const buildHeaderLeft = (savesLine: ReactNode) => (
     <div>
       <h1 className="text-xl sm:text-2xl font-bold break-words">{build.name}</h1>
@@ -148,6 +166,7 @@ export default async function BuildDetailsPage({ params, searchParams }: Params)
         <CreatorAttribution ownerId={build.owner_id} displayName={creatorName} />
       </div>
       {usageStatsSection(savesLine)}
+      {buildGroupsSection}
     </div>
   );
 

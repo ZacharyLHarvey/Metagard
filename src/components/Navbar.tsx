@@ -12,6 +12,7 @@ export default async function Navbar() {
   const links = [
     { href: "/", label: "Home" },
     { href: "/builds", label: "Builds" },
+    { href: "/build-groups", label: "Build Groups" },
     { href: "/create-build", label: "Create Build" },
     { href: "/leaderboards", label: "Leaderboards" },
     { href: "/battlegames", label: "Battlegames" },

@@ -3,6 +3,7 @@ import BuildTableBodyRow from "@/components/BuildTableBodyRow";
 import CreatorAttribution from "@/components/CreatorAttribution";
 import TierBadge from "@/components/TierBadge";
 import AutoQuerySelect from "@/components/AutoQuerySelect";
+import { getLeaderboardBuildGroups } from "@/lib/queries/buildGroups";
 import { getAllSpellsList, getClassLeaderboard, getLeaderboardBuilds } from "@/lib/queries/spellbook";
 import type { BuildRow } from "@/lib/spellbook/types";
 import { getDisplayNamesForOwnerIds } from "@/lib/queries/publicProfiles";
@@ -63,8 +64,10 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
   const showMonsters = lb === "all" || lb === "monsters";
   const showCustomClasses = lb === "all" || lb === "custom-classes";
   const showCustomSpells = lb === "all" || lb === "custom-spells";
+  const showBuildGroups = lb === "all" || lb === "build-groups";
 
-  const [builds, spells, classes, battleGames, monsters, customClasses, customSpells] = await Promise.all([
+  const [builds, spells, classes, battleGames, monsters, customClasses, customSpells, buildGroups] =
+    await Promise.all([
     showBuilds ? getLeaderboardBuilds(200) : Promise.resolve([] as BuildRow[]),
     showSpells ? getAllSpellsList() : Promise.resolve([]),
     showClasses ? getClassLeaderboard() : Promise.resolve([]),
@@ -159,6 +162,7 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
             );
         })()
       : Promise.resolve([]),
+    showBuildGroups ? getLeaderboardBuildGroups(200) : Promise.resolve([]),
   ]);
 
   const creatorByOwnerId = await getDisplayNamesForOwnerIds([
@@ -167,6 +171,7 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
     ...monsters.map((r) => r.owner_id),
     ...customClasses.map((r) => r.owner_id),
     ...customSpells.map((r) => r.owner_id),
+    ...buildGroups.map((r) => r.owner_id),
   ]);
 
   const byClassLevel = new Map<string, BuildRow[]>();
@@ -191,6 +196,7 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
           options={[
             { value: "all", label: "All" },
             { value: "builds", label: "Builds" },
+            { value: "build-groups", label: "Build Groups" },
             { value: "spells", label: "Spells" },
             { value: "classes", label: "Classes" },
             { value: "battle-games", label: "Battlegames" },
@@ -305,6 +311,59 @@ export default async function LeaderboardsPage({ searchParams }: { searchParams:
             </div>
           </section>
         </>
+      ) : null}
+
+      {showBuildGroups ? (
+        <section className="space-y-3">
+          <div className="flex items-baseline justify-between flex-wrap gap-4">
+            <h2 className="text-lg font-semibold">Build Groups</h2>
+            <Link href="/leaderboards/build-groups" className="text-sm text-blue-400 hover:underline">
+              Open Build Groups Leaderboard →
+            </Link>
+          </div>
+          <div className="border border-neutral-800 rounded-lg overflow-hidden">
+            <div className="overflow-x-auto">
+            <table className="w-full text-sm border-collapse table-fixed">
+              <thead className="bg-neutral-900">
+                <tr>
+                  <th className="px-4 py-2 text-left border-b border-neutral-800 w-12">#</th>
+                  <th className="px-4 py-2 text-left border-b border-neutral-800">Build Group</th>
+                  <th className="px-4 py-2 text-left border-b border-neutral-800 w-20">Tier</th>
+                  <th className="px-4 py-2 text-left border-b border-neutral-800 w-24">WR</th>
+                  <th className="px-4 py-2 text-left border-b border-neutral-800 w-20">Votes</th>
+                </tr>
+              </thead>
+              <tbody>
+                {buildGroups.slice(0, 25).map((r, i) => (
+                  <tr key={r.id} className="hover:bg-neutral-900/40">
+                    <td className="px-4 py-2 border-b border-neutral-800 text-neutral-500">{i + 1}</td>
+                    <td className="px-4 py-2 border-b border-neutral-800">
+                      <Link href={`/build-groups/${r.id}`} className="text-blue-400 hover:underline">
+                        {r.name}
+                      </Link>
+                      <div className="mt-1">
+                        <CreatorAttribution
+                          ownerId={r.owner_id}
+                          displayName={
+                            r.owner_id ? (creatorByOwnerId.get(r.owner_id) ?? "Player") : "Player"
+                          }
+                        />
+                      </div>
+                    </td>
+                    <td className="px-4 py-2 border-b border-neutral-800">
+                      <TierBadge tier={r.tier as "S+" | "S" | "A" | "B" | "C" | "D" | "F"} />
+                    </td>
+                    <td className="px-4 py-2 border-b border-neutral-800">
+                      {Number(r.weighted_rating ?? 0).toFixed(2)}
+                    </td>
+                    <td className="px-4 py-2 border-b border-neutral-800">{Number(r.ratings_count ?? 0)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            </div>
+          </div>
+        </section>
       ) : null}
 
       {showSpells ? (
