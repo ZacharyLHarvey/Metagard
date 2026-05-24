@@ -1,13 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { buildSelectedSpellNameSet } from "@/lib/spellbook/rules";
 import { findSpellForSelection } from "@/lib/spellbook/selection";
 import type { BuildSpellSelectionRow, SpellRow } from "@/lib/spellbook/types";
-import {
-  mergeViewDisplaySpellSelectionRows,
-  partitionViewBuildSpellDisplayRows,
-} from "@/lib/spellbook/viewBuildSpellSelections";
+import { getViewBuildPurchasedSpellRows } from "@/lib/spellbook/viewBuildSpellSelections";
 
 type Props = {
   selections: BuildSpellSelectionRow[];
@@ -27,26 +23,14 @@ export default function ArcherArrowTotalsSection({
   const [collapsed, setCollapsed] = useState(false);
 
   const lines = useMemo(() => {
-    const purchasedBySpellId: Record<number, number> = {};
-    for (const s of selections) {
-      purchasedBySpellId[s.spell_id] = (purchasedBySpellId[s.spell_id] ?? 0) + s.purchased;
-    }
-    const selectedSpellNames = buildSelectedSpellNameSet(purchasedBySpellId, spells);
-    const displaySelections = mergeViewDisplaySpellSelectionRows(
+    const rowsForArrows = getViewBuildPurchasedSpellRows(
       selections,
       extraSelections,
-      spells
-    );
-    const { mainRows, lookThePartRows } = partitionViewBuildSpellDisplayRows(
-      displaySelections,
       spells,
-      { className, lookThePart, selectedSpellNames }
+      { className, lookThePart }
     );
-    // Include LtP-section specialty arrows (e.g. fourth Pinning) as well as level/type table rows.
-    const rowsForArrows = [...mainRows, ...lookThePartRows];
     const byName = new Map<string, number>();
     for (const row of rowsForArrows) {
-      if (row.purchased <= 0) continue;
       const spell = findSpellForSelection(spells, row);
       if (spell?.type !== "Specialty Arrow") continue;
       const name = spell.name;
