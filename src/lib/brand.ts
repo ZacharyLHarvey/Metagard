@@ -7,7 +7,14 @@ export const BRAND_IMAGE = {
   logoWidth: 900,
   logoHeight: 650,
   iconSize: 1024,
+  ogImage: "/og-image.png",
+  ogImageWidth: 1200,
+  ogImageHeight: 630,
 } as const;
+
+/** Open Graph / social preview alt — `og-image.png`. */
+export const SITE_OG_IMAGE_ALT =
+  "Metagard — community tools for Amtgard builds, spells, and battlegames";
 
 /** Full wordmark alt — `logo2.png` (dark theme). */
 export const SITE_LOGO_ALT =

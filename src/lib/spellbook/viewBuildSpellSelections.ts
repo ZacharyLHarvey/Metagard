@@ -82,3 +82,28 @@ export function partitionViewBuildSpellDisplayRows(
   }
   return { lookThePartRows, mainRows };
 }
+
+/** Purchased spell rows visible on view build (main + LtP tables), same pipeline as BuildSpellDetails. */
+export function getViewBuildPurchasedSpellRows(
+  selections: BuildSpellSelectionRow[],
+  extraSelections: BuildSpellSelectionRow[],
+  spells: SpellRow[],
+  opts: { className: string; lookThePart: boolean }
+): BuildSpellSelectionRow[] {
+  const purchasedBySpellId: Record<number, number> = {};
+  for (const s of selections) {
+    purchasedBySpellId[s.spell_id] = (purchasedBySpellId[s.spell_id] ?? 0) + s.purchased;
+  }
+  const selectedSpellNames = buildSelectedSpellNameSet(purchasedBySpellId, spells);
+  const displaySelections = mergeViewDisplaySpellSelectionRows(
+    selections,
+    extraSelections,
+    spells
+  );
+  const { mainRows, lookThePartRows } = partitionViewBuildSpellDisplayRows(
+    displaySelections,
+    spells,
+    { className: opts.className, lookThePart: opts.lookThePart, selectedSpellNames }
+  );
+  return [...mainRows, ...lookThePartRows].filter((row) => row.purchased > 0);
+}

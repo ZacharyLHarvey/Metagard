@@ -5,6 +5,7 @@ import BuildInfoSection from "@/components/BuildInfoSection";
 import BuildRatingSection from "@/components/BuildRatingSection";
 import BuildSideboardSection from "@/components/BuildSideboardSection";
 import ArcherArrowTotalsSection from "@/components/ArcherArrowTotalsSection";
+import MaterialTotalsSection from "@/components/MaterialTotalsSection";
 import BuildSpellDetails from "@/components/BuildSpellDetails";
 import CloneBuildButton from "@/components/CloneBuildButton";
 import {
@@ -261,7 +262,15 @@ export default async function BuildDetailsPage({ params, searchParams }: Params)
           lookThePart={build.look_the_part}
           className={build.class}
         />
-      ) : null}
+      ) : (
+        <MaterialTotalsSection
+          selections={selections}
+          extraSelections={extraArchetypeSelections}
+          spells={spellsForView}
+          lookThePart={build.look_the_part}
+          className={build.class}
+        />
+      )}
       {martial ? (
         <p className="text-xs text-neutral-400">
           Martial class build: abilities are auto-assigned by class/level. Look The Part grants class-specific LTP ability only.

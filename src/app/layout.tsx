@@ -4,8 +4,9 @@ import "./globals.css";
 import FaviconThemeSync from "@/components/FaviconThemeSync";
 import Navbar from "@/components/Navbar";
 import ThemeProvider from "@/components/ThemeProvider";
-import { BRAND_IMAGE, SITE_LOGO_ALT } from "@/lib/brand";
+import { BRAND_IMAGE, SITE_OG_IMAGE_ALT } from "@/lib/brand";
 import { getProfileCached } from "@/lib/queries/getProfileCached";
+import { getSiteUrl } from "@/lib/siteUrl";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -20,17 +21,11 @@ const geistMono = Geist_Mono({
 const siteDescription =
   "Community tools for Amtgard builds, spells, classes, battlegames, monsters, and tiered leaderboards.";
 
-const defaultMetadataBase = "http://localhost:3000";
-const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL ??
-  (process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : defaultMetadataBase);
-
 export async function generateMetadata(): Promise<Metadata> {
   const profile = await getProfileCached();
   const isLight = profile?.theme_preference === "light";
   const iconPath = isLight ? BRAND_IMAGE.iconLight : BRAND_IMAGE.iconDark;
+  const siteUrl = getSiteUrl();
 
   return {
     metadataBase: new URL(siteUrl),
@@ -67,12 +62,13 @@ export async function generateMetadata(): Promise<Metadata> {
       siteName: "Metagard",
       title: "Metagard",
       description: siteDescription,
+      url: siteUrl,
       images: [
         {
-          url: BRAND_IMAGE.logoDark,
-          width: BRAND_IMAGE.logoWidth,
-          height: BRAND_IMAGE.logoHeight,
-          alt: SITE_LOGO_ALT,
+          url: BRAND_IMAGE.ogImage,
+          width: BRAND_IMAGE.ogImageWidth,
+          height: BRAND_IMAGE.ogImageHeight,
+          alt: SITE_OG_IMAGE_ALT,
         },
       ],
     },
@@ -80,7 +76,7 @@ export async function generateMetadata(): Promise<Metadata> {
       card: "summary_large_image",
       title: "Metagard",
       description: siteDescription,
-      images: [BRAND_IMAGE.logoDark],
+      images: [BRAND_IMAGE.ogImage],
     },
   };
 }
