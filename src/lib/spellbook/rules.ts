@@ -1,6 +1,7 @@
 import { formatSpellFrequency } from "@/lib/spellbook/formatFrequency";
 import type { ExperiencedChargeSuffix } from "@/lib/spellbook/experienced";
-import type { SpellRow } from "@/lib/spellbook/types";
+import { findSpellForSelection } from "@/lib/spellbook/selection";
+import type { BuildSpellSelectionRow, SpellRow } from "@/lib/spellbook/types";
 
 type RuleResult = {
   restricted: boolean;
@@ -13,6 +14,28 @@ export const ARTIFICER_MEND_WEAPON_SHIELD_TAG =
 
 export const ROGUE_COUP_DE_GRACE_TAG =
   "Regain a use of Coup de Grace upon killing a player with a thrown weapon" as const;
+
+export const PRIEST_META_MAGIC_SPIRIT_TAG = "May only be used on Spirit abilities" as const;
+
+export const COMBAT_CASTER_EMPTY_HAND_TAG =
+  "Does not require an empty hand to cast abilities" as const;
+
+export const SNIPER_NO_NORMAL_ARROWS_NOTE = "May not fire normal arrows" as const;
+
+export type EvaluateSpellRulesContext = {
+  /** Purchased counts by resolved spell name (for archetype purchase caps). */
+  purchasedCountBySpellName?: Record<string, number>;
+  /** Treat as buying this many additional copies (e.g. + button); default 0 for display. */
+  prospectiveAdditionalPurchases?: number;
+};
+
+function effectivePurchasedCount(
+  purchasedByName: Record<string, number>,
+  spellName: string,
+  context?: EvaluateSpellRulesContext | null
+): number {
+  return (purchasedByName[spellName] ?? 0) + (context?.prospectiveAdditionalPurchases ?? 0);
+}
 
 export type DisplayRuleResult = {
   frequency: string | null;
@@ -90,9 +113,43 @@ export function buildSelectedSpellNameSet(
   return selected;
 }
 
+/** Sum purchased counts by spell name (same name at different levels aggregates). */
+export function buildPurchasedCountBySpellName(
+  purchasedById: Record<number, number>,
+  spells: SpellRow[]
+): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const spell of spells) {
+    const n = purchasedById[spell.id] ?? 0;
+    if (n <= 0) continue;
+    counts[spell.name] = (counts[spell.name] ?? 0) + n;
+  }
+  return counts;
+}
+
+/** Aggregate purchased counts from selection rows (edit map or persisted selections). */
+export function buildPurchasedCountBySpellNameFromSelections(
+  selections: Iterable<{ spell_id: number; spell_level: number; purchased: number }>,
+  spells: SpellRow[]
+): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const sel of selections) {
+    if (sel.purchased <= 0) continue;
+    const spell = findSpellForSelection(spells, {
+      spell_id: sel.spell_id,
+      spell_level: sel.spell_level,
+      selection_group: null,
+    });
+    if (!spell) continue;
+    counts[spell.name] = (counts[spell.name] ?? 0) + sel.purchased;
+  }
+  return counts;
+}
+
 export function evaluateSpellRules(
   spell: SpellRow,
-  selectedSpellNames: Set<string>
+  selectedSpellNames: Set<string>,
+  context?: EvaluateSpellRulesContext | null
 ): RuleResult {
   let restricted = false;
   let reason: string | null = null;
@@ -114,6 +171,20 @@ export function evaluateSpellRules(
   if (hasArchetype(selectedSpellNames, "Priest")) {
     if (spell.name === "Heal") {
       adjustedCost = 0;
+    }
+  }
+
+  const purchasedByName = context?.purchasedCountBySpellName ?? {};
+  if (hasArchetype(selectedSpellNames, "Necromancer") && spell.name === "Undead Minion") {
+    if (effectivePurchasedCount(purchasedByName, "Undead Minion", context) > 5) {
+      restricted = true;
+      reason = "Blocked by Necromancer archetype (max 5 Undead Minion)";
+    }
+  }
+  if (hasArchetype(selectedSpellNames, "Guardian") && spell.name === "Imbue Shield") {
+    if (effectivePurchasedCount(purchasedByName, "Imbue Shield", context) > 1) {
+      restricted = true;
+      reason = "Blocked by Guardian archetype (only one Imbue Shield)";
     }
   }
 
@@ -208,7 +279,7 @@ export function evaluateSpellRules(
   }
   if (
     hasArchetype(selectedSpellNames, "Apex") &&
-    ["Evolution", "Hold Person", "Pinning Arrow", "Adaptive Protection"].includes(spell.name)
+    ["Evolution", "Hold Person", "Pinning Arrow"].includes(spell.name)
   ) {
     restricted = true;
     reason = "Blocked by Apex archetype";
@@ -330,7 +401,7 @@ export function computeDisplayRuleOverrides(
     frequency = `${frequency ?? ""} Charge x5`.trim();
   }
   if (hasArchetype(selectedSpellNames, "Corruptor") && spell.name === "Terror") {
-    frequency = `${frequency ?? ""} Charge x10`.trim();
+    frequency = `${frequency ?? ""} Charge x10 (m)`.trim();
   }
   if (hasArchetype(selectedSpellNames, "Corruptor") && spell.name === "Void Touched") {
     range = "Self";
@@ -348,6 +419,25 @@ export function computeDisplayRuleOverrides(
 
   if (hasArchetype(selectedSpellNames, "Evoker") && spell.name === "Elemental Barrage") {
     frequency = `${frequency ?? ""} Charge x10`.trim();
+  }
+
+  if (
+    hasArchetype(selectedSpellNames, "Avatar of Nature") &&
+    spell.type === "Enchantment" &&
+    spell.name !== "Golem" &&
+    (spell.level ?? 99) <= 4 &&
+    spell.range &&
+    spell.range !== "Self"
+  ) {
+    range = "Self";
+  }
+
+  if (hasArchetype(selectedSpellNames, "Priest") && spell.type === "Meta-Magic") {
+    tag = PRIEST_META_MAGIC_SPIRIT_TAG;
+  }
+
+  if (hasArchetype(selectedSpellNames, "Combat Caster") && purchasedCount > 0) {
+    tag = tag ? `${tag}; ${COMBAT_CASTER_EMPTY_HAND_TAG}` : COMBAT_CASTER_EMPTY_HAND_TAG;
   }
 
   if (cls === "Assassin" && hasArchetype(selectedSpellNames, "Rogue") && spell.name === "Coup de Grace") {

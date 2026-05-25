@@ -1,0 +1,710 @@
+{
+  "generatedAt": "2026-05-25T17:05:38.451Z",
+  "archetypeCount": 28,
+  "grantMapCount": 13,
+  "grantArchetypes": [
+    "Apex",
+    "Artificer",
+    "Berserker",
+    "Corruptor",
+    "Guardian",
+    "Infernal",
+    "Inquisitor",
+    "Juggernaut",
+    "Marauder",
+    "Medium",
+    "Mystic",
+    "Raider",
+    "Sniper"
+  ],
+  "evalArchetypeCount": 28,
+  "displayArchetypeCount": 22,
+  "gearArchetypeCount": 11,
+  "openGapCount": 0,
+  "overallPass": true,
+  "evalArchetypes": [
+    "Apex",
+    "Artificer",
+    "Avatar of Nature",
+    "Battlemage",
+    "Berserker",
+    "Combat Caster",
+    "Corruptor",
+    "Dervish",
+    "Evoker",
+    "Guardian",
+    "Hunter",
+    "Infernal",
+    "Inquisitor",
+    "Juggernaut",
+    "Legend",
+    "Marauder",
+    "Medium",
+    "Mystic",
+    "Necromancer",
+    "Priest",
+    "Raider",
+    "Ranger",
+    "Rogue",
+    "Sniper",
+    "Spy",
+    "Summoner",
+    "Warder",
+    "Warlock"
+  ],
+  "displayArchetypes": [
+    "Artificer",
+    "Avatar of Nature",
+    "Battlemage",
+    "Berserker",
+    "Combat Caster",
+    "Corruptor",
+    "Dervish",
+    "Evoker",
+    "Hunter",
+    "Infernal",
+    "Juggernaut",
+    "Legend",
+    "Marauder",
+    "Medium",
+    "Necromancer",
+    "Priest",
+    "Rogue",
+    "Sniper",
+    "Spy",
+    "Summoner",
+    "Warder",
+    "Warlock"
+  ],
+  "gearArchetypes": [
+    "Artificer",
+    "Berserker",
+    "Corruptor",
+    "Hunter",
+    "Infernal",
+    "Marauder",
+    "Medium",
+    "Mystic",
+    "Ranger",
+    "Rogue",
+    "Spy"
+  ],
+  "perArchetype": [
+    {
+      "id": 9,
+      "name": "Apex",
+      "effect": "Gain Mend 1/Life (ex) and Sleight of Mind (Self) 1/Life (ex)",
+      "limitation": "Loses all instances of Evolution, Hold Person, Pinning Arrow, and Adaptive Protection.",
+      "note": null,
+      "fixtureClass": "Paladin",
+      "code": {
+        "grants": [
+          {
+            "spellId": 98,
+            "purchased": 1,
+            "displayFrequency": "1/Life (ex)",
+            "displayRange": null,
+            "requiresLookThePart": false
+          },
+          {
+            "spellId": 136,
+            "purchased": 1,
+            "displayFrequency": "1/Life (ex)",
+            "displayRange": null,
+            "requiresLookThePart": false
+          }
+        ],
+        "inEvaluateRules": true,
+        "inDisplayRules": false,
+        "inGear": false
+      },
+      "gaps": []
+    },
+    {
+      "id": 10,
+      "name": "Artificer",
+      "effect": "May wield a Small shield. Gain Greater Mend 2/Refresh Charge x10 (ex). Mend becomes 2/Life Charge x3 (ex). Casting Mend on weapons or shields does not consume a use of Mend.",
+      "limitation": "Rather than the normal amount of Specialty Arrows for an Archer, gain: - Pinning Arrow 3 Arrows / Unlimited (ex) - Phase Arrow 1 Arrow / Unlimited (ex) - Suppression Arrow 1 Arrow/ Unlimited (ex) Look the Part becomes a fourth Pinning Arrow.",
+      "note": "Player must still have a use of Mend remaining to cast on weapons or shields.",
+      "fixtureClass": "Archer",
+      "code": {
+        "grants": [
+          {
+            "spellId": 71,
+            "purchased": 3,
+            "displayFrequency": "2/Refresh Charge x10 (ex)",
+            "displayRange": null,
+            "requiresLookThePart": true
+          },
+          {
+            "spellId": 109,
+            "purchased": 1,
+            "displayFrequency": "Unlimited (ex)",
+            "displayRange": null,
+            "requiresLookThePart": true
+          },
+          {
+            "spellId": 106,
+            "purchased": 1,
+            "displayFrequency": "Unlimited (ex)",
+            "displayRange": null,
+            "requiresLookThePart": true
+          },
+          {
+            "spellId": 157,
+            "purchased": 1,
+            "displayFrequency": "Unlimited (ex)",
+            "displayRange": null,
+            "requiresLookThePart": true
+          },
+          {
+            "spellId": 109,
+            "purchased": 1,
+            "displayFrequency": "Unlimited (ex)",
+            "displayRange": null,
+            "requiresLookThePart": true
+          }
+        ],
+        "inEvaluateRules": true,
+        "inDisplayRules": true,
+        "inGear": true
+      },
+      "gaps": []
+    },
+    {
+      "id": 19,
+      "name": "Avatar of Nature",
+      "effect": "All the casters Enchantments of level 4 and below are now range Self instead of their previous range. Does not apply to Golem.",
+      "limitation": "",
+      "note": null,
+      "fixtureClass": "Druid",
+      "code": {
+        "grants": [],
+        "inEvaluateRules": true,
+        "inDisplayRules": true,
+        "inGear": false
+      },
+      "gaps": []
+    },
+    {
+      "id": 18,
+      "name": "Battlemage",
+      "effect": "Use of Ambulant becomes unlimited.",
+      "limitation": "May not purchase Enchantments or Magic Balls.",
+      "note": null,
+      "fixtureClass": "Wizard",
+      "code": {
+        "grants": [],
+        "inEvaluateRules": true,
+        "inDisplayRules": true,
+        "inGear": false
+      },
+      "gaps": []
+    },
+    {
+      "id": 22,
+      "name": "Berserker",
+      "effect": "Gain Momentum Unlimited (ex) (Ambulant).",
+      "limitation": "May not wear Armor, and loses all instances of Blood and Thunder.",
+      "note": null,
+      "fixtureClass": "Barbarian",
+      "code": {
+        "grants": [
+          {
+            "spellId": 100,
+            "purchased": 1,
+            "displayFrequency": "Unlimited (ex) (Ambulant)",
+            "displayRange": null,
+            "requiresLookThePart": false
+          }
+        ],
+        "inEvaluateRules": true,
+        "inDisplayRules": true,
+        "inGear": true
+      },
+      "gaps": []
+    },
+    {
+      "id": 29,
+      "name": "Combat Caster",
+      "effect": "Does not require an empty hand to cast abilities",
+      "limitation": "",
+      "note": null,
+      "fixtureClass": "Wizard",
+      "code": {
+        "grants": [],
+        "inEvaluateRules": true,
+        "inDisplayRules": true,
+        "inGear": false
+      },
+      "gaps": []
+    },
+    {
+      "id": 36,
+      "name": "Corruptor",
+      "effect": "Gain Void Touched (Self) 2/Refresh (m). All uses of Terror become 1/Life Charge x10 (m).",
+      "limitation": "May not wield Great Weapons or Javelins and loses all instances of Flame Blade.",
+      "note": null,
+      "fixtureClass": "Anti-Paladin",
+      "code": {
+        "grants": [
+          {
+            "spellId": 169,
+            "purchased": 1,
+            "displayFrequency": "2/Refresh (m)",
+            "displayRange": "Self",
+            "requiresLookThePart": false
+          }
+        ],
+        "inEvaluateRules": true,
+        "inDisplayRules": true,
+        "inGear": true
+      },
+      "gaps": []
+    },
+    {
+      "id": 40,
+      "name": "Dervish",
+      "effect": "Equipment costs are doubled. Each Verbal purchased gives double the uses. Example: 1/Life Charge x3 becomes 2/Life Charge x3, 2/Life becomes 4/Life, 1/Refresh becomes 2/Refresh.",
+      "limitation": "",
+      "note": null,
+      "fixtureClass": "Bard",
+      "code": {
+        "grants": [],
+        "inEvaluateRules": true,
+        "inDisplayRules": true,
+        "inGear": false
+      },
+      "gaps": []
+    },
+    {
+      "id": 54,
+      "name": "Evoker",
+      "effect": "May not purchase Verbals with a range of 20' or 50'. Elemental Barrage becomes Charge x10.",
+      "limitation": "",
+      "note": "Elemental Barrage must still be purchased.",
+      "fixtureClass": "Wizard",
+      "code": {
+        "grants": [],
+        "inEvaluateRules": true,
+        "inDisplayRules": true,
+        "inGear": false
+      },
+      "gaps": []
+    },
+    {
+      "id": 73,
+      "name": "Guardian",
+      "effect": "Gain Imbue Shield (Touch) 1/Life (m) and Martyr (Other) 2/Life Charge x3 (ex).",
+      "limitation": "Loses all instances of Protection from Magic and Extend Immunities. May only have one instance of Imbue Shield active at a time.",
+      "note": null,
+      "fixtureClass": "Paladin",
+      "code": {
+        "grants": [
+          {
+            "spellId": 81,
+            "purchased": 1,
+            "displayFrequency": "1/Life (m)",
+            "displayRange": "Touch",
+            "requiresLookThePart": false
+          },
+          {
+            "spellId": 95,
+            "purchased": 1,
+            "displayFrequency": "2/Life Charge x3 (ex)",
+            "displayRange": "Other",
+            "requiresLookThePart": false
+          }
+        ],
+        "inEvaluateRules": true,
+        "inDisplayRules": false,
+        "inGear": false
+      },
+      "gaps": []
+    },
+    {
+      "id": 80,
+      "name": "Hunter",
+      "effect": "May wield Great weapons and Javelins. Pick one: -Hold Person becomes 1/Life Charge x3 (m). -Pinning Arrow becomes 2 Arrows / Unlimited (ex)",
+      "limitation": "May not wield shields. Loses all instances of Release and Evolution.",
+      "note": "You only gain the benefit of an option if you already have that ability.",
+      "fixtureClass": "Scout",
+      "code": {
+        "grants": [],
+        "inEvaluateRules": true,
+        "inDisplayRules": true,
+        "inGear": true
+      },
+      "gaps": []
+    },
+    {
+      "id": 85,
+      "name": "Infernal",
+      "effect": "Gain Fireball 2 Balls / Unlimited (m). Flame Blade becomes (Self) 2/Refresh Charge x5.",
+      "limitation": "May not wield shields. Lose all instances of Steal Life Essence.",
+      "note": null,
+      "fixtureClass": "Anti-Paladin",
+      "code": {
+        "grants": [
+          {
+            "spellId": 60,
+            "purchased": 2,
+            "displayFrequency": "Unlimited (m)",
+            "displayRange": null,
+            "requiresLookThePart": false
+          }
+        ],
+        "inEvaluateRules": true,
+        "inDisplayRules": true,
+        "inGear": true
+      },
+      "gaps": []
+    },
+    {
+      "id": 87,
+      "name": "Inquisitor",
+      "effect": "Gain Sacred Blades (Self) 1/Life (ex)",
+      "limitation": "Player loses all instances of Greater Resurrect.",
+      "note": null,
+      "fixtureClass": "Paladin",
+      "code": {
+        "grants": [
+          {
+            "spellId": 187,
+            "purchased": 1,
+            "displayFrequency": "1/Life (ex)",
+            "displayRange": "Self",
+            "requiresLookThePart": false
+          }
+        ],
+        "inEvaluateRules": true,
+        "inDisplayRules": false,
+        "inGear": false
+      },
+      "gaps": []
+    },
+    {
+      "id": 90,
+      "name": "Juggernaut",
+      "effect": "Replace Harden with Greater Harden (Self) (ex) at the same frequency. Gain Phoenix Tears (Self) 3/Refresh (ex) (Swift) and Imbue Armor (T).",
+      "limitation": "Loses all instances of Ancestral Armor and True Grit.",
+      "note": null,
+      "fixtureClass": "Warrior",
+      "code": {
+        "grants": [
+          {
+            "spellId": 69,
+            "purchased": 1,
+            "displayFrequency": "3/Refresh (ex) (Swift)",
+            "displayRange": "Self",
+            "requiresLookThePart": false
+          },
+          {
+            "spellId": 200,
+            "purchased": 1,
+            "displayFrequency": null,
+            "displayRange": "Self",
+            "requiresLookThePart": false
+          },
+          {
+            "spellId": 199,
+            "purchased": 1,
+            "displayFrequency": null,
+            "displayRange": null,
+            "requiresLookThePart": false
+          }
+        ],
+        "inEvaluateRules": true,
+        "inDisplayRules": true,
+        "inGear": false
+      },
+      "gaps": []
+    },
+    {
+      "id": 91,
+      "name": "Legend",
+      "effect": "Each Extension purchased gives double the uses. Example: 1/Life becomes 2/Life. Swift may not be purchased or used.",
+      "limitation": "",
+      "note": null,
+      "fixtureClass": "Bard",
+      "code": {
+        "grants": [],
+        "inEvaluateRules": true,
+        "inDisplayRules": true,
+        "inGear": false
+      },
+      "gaps": []
+    },
+    {
+      "id": 178,
+      "name": "Marauder",
+      "effect": "Gain Momentum Unlimited (ex) (Ambulant). Insult becomes 1/Life Charge x5 (m) (Ambulant).",
+      "limitation": "Maximum Armor becomes 4pts. May not wield Large shields. Ancestral Armor is no longer chargeable.",
+      "note": null,
+      "fixtureClass": "Warrior",
+      "code": {
+        "grants": [
+          {
+            "spellId": 100,
+            "purchased": 1,
+            "displayFrequency": "Unlimited (ex) (Ambulant)",
+            "displayRange": null,
+            "requiresLookThePart": false
+          }
+        ],
+        "inEvaluateRules": true,
+        "inDisplayRules": true,
+        "inGear": true
+      },
+      "gaps": []
+    },
+    {
+      "id": 97,
+      "name": "Medium",
+      "effect": "Gain Blessing Against Wounds (Touch) 1/Life (ex), Sever Spirit 1/Life Charge x3 (ex), and Swift 2/Life (ex). Abilities in the Spirit school become Charge x3.",
+      "limitation": "May not wear Armor and may not wield Great weapons.",
+      "note": null,
+      "fixtureClass": "Monk",
+      "code": {
+        "grants": [
+          {
+            "spellId": 26,
+            "purchased": 1,
+            "displayFrequency": "1/Life (ex)",
+            "displayRange": "Touch",
+            "requiresLookThePart": false
+          },
+          {
+            "spellId": 130,
+            "purchased": 1,
+            "displayFrequency": "1/Life Charge x3 (ex)",
+            "displayRange": null,
+            "requiresLookThePart": false
+          },
+          {
+            "spellId": 159,
+            "purchased": 1,
+            "displayFrequency": "2/Life (ex)",
+            "displayRange": null,
+            "requiresLookThePart": false
+          }
+        ],
+        "inEvaluateRules": true,
+        "inDisplayRules": true,
+        "inGear": true
+      },
+      "gaps": []
+    },
+    {
+      "id": 102,
+      "name": "Mystic",
+      "effect": "Gain Force Bolt 4 Balls / Unlimited (m). Gain Suppression Bolt 2 Balls / Unlimited (m).",
+      "limitation": "May not wield Heavy Thrown. Lose all instances of Resurrect.",
+      "note": null,
+      "fixtureClass": "Monk",
+      "code": {
+        "grants": [
+          {
+            "spellId": 61,
+            "purchased": 4,
+            "displayFrequency": "Unlimited (m)",
+            "displayRange": null,
+            "requiresLookThePart": false
+          },
+          {
+            "spellId": 158,
+            "purchased": 2,
+            "displayFrequency": "Unlimited (m)",
+            "displayRange": null,
+            "requiresLookThePart": false
+          }
+        ],
+        "inEvaluateRules": true,
+        "inDisplayRules": false,
+        "inGear": true
+      },
+      "gaps": []
+    },
+    {
+      "id": 104,
+      "name": "Necromancer",
+      "effect": "All abilities purchased in the Death School become Charge x3. You may have a combined total of five Undead Minion Enchantments.",
+      "limitation": "You may not purchase any abilities from the Protection School.",
+      "note": null,
+      "fixtureClass": "Healer",
+      "code": {
+        "grants": [],
+        "inEvaluateRules": true,
+        "inDisplayRules": true,
+        "inGear": false
+      },
+      "gaps": []
+    },
+    {
+      "id": 114,
+      "name": "Priest",
+      "effect": "Meta-Magic may only be used on Spirit abilities. All Meta-Magics purchased become 1/Life Charge x3. Heal costs zero points.",
+      "limitation": "",
+      "note": null,
+      "fixtureClass": "Healer",
+      "code": {
+        "grants": [],
+        "inEvaluateRules": true,
+        "inDisplayRules": true,
+        "inGear": false
+      },
+      "gaps": []
+    },
+    {
+      "id": 117,
+      "name": "Raider",
+      "effect": "Gain Bear Strength (Self) 1/Life (ex). Look the part becomes an additional use of Brutal Strike.",
+      "limitation": "Loses all instances of Rage.",
+      "note": null,
+      "fixtureClass": "Barbarian",
+      "code": {
+        "grants": [
+          {
+            "spellId": 179,
+            "purchased": 1,
+            "displayFrequency": "1/Life (ex)",
+            "displayRange": "Self",
+            "requiresLookThePart": true
+          },
+          {
+            "spellId": 32,
+            "purchased": 1,
+            "displayFrequency": null,
+            "displayRange": null,
+            "requiresLookThePart": true
+          }
+        ],
+        "inEvaluateRules": true,
+        "inDisplayRules": false,
+        "inGear": false
+      },
+      "gaps": []
+    },
+    {
+      "id": 121,
+      "name": "Ranger",
+      "effect": "May use Bows. The cost of all available Equipment is reduced to zero points. Enchantment costs are doubled.",
+      "limitation": "",
+      "note": null,
+      "fixtureClass": "Druid",
+      "code": {
+        "grants": [],
+        "inEvaluateRules": true,
+        "inDisplayRules": false,
+        "inGear": true
+      },
+      "gaps": []
+    },
+    {
+      "id": 181,
+      "name": "Rogue",
+      "effect": "Regain a use of Coup de Grace upon killing a player with a thrown weapon.",
+      "limitation": "May not wield Long weapons or Bows.",
+      "note": null,
+      "fixtureClass": "Assassin",
+      "code": {
+        "grants": [],
+        "inEvaluateRules": true,
+        "inDisplayRules": true,
+        "inGear": true
+      },
+      "gaps": []
+    },
+    {
+      "id": 139,
+      "name": "Sniper",
+      "effect": "May physically carry any number of Specialty Arrows of each type. The frequency of each type of Specialty Arrow ability becomes 1 Arrow/Life Charge x3. Gain Momentum Unlimited (ex) (Ambulant). Look the part becomes Mend 1/Life.",
+      "limitation": "May not fire normal arrows.",
+      "note": null,
+      "fixtureClass": "Archer",
+      "code": {
+        "grants": [
+          {
+            "spellId": 100,
+            "purchased": 1,
+            "displayFrequency": "Unlimited (ex) (Ambulant)",
+            "displayRange": null,
+            "requiresLookThePart": true
+          },
+          {
+            "spellId": 98,
+            "purchased": 1,
+            "displayFrequency": "1/Life",
+            "displayRange": null,
+            "requiresLookThePart": true
+          }
+        ],
+        "inEvaluateRules": true,
+        "inDisplayRules": true,
+        "inGear": false
+      },
+      "gaps": []
+    },
+    {
+      "id": 150,
+      "name": "Spy",
+      "effect": "Blink and Shadow Step become Charge x3 (ex).",
+      "limitation": "May not wear Armor.",
+      "note": null,
+      "fixtureClass": "Assassin",
+      "code": {
+        "grants": [],
+        "inEvaluateRules": true,
+        "inDisplayRules": true,
+        "inGear": true
+      },
+      "gaps": []
+    },
+    {
+      "id": 155,
+      "name": "Summoner",
+      "effect": "Each Enchantment purchased gives double the uses. Example: 1/Life Charge x3 becomes 2/Life Charge x3, 2/Life becomes 4/Life.",
+      "limitation": "May not purchase Verbals with a range other than Touch or Self. May not purchase equipment beyond 2nd level.",
+      "note": null,
+      "fixtureClass": "Druid",
+      "code": {
+        "grants": [],
+        "inEvaluateRules": true,
+        "inDisplayRules": true,
+        "inGear": false
+      },
+      "gaps": []
+    },
+    {
+      "id": 171,
+      "name": "Warder",
+      "effect": "All abilities purchased in the Protection School give double the uses. Example: 1/Life Charge x3 becomes 2/Life Charge x3, 2/Life becomes 4/Life.",
+      "limitation": "Player may not purchase any abilities from the Death, Command, or Subdual Schools.",
+      "note": null,
+      "fixtureClass": "Healer",
+      "code": {
+        "grants": [],
+        "inEvaluateRules": true,
+        "inDisplayRules": true,
+        "inGear": false
+      },
+      "gaps": []
+    },
+    {
+      "id": 172,
+      "name": "Warlock",
+      "effect": "Each Verbal purchased in the Death and Flame Schools gives double the uses. Example: 1/Life Charge x3 becomes 2/Life Charge x3, 2/Life becomes 4/Life.",
+      "limitation": "Player may not purchase Verbals from any School other than the Death and Flame Schools.",
+      "note": null,
+      "fixtureClass": "Wizard",
+      "code": {
+        "grants": [],
+        "inEvaluateRules": true,
+        "inDisplayRules": true,
+        "inGear": false
+      },
+      "gaps": []
+    }
+  ],
+  "allGaps": []
+}

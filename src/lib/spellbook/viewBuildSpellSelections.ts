@@ -1,9 +1,14 @@
 import {
   ARTIFICER_LTP_PINNING_SELECTION_GROUP,
+  RAIDER_LTP_BRUTAL_STRIKE_SELECTION_GROUP,
   SNIPER_LTP_MEND_SELECTION_GROUP,
 } from "@/lib/spellbook/archetypeGrantedSpells";
 import { isMartialClass } from "@/lib/spellbook/martial";
-import { buildSelectedSpellNameSet, evaluateSpellRules } from "@/lib/spellbook/rules";
+import {
+  buildPurchasedCountBySpellName,
+  buildSelectedSpellNameSet,
+  evaluateSpellRules,
+} from "@/lib/spellbook/rules";
 import { findSpellForSelection } from "@/lib/spellbook/selection";
 import type { BuildSpellSelectionRow, SpellRow } from "@/lib/spellbook/types";
 
@@ -11,12 +16,13 @@ import type { BuildSpellSelectionRow, SpellRow } from "@/lib/spellbook/types";
 function isSelectionHiddenByArchetypeOnView(
   selection: BuildSpellSelectionRow,
   spells: SpellRow[],
-  selectedSpellNames: Set<string>
+  selectedSpellNames: Set<string>,
+  purchasedCountBySpellName: Record<string, number>
 ): boolean {
   if (selection.purchased <= 0) return false;
   const spell = findSpellForSelection(spells, selection);
   if (!spell) return false;
-  return evaluateSpellRules(spell, selectedSpellNames).restricted;
+  return evaluateSpellRules(spell, selectedSpellNames, { purchasedCountBySpellName }).restricted;
 }
 
 /**
@@ -33,8 +39,9 @@ export function mergeViewDisplaySpellSelectionRows(
     purchasedBySpellId[s.spell_id] = (purchasedBySpellId[s.spell_id] ?? 0) + s.purchased;
   }
   const selectedSpellNames = buildSelectedSpellNameSet(purchasedBySpellId, spells);
+  const purchasedCountBySpellName = buildPurchasedCountBySpellName(purchasedBySpellId, spells);
   const visible = selections.filter(
-    (s) => !isSelectionHiddenByArchetypeOnView(s, spells, selectedSpellNames)
+    (s) => !isSelectionHiddenByArchetypeOnView(s, spells, selectedSpellNames, purchasedCountBySpellName)
   );
   return [...visible, ...extraSelections];
 }
@@ -53,6 +60,8 @@ export function partitionViewBuildSpellDisplayRows(
     opts.className === "Archer" && opts.lookThePart && opts.selectedSpellNames.has("Sniper");
   const archerArtificerLtP =
     opts.className === "Archer" && opts.lookThePart && opts.selectedSpellNames.has("Artificer");
+  const barbarianRaiderLtP =
+    opts.className === "Barbarian" && opts.lookThePart && opts.selectedSpellNames.has("Raider");
   const lookThePartRows: BuildSpellSelectionRow[] = [];
   const mainRows: BuildSpellSelectionRow[] = [];
   for (const selection of displaySelections) {
@@ -63,13 +72,17 @@ export function partitionViewBuildSpellDisplayRows(
     ) {
       continue;
     }
+    if (barbarianRaiderLtP && spell && (spell.is_look_the_part || spell.source_type === "look_the_part")) {
+      continue;
+    }
     const isLtpSpell = Boolean(
       spell && (spell.is_look_the_part || spell.source_type === "look_the_part")
     );
     if (
       showLtpSection &&
       (selection.selection_group === SNIPER_LTP_MEND_SELECTION_GROUP ||
-        selection.selection_group === ARTIFICER_LTP_PINNING_SELECTION_GROUP)
+        selection.selection_group === ARTIFICER_LTP_PINNING_SELECTION_GROUP ||
+        selection.selection_group === RAIDER_LTP_BRUTAL_STRIKE_SELECTION_GROUP)
     ) {
       lookThePartRows.push(selection);
       continue;

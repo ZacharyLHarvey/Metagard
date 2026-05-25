@@ -1,6 +1,11 @@
 import type { BuildSpellSelectionInput, SpellRow } from "@/lib/spellbook/types";
 import { isCasterClass } from "@/lib/spellbook/casterBudget";
-import { catalogRuleKey } from "@/lib/spellbook/selection";
+import {
+  buildPurchasedCountBySpellNameFromSelections,
+  buildSelectedSpellNameSet,
+  evaluateSpellRules,
+} from "@/lib/spellbook/rules";
+import { catalogRuleKey, findSpellForSelection } from "@/lib/spellbook/selection";
 
 const MARTIAL_CLASSES = new Set([
   "Anti-Paladin",
@@ -154,6 +159,61 @@ export function getPickTwoOfThreeGroups(
   });
 }
 
+/** Drop purchased rows blocked by an active archetype (e.g. Apex vs Evolution on Scout). */
+export function filterArchetypeRestrictedSelections(
+  selections: BuildSpellSelectionInput[],
+  spells: SpellRow[]
+): BuildSpellSelectionInput[] {
+  const purchasedById: Record<number, number> = {};
+  for (const sel of selections) {
+    if (sel.purchased <= 0) continue;
+    purchasedById[sel.spell_id] = (purchasedById[sel.spell_id] ?? 0) + sel.purchased;
+  }
+  const selectedSpellNames = buildSelectedSpellNameSet(purchasedById, spells);
+  const ruleContext = {
+    purchasedCountBySpellName: buildPurchasedCountBySpellNameFromSelections(selections, spells),
+  };
+
+  return selections.filter((sel) => {
+    if (sel.purchased <= 0) return false;
+    if (sel.selection_group?.startsWith("archetype-grant:")) return false;
+    const spell = findSpellForSelection(spells, sel);
+    if (!spell) return true;
+    if (spell.type === "Archetype") return true;
+    return !evaluateSpellRules(spell, selectedSpellNames, ruleContext).restricted;
+  });
+}
+
+/** True when every pick-one option is blocked by the current archetype selection (no valid choice). */
+export function isPickOneGroupFullyBlockedByArchetype(
+  group: PickOneGroup,
+  selectedSpellNames: Set<string>,
+  ruleContext?: { purchasedCountBySpellName?: Record<string, number> }
+): boolean {
+  const options = group.options.filter((opt) => opt.catalog_rule_id != null);
+  if (options.length === 0) return false;
+  return options.every((opt) =>
+    evaluateSpellRules(opt, selectedSpellNames, ruleContext ?? null).restricted
+  );
+}
+
+/** Required pick-one is satisfied, or waived when every option is archetype-blocked. */
+export function isRequiredPickOneGroupSatisfied(
+  group: PickOneGroup,
+  hasPurchased: (catalogRuleId: number) => boolean,
+  spells: SpellRow[],
+  selectedSpellNames: Set<string>,
+  ruleContext?: { purchasedCountBySpellName?: Record<string, number> }
+): boolean {
+  if (!group.requiredForMartial) return true;
+  const allowed = group.options.filter((opt) => {
+    if (opt.catalog_rule_id == null) return false;
+    return !evaluateSpellRules(opt, selectedSpellNames, ruleContext ?? null).restricted;
+  });
+  if (allowed.length === 0) return true;
+  return allowed.some((opt) => hasPurchased(opt.catalog_rule_id!));
+}
+
 export function buildMartialAutoSelections(
   spells: SpellRow[],
   lookThePart: boolean,
@@ -228,5 +288,8 @@ export function buildMartialAutoSelections(
     }
   }
 
-  return [...base, ...pickOneSelections, ...pickTwoSelections];
+  return filterArchetypeRestrictedSelections(
+    [...base, ...pickOneSelections, ...pickTwoSelections],
+    spells
+  );
 }

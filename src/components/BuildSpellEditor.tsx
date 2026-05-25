@@ -6,6 +6,7 @@ import type { BuildSpellSelectionRow, SpellRow } from "@/lib/spellbook/types";
 import SpellDetailModal from "@/components/spellbook/SpellDetailModal";
 import TipsAlert from "@/components/spellbook/TipsAlert";
 import {
+  buildPurchasedCountBySpellNameFromSelections,
   buildSelectedSpellNameSet,
   applyDisplayRuleToSpell,
   computeDisplayRuleOverrides,
@@ -27,14 +28,17 @@ import {
 import {
   ARCHER_LTP_SPECIALTY_PICK_ONE_GROUP_KEY,
   buildMartialAutoSelections,
+  filterArchetypeRestrictedSelections,
   getPickTwoOfThreeGroups,
   isLookThePartPickOneGroup,
   isMartialClass,
   isPickTwoOfThreeSpell,
+  isRequiredPickOneGroupSatisfied,
   getPickOneGroups,
 } from "@/lib/spellbook/martial";
 import {
   ARTIFICER_LTP_PINNING_SELECTION_GROUP,
+  RAIDER_LTP_BRUTAL_STRIKE_SELECTION_GROUP,
   SNIPER_LTP_MEND_SELECTION_GROUP,
 } from "@/lib/spellbook/archetypeGrantedSpells";
 import {
@@ -94,13 +98,23 @@ function mergePurchasedBySpellId(
   return m;
 }
 
+function ruleContextForMap(map: Record<string, Selection>, spells: SpellRow[]) {
+  return {
+    purchasedCountBySpellName: buildPurchasedCountBySpellNameFromSelections(
+      Object.values(map),
+      spells
+    ),
+  };
+}
+
 function pointsSpentForMap(map: Record<string, Selection>, spells: SpellRow[]) {
   const names = buildSelectedSpellNameSet(purchasedBySpellIdFromMap(map), spells);
+  const ctx = ruleContextForMap(map, spells);
   let sum = 0;
   for (const sel of Object.values(map)) {
     const spell = findSpellForSelection(spells, sel);
     if (!spell) continue;
-    const ev = evaluateSpellRules(spell, names);
+    const ev = evaluateSpellRules(spell, names, ctx);
     sum += ev.adjustedCost * sel.purchased;
   }
   return sum;
@@ -108,12 +122,13 @@ function pointsSpentForMap(map: Record<string, Selection>, spells: SpellRow[]) {
 
 function pointsSpentAtSpellLevel(map: Record<string, Selection>, spells: SpellRow[], spellLevel: number) {
   const names = buildSelectedSpellNameSet(purchasedBySpellIdFromMap(map), spells);
+  const ctx = ruleContextForMap(map, spells);
   let sum = 0;
   for (const sel of Object.values(map)) {
     if (sel.spell_level !== spellLevel) continue;
     const spell = findSpellForSelection(spells, sel);
     if (!spell) continue;
-    const ev = evaluateSpellRules(spell, names);
+    const ev = evaluateSpellRules(spell, names, ctx);
     sum += ev.adjustedCost * sel.purchased;
   }
   return sum;
@@ -226,6 +241,10 @@ export default function BuildSpellEditor({
     () => buildSelectedSpellNameSet(purchasedBySpellId, spells),
     [purchasedBySpellId, spells]
   );
+  const ruleContext = useMemo(
+    () => ruleContextForMap(selectionMap, spells),
+    [selectionMap, spells]
+  );
 
   type ExperiencedPickerOpen = {
     experiencedMapKey: string;
@@ -267,6 +286,7 @@ export default function BuildSpellEditor({
 
   const hideArcherSniperLtpPickOne = className === "Archer" && selectedSpellNames.has("Sniper");
   const hideArcherArtificerLtpPickOne = className === "Archer" && selectedSpellNames.has("Artificer");
+  const hideBarbarianRaiderLtp = className === "Barbarian" && selectedSpellNames.has("Raider");
   const hideArcherArtificerPickTwo = hideArcherArtificerLtpPickOne;
   const hideArcherLtpSpecialtyPickOne = hideArcherSniperLtpPickOne || hideArcherArtificerLtpPickOne;
   const visibleArchetypeGrants = useMemo(
@@ -275,7 +295,8 @@ export default function BuildSpellEditor({
         (s) =>
           s.purchased > 0 &&
           s.selection_group !== SNIPER_LTP_MEND_SELECTION_GROUP &&
-          s.selection_group !== ARTIFICER_LTP_PINNING_SELECTION_GROUP
+          s.selection_group !== ARTIFICER_LTP_PINNING_SELECTION_GROUP &&
+          s.selection_group !== RAIDER_LTP_BRUTAL_STRIKE_SELECTION_GROUP
       ),
     [extraSelections]
   );
@@ -296,6 +317,15 @@ export default function BuildSpellEditor({
           )
         : [],
     [extraSelections, hideArcherArtificerLtpPickOne, lookThePart]
+  );
+  const lookThePartBrutalGrantRows = useMemo(
+    () =>
+      hideBarbarianRaiderLtp && lookThePart
+        ? extraSelections.filter(
+            (s) => s.purchased > 0 && s.selection_group === RAIDER_LTP_BRUTAL_STRIKE_SELECTION_GROUP
+          )
+        : [],
+    [extraSelections, hideBarbarianRaiderLtp, lookThePart]
   );
   const pickOneGroups = useMemo(() => {
     const selectedRuleIds = new Set<number>();
@@ -358,6 +388,9 @@ export default function BuildSpellEditor({
       ) {
         continue;
       }
+      if (hideBarbarianRaiderLtp && (spell.is_look_the_part || spell.source_type === "look_the_part")) {
+        continue;
+      }
       const isLtp = Boolean(spell.is_look_the_part || spell.source_type === "look_the_part");
       if (!isLtp) continue;
       const rid = spell.catalog_rule_id;
@@ -366,7 +399,15 @@ export default function BuildSpellEditor({
     }
     out.sort((a, b) => a.spell.name.localeCompare(b.spell.name));
     return out;
-  }, [selectionMap, spells, className, lookThePart, lookThePartPickOneRuleIds, hideArcherLtpSpecialtyPickOne]);
+  }, [
+    selectionMap,
+    spells,
+    className,
+    lookThePart,
+    lookThePartPickOneRuleIds,
+    hideArcherLtpSpecialtyPickOne,
+    hideBarbarianRaiderLtp,
+  ]);
 
   function toggleSectionCollapse(sectionKey: string) {
     setCollapsedSectionKeys((prev) => {
@@ -430,7 +471,10 @@ export default function BuildSpellEditor({
 
   function increment(spell: SpellRow, level: number) {
     if (martial) return;
-    const evaluated = evaluateSpellRules(spell, selectedSpellNames);
+    const evaluated = evaluateSpellRules(spell, selectedSpellNames, {
+      ...ruleContext,
+      prospectiveAdditionalPurchases: 1,
+    });
     if (evaluated.restricted) {
       setRuleWarning(evaluated.reason ?? "Spell restricted by active archetype limitations.");
       return;
@@ -519,6 +563,34 @@ export default function BuildSpellEditor({
     });
   }
 
+  function applyArchetypeFilterToMap(map: Record<string, Selection>): Record<string, Selection> {
+    const rows = Object.values(map).map((s) => ({
+      build_id: buildId,
+      spell_id: s.spell_id,
+      spell_level: s.spell_level,
+      purchased: s.purchased,
+      experienced: s.experienced,
+      selection_group: s.selection_group,
+      chosen: s.chosen,
+      metadata: s.metadata ?? {},
+    }));
+    const filtered = filterArchetypeRestrictedSelections(rows, spells);
+    const out: Record<string, Selection> = {};
+    for (const s of filtered) {
+      const key = s.selection_group ?? `${s.spell_level}:${s.spell_id}`;
+      out[key] = {
+        spell_id: s.spell_id,
+        spell_level: s.spell_level,
+        purchased: s.purchased,
+        experienced: s.experienced,
+        selection_group: s.selection_group,
+        chosen: s.chosen,
+        metadata: s.metadata && typeof s.metadata === "object" ? { ...s.metadata } : {},
+      };
+    }
+    return out;
+  }
+
   function choosePickOne(groupKey: string, chosenCatalogRuleId: number) {
     setSelectionMap((prev) => {
       const next = { ...prev };
@@ -542,7 +614,14 @@ export default function BuildSpellEditor({
           metadata: {},
         };
       }
-      return next;
+      if (chosen?.type === "Archetype") {
+        for (const spell of spells) {
+          if (spell.option_group?.startsWith(`${chosen.id}:pickOne`) && spell.catalog_rule_id != null) {
+            delete next[catalogRuleKey(spell.catalog_rule_id)];
+          }
+        }
+      }
+      return applyArchetypeFilterToMap(next);
     });
   }
 
@@ -731,7 +810,8 @@ export default function BuildSpellEditor({
       (lookThePartRows.length > 0 ||
         lookThePartPickOneGroups.length > 0 ||
         lookThePartMendGrantRows.length > 0 ||
-        lookThePartPinningGrantRows.length > 0) ? (
+        lookThePartPinningGrantRows.length > 0 ||
+        lookThePartBrutalGrantRows.length > 0) ? (
         <section className="border border-neutral-800 rounded-lg p-3 sm:p-4">
           <button
             type="button"
@@ -780,7 +860,7 @@ export default function BuildSpellEditor({
                 const purchased = row.purchased;
                 const rowKey = selectionKeyFromRow(row);
                 const expSuffix = experiencedSuffixByTargetKey.get(rowKey);
-                const evaluated = spell ? evaluateSpellRules(spell, selectedSpellNames) : null;
+                const evaluated = spell ? evaluateSpellRules(spell, selectedSpellNames, ruleContext) : null;
                 const display = spell
                   ? computeDisplayRuleOverrides(
                       spell,
@@ -849,7 +929,7 @@ export default function BuildSpellEditor({
                 const purchased = row.purchased;
                 const rowKey = selectionKeyFromRow(row);
                 const expSuffix = experiencedSuffixByTargetKey.get(rowKey);
-                const evaluated = spell ? evaluateSpellRules(spell, selectedSpellNames) : null;
+                const evaluated = spell ? evaluateSpellRules(spell, selectedSpellNames, ruleContext) : null;
                 const display = spell
                   ? computeDisplayRuleOverrides(
                       spell,
@@ -913,8 +993,62 @@ export default function BuildSpellEditor({
                   </div>
                 );
               })}
+              {lookThePartBrutalGrantRows.map((row) => {
+                const spell = findSpellForSelection(spells, row);
+                const purchased = row.purchased;
+                const rowKey = selectionKeyFromRow(row);
+                const expSuffix = experiencedSuffixByTargetKey.get(rowKey);
+                const evaluated = spell ? evaluateSpellRules(spell, selectedSpellNames, ruleContext) : null;
+                const display = spell
+                  ? computeDisplayRuleOverrides(
+                      spell,
+                      selectedSpellNames,
+                      purchased,
+                      className,
+                      expSuffix ? { experiencedChargeSuffix: expSuffix } : undefined
+                    )
+                  : { frequency: null, range: null, tag: null };
+                let longPressTimeout: ReturnType<typeof setTimeout> | null = null;
+                return (
+                  <div
+                    key={row.id}
+                    className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded border p-2 sm:p-3 ${
+                      evaluated?.restricted ? "border-red-800 bg-red-950/20" : "border-neutral-800"
+                    }`}
+                    onMouseDown={() => {
+                      if (spell) longPressTimeout = startLongPress(spell, display);
+                    }}
+                    onMouseUp={() => {
+                      if (longPressTimeout) clearTimeout(longPressTimeout);
+                    }}
+                    onMouseLeave={() => {
+                      if (longPressTimeout) clearTimeout(longPressTimeout);
+                    }}
+                    onTouchStart={() => {
+                      if (spell) longPressTimeout = startLongPress(spell, display);
+                    }}
+                    onTouchEnd={() => {
+                      if (longPressTimeout) clearTimeout(longPressTimeout);
+                    }}
+                  >
+                    <div>
+                      <p className="font-medium">
+                        {spell
+                          ? displaySpellTitle(spell, purchased, {
+                              isExperiencedTarget: experiencedSuffixByTargetKey.has(rowKey),
+                              displayTag: display.tag,
+                            })
+                          : `Spell #${row.spell_id}`}
+                      </p>
+                      {display.frequency ? (
+                        <p className="text-xs text-neutral-500 mt-1">{display.frequency}</p>
+                      ) : null}
+                    </div>
+                  </div>
+                );
+              })}
               {lookThePartRows.map(({ mapKey, spell, purchased }) => {
-                const evaluated = evaluateSpellRules(spell, selectedSpellNames);
+                const evaluated = evaluateSpellRules(spell, selectedSpellNames, ruleContext);
                 const expSuffix = experiencedSuffixByTargetKey.get(mapKey);
                 const display = computeDisplayRuleOverrides(
                   spell,
@@ -1032,7 +1166,11 @@ export default function BuildSpellEditor({
               .map((spell) => {
               const key = selectionKeyForCatalogSpell(spell);
               const purchased = selectionMap[key]?.purchased ?? 0;
-              const evaluated = evaluateSpellRules(spell, selectedSpellNames);
+              const evaluated = evaluateSpellRules(spell, selectedSpellNames, ruleContext);
+              const incrementBlocked = evaluateSpellRules(spell, selectedSpellNames, {
+                ...ruleContext,
+                prospectiveAdditionalPurchases: 1,
+              }).restricted;
               const expSuffix = experiencedSuffixByTargetKey.get(key);
               const display = computeDisplayRuleOverrides(
                 spell,
@@ -1099,7 +1237,7 @@ export default function BuildSpellEditor({
                         <span className="w-8 text-center">{purchased}</span>
                         <button
                           onClick={() => increment(spell, level)}
-                          disabled={evaluated.restricted}
+                          disabled={incrementBlocked}
                           className="px-3 py-1.5 bg-blue-600 rounded"
                         >
                           +
@@ -1204,7 +1342,7 @@ export default function BuildSpellEditor({
               const purchased = row.purchased;
               const rowKey = selectionKeyFromRow(row);
               const expSuffix = experiencedSuffixByTargetKey.get(rowKey);
-              const evaluated = spell ? evaluateSpellRules(spell, selectedSpellNames) : null;
+              const evaluated = spell ? evaluateSpellRules(spell, selectedSpellNames, ruleContext) : null;
               const display = spell
                 ? computeDisplayRuleOverrides(
                     spell,
@@ -1280,11 +1418,13 @@ export default function BuildSpellEditor({
             !experiencedStateValid.ok ||
             pickOneGroupsForUI.some(
               (g) =>
-                g.requiredForMartial &&
-                !g.options.some(
-                  (opt) =>
-                    opt.catalog_rule_id != null &&
-                    selectionMap[catalogRuleKey(opt.catalog_rule_id)]?.purchased > 0
+                !isRequiredPickOneGroupSatisfied(
+                  g,
+                  (catalogRuleId) =>
+                    (selectionMap[catalogRuleKey(catalogRuleId)]?.purchased ?? 0) > 0,
+                  spells,
+                  selectedSpellNames,
+                  ruleContext
                 )
             ) ||
             pickTwoOfThreeGroupsForUI.some((g) => {

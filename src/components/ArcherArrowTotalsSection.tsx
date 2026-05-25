@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { findSpellForSelection } from "@/lib/spellbook/selection";
 import type { BuildSpellSelectionRow, SpellRow } from "@/lib/spellbook/types";
+import { SNIPER_NO_NORMAL_ARROWS_NOTE } from "@/lib/spellbook/rules";
 import { getViewBuildPurchasedSpellRows } from "@/lib/spellbook/viewBuildSpellSelections";
 
 type Props = {
@@ -21,6 +22,15 @@ export default function ArcherArrowTotalsSection({
   className,
 }: Props) {
   const [collapsed, setCollapsed] = useState(false);
+
+  const hasSniperArchetype = useMemo(() => {
+    for (const row of [...selections, ...extraSelections]) {
+      if (row.purchased <= 0) continue;
+      const spell = findSpellForSelection(spells, row);
+      if (spell?.type === "Archetype" && spell.name === "Sniper") return true;
+    }
+    return false;
+  }, [selections, extraSelections, spells]);
 
   const lines = useMemo(() => {
     const rowsForArrows = getViewBuildPurchasedSpellRows(
@@ -57,13 +67,18 @@ export default function ArcherArrowTotalsSection({
         </span>
       </button>
       {!collapsed ? (
-        <ul className="mt-2 list-none space-y-1 pl-1 text-neutral-200">
-          {lines.map(({ name, total }) => (
-            <li key={name}>
-              {total}x {name}
-            </li>
-          ))}
-        </ul>
+        <>
+          <ul className="mt-2 list-none space-y-1 pl-1 text-neutral-200">
+            {lines.map(({ name, total }) => (
+              <li key={name}>
+                {total}x {name}
+              </li>
+            ))}
+          </ul>
+          {className === "Archer" && hasSniperArchetype ? (
+            <p className="mt-2 text-xs text-amber-200/90 pl-1">{SNIPER_NO_NORMAL_ARROWS_NOTE}</p>
+          ) : null}
+        </>
       ) : null}
     </section>
   );

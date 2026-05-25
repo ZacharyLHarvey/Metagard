@@ -127,11 +127,15 @@ export async function getClassEquipment(className: string): Promise<ClassEquipme
     .eq("name", className)
     .maybeSingle();
   if (!data) return null;
-  return {
+  const equipment: ClassEquipment = {
     armor: toStringOrNull((data as Record<string, unknown>).armor),
     shields: toStringOrNull((data as Record<string, unknown>).shields),
     weapons: toStringOrNull((data as Record<string, unknown>).weapons),
   };
+  if (isCasterClass(className) && !equipment.weapons) {
+    equipment.weapons = "Dagger";
+  }
+  return equipment;
 }
 
 export type ClassLeaderboardRow = {

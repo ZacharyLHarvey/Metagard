@@ -33,8 +33,9 @@ import { getMyBuildRating } from "@/lib/queries/social";
 import { computeTierResult } from "@/lib/tier";
 import { isMartialClass } from "@/lib/spellbook/martial";
 import { isCasterClass } from "@/lib/spellbook/casterBudget";
+import { applyPurchasedEquipmentSpells } from "@/lib/spellbook/equipmentFromSpells";
 import {
-  applyMartialArchetypeEquipmentOverrides,
+  applyArchetypeEquipmentOverrides,
   selectedMartialArchetypeSpells,
 } from "@/lib/spellbook/martialEquipment";
 import {
@@ -108,14 +109,15 @@ export default async function BuildDetailsPage({ params, searchParams }: Params)
   const isSaved = showSaveControls ? await isBuildSavedByCurrentUser(buildId) : false;
   const initialSaveCount = Math.max(0, Number(build.save_count ?? 0));
   const martial = isMartialClass(build.class);
-  const baseEquipment = martial ? await getClassEquipment(build.class) : null;
-  const equipment =
-    martial && baseEquipment
-      ? applyMartialArchetypeEquipmentOverrides(
-          baseEquipment,
-          selectedMartialArchetypeSpells(selections, spells)
-        )
-      : null;
+  const archetypeSpells = selectedMartialArchetypeSpells(selections, spells);
+  const baseEquipment = await getClassEquipment(build.class);
+  const equipment = baseEquipment
+    ? applyPurchasedEquipmentSpells(
+        applyArchetypeEquipmentOverrides(baseEquipment, archetypeSpells, build.class),
+        selections,
+        spellsForView
+      )
+    : null;
   const creatorMap = await getDisplayNamesForOwnerIds([build.owner_id]);
   const creatorName = build.owner_id ? (creatorMap.get(build.owner_id) ?? "Player") : "Player";
 
@@ -220,7 +222,7 @@ export default async function BuildDetailsPage({ params, searchParams }: Params)
         </div>
       </section>
 
-      {martial ? (
+      {equipment ? (
         <section className="border border-neutral-800 rounded-lg overflow-hidden">
           <h3 className="px-4 py-2 bg-neutral-900 border-b border-neutral-800 font-semibold">Equipment</h3>
           <div className="overflow-x-auto">
