@@ -98,6 +98,13 @@ function applyMystic(eq: Equipment): Equipment {
   return next;
 }
 
+/** Ranger (Druid): may use Bows. */
+function applyRanger(eq: Equipment): Equipment {
+  const next = cloneEq(eq);
+  next.weapons = eq.weapons ? `${eq.weapons}, Bow` : "Bow";
+  return next;
+}
+
 const ARCHETYPE_EQUIPMENT: Record<string, (eq: Equipment) => Equipment> = {
   Hunter: applyHunter,
   Infernal: applyInfernal,
@@ -109,6 +116,7 @@ const ARCHETYPE_EQUIPMENT: Record<string, (eq: Equipment) => Equipment> = {
   Rogue: applyRogue,
   Medium: applyMedium,
   Mystic: applyMystic,
+  Ranger: applyRanger,
 };
 
 /**
@@ -125,4 +133,13 @@ export function applyMartialArchetypeEquipmentOverrides(
     if (fn) out = fn(out);
   }
   return out;
+}
+
+/** Martial and caster builds: apply archetype equipment overrides from purchased archetype rows. */
+export function applyArchetypeEquipmentOverrides(
+  base: ClassEquipment,
+  archetypes: SpellRow[],
+  _className?: string
+): ClassEquipment {
+  return applyMartialArchetypeEquipmentOverrides(base, archetypes);
 }

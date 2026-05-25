@@ -8,6 +8,9 @@ export const SNIPER_LTP_MEND_SELECTION_GROUP = "archetype-grant:Sniper:ltp-mend"
 /** Synthetic selection_group for Artificer + Look the Part Pinning Arrow grant (shown in LtP section, not persisted). */
 export const ARTIFICER_LTP_PINNING_SELECTION_GROUP = "archetype-grant:Artificer:ltp-pinning" as const;
 
+/** Synthetic selection_group for Raider + Look the Part Brutal Strike grant (shown in LtP section, not persisted). */
+export const RAIDER_LTP_BRUTAL_STRIKE_SELECTION_GROUP = "archetype-grant:Raider:ltp-brutal" as const;
+
 function catalogHasSpellAtLevel(catalogSpells: SpellRow[], spellId: number, spellLevel: number): boolean {
   return catalogSpells.some((s) => s.id === spellId && (s.level ?? 1) === spellLevel);
 }
@@ -59,6 +62,7 @@ function selectionGroupForGrant(d: FlatArchetypeGrantDescriptor): string {
   if (d.selectionGroup) return d.selectionGroup;
   if (d.requiresLookThePart && d.archetype === "Sniper") return SNIPER_LTP_MEND_SELECTION_GROUP;
   if (d.requiresLookThePart && d.archetype === "Artificer") return ARTIFICER_LTP_PINNING_SELECTION_GROUP;
+  if (d.requiresLookThePart && d.archetype === "Raider") return RAIDER_LTP_BRUTAL_STRIKE_SELECTION_GROUP;
   return `archetype-grant:${d.archetype}`;
 }
 
@@ -139,6 +143,47 @@ const ARCHETYPE_GRANTED_SPELLS: Record<string, ArchetypeGrantedSpellDescriptor[]
     },
     { spellId: 130, spellLevel: 6, displayFrequency: "1/Life Charge x3 (ex)" },
     { spellId: 159, spellLevel: 6, displayFrequency: "2/Life (ex)" },
+  ],
+  Corruptor: [
+    {
+      spellId: 169,
+      spellLevel: 6,
+      displayFrequency: "2/Refresh (m)",
+      displayRange: "Self",
+    },
+  ],
+  Infernal: [{ spellId: 60, spellLevel: 6, purchased: 2, displayFrequency: "Unlimited (m)" }],
+  Inquisitor: [
+    {
+      spellId: 187,
+      spellLevel: 6,
+      displayFrequency: "1/Life (ex)",
+      displayRange: "Self",
+    },
+  ],
+  Guardian: [
+    {
+      spellId: 81,
+      spellLevel: 6,
+      displayFrequency: "1/Life (m)",
+      displayRange: "Touch",
+    },
+    { spellId: 95, spellLevel: 6, displayFrequency: "2/Life Charge x3 (ex)", displayRange: "Other" },
+  ],
+  Raider: [
+    {
+      spellId: 179,
+      spellLevel: 6,
+      displayFrequency: "1/Life (ex)",
+      displayRange: "Self",
+    },
+    {
+      spellId: 32,
+      spellLevel: 1,
+      requiresLookThePart: true,
+      allowCatalogCollision: true,
+      selectionGroup: RAIDER_LTP_BRUTAL_STRIKE_SELECTION_GROUP,
+    },
   ],
 };
 

@@ -3,12 +3,18 @@
 import { useMemo, useRef, useState, type ReactElement, type ReactNode } from "react";
 import type { BuildSpellSelectionRow, SpellRow } from "@/lib/spellbook/types";
 import {
+  buildPurchasedCountBySpellNameFromSelections,
   buildSelectedSpellNameSet,
   applyDisplayRuleToSpell,
   computeDisplayRuleOverrides,
 } from "@/lib/spellbook/rules";
 import { catalogRuleKey, findSpellForSelection, selectionKeyFromRow } from "@/lib/spellbook/selection";
-import { getPickOneGroups, getPickTwoOfThreeGroups, ARCHER_LTP_SPECIALTY_PICK_ONE_GROUP_KEY } from "@/lib/spellbook/martial";
+import {
+  getPickOneGroups,
+  getPickTwoOfThreeGroups,
+  ARCHER_LTP_SPECIALTY_PICK_ONE_GROUP_KEY,
+  isPickOneGroupFullyBlockedByArchetype,
+} from "@/lib/spellbook/martial";
 import {
   buildExperiencedChargeSuffixByTargetKey,
 } from "@/lib/spellbook/experienced";
@@ -172,6 +178,12 @@ export default function BuildSpellDetails({
     () => buildSelectedSpellNameSet(purchasedBySpellId, spells),
     [purchasedBySpellId, spells]
   );
+  const ruleContext = useMemo(
+    () => ({
+      purchasedCountBySpellName: buildPurchasedCountBySpellNameFromSelections(selections, spells),
+    }),
+    [selections, spells]
+  );
   const experiencedSuffixByTargetKey = useMemo(
     () => buildExperiencedChargeSuffixByTargetKey(selections, spells),
     [selections, spells]
@@ -218,6 +230,7 @@ export default function BuildSpellDetails({
     }
     const unresolved = groups.filter((g) => {
       if (!g.requiredForMartial) return false;
+      if (isPickOneGroupFullyBlockedByArchetype(g, selectedSpellNames, ruleContext)) return false;
       return !g.options.some(
         (opt) => {
           if (opt.catalog_rule_id == null) return false;
@@ -232,7 +245,7 @@ export default function BuildSpellDetails({
       byLevel.get(group.level)!.push(group);
     }
     return byLevel;
-  }, [selections, spells, className, selectedSpellNames]);
+  }, [selections, spells, className, selectedSpellNames, ruleContext]);
   const hasUnresolvedPickOne = useMemo(() => {
     for (const arr of unresolvedPickOneByLevel.values()) {
       if (arr.length > 0) return true;

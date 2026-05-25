@@ -709,6 +709,9 @@ update public.classes set armor = '4pts', shields = 'Large', weapons = 'All Mele
 update public.classes set armor = '3pts', shields = 'Small', weapons = 'Dagger, Short, Long, Heavy Thrown, Bow' where name = 'Scout';
 update public.classes set armor = '6pts', shields = 'Large', weapons = 'All Melee, Javelins' where name = 'Warrior';
 
+-- Caster classes: Dagger (Ranger archetype appends Bow in martialEquipment.ts)
+update public.classes set weapons = 'Dagger' where name in ('Bard', 'Druid', 'Healer', 'Wizard');
+
 -- ---------------------------------------------------------------------------
 -- Create public.profiles when a new auth.users row is inserted
 -- (covers email-confirm signups: no session yet, but profile row is required.)
