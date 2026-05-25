@@ -11,6 +11,9 @@ type RuleResult = {
 export const ARTIFICER_MEND_WEAPON_SHIELD_TAG =
   "Casting Mend on weapons or shields does not consume a use of Mend" as const;
 
+export const ROGUE_COUP_DE_GRACE_TAG =
+  "Regain a use of Coup de Grace upon killing a player with a thrown weapon" as const;
+
 export type DisplayRuleResult = {
   frequency: string | null;
   range: string | null;
@@ -340,11 +343,15 @@ export function computeDisplayRuleOverrides(
     frequency = "Unlimited (ex) (Ambulant)";
   }
   if (hasArchetype(selectedSpellNames, "Spy") && ["Shadow Step", "Blink"].includes(spell.name)) {
-    frequency = `${frequency ?? ""} Charge x3`.trim();
+    frequency = `${frequency ?? ""} Charge x3 (ex)`.trim();
   }
 
   if (hasArchetype(selectedSpellNames, "Evoker") && spell.name === "Elemental Barrage") {
     frequency = `${frequency ?? ""} Charge x10`.trim();
+  }
+
+  if (cls === "Assassin" && hasArchetype(selectedSpellNames, "Rogue") && spell.name === "Coup de Grace") {
+    tag = ROGUE_COUP_DE_GRACE_TAG;
   }
 
   if (cls === "Archer" && hasArchetype(selectedSpellNames, "Artificer")) {

@@ -399,7 +399,7 @@ export default function BuildSpellDetails({
             <p className="text-xs text-neutral-400">
               {showTypeSchool && spell?.type ? `${spell.type}` : ""}
               {showTypeSchool && spell?.school ? ` (${spell.school})` : ""}
-              {showRange && ruleDisplay.range ? ` ${ruleDisplay.range}` : ""}
+              {showRange && ruleDisplay.range ? ` (${ruleDisplay.range})` : ""}
             </p>
             {ruleDisplay.frequency ? (
               <p className="text-xs text-neutral-500 mt-1">{ruleDisplay.frequency}</p>
