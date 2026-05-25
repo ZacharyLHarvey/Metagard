@@ -11,6 +11,9 @@ type RuleResult = {
 export const ARTIFICER_MEND_WEAPON_SHIELD_TAG =
   "Casting Mend on weapons or shields does not consume a use of Mend" as const;
 
+export const ROGUE_COUP_DE_GRACE_TAG =
+  "Regain a use of Coup de Grace upon killing a player with a thrown weapon" as const;
+
 export type DisplayRuleResult = {
   frequency: string | null;
   range: string | null;
@@ -31,19 +34,23 @@ export type ComputeDisplayRuleOptions = {
   experiencedChargeSuffix?: ExperiencedChargeSuffix | null;
 };
 
-/** If frequency already has a Charge x# clause, replace it with Experienced's; otherwise append. */
+/** If frequency already has a Charge x# clause, replace it; otherwise append. */
+function applyChargeSuffixToFrequency(frequency: string | null, suffix: string): string {
+  if (!frequency || !frequency.trim()) return suffix;
+  const trimmed = frequency.trim();
+  // Avoid matching "Charge" inside e.g. "Recharge"
+  const hasCharge = /(?<![a-zA-Z])Charge\s+x\d+/i.test(trimmed);
+  if (hasCharge) {
+    return trimmed.replace(/(?<![a-zA-Z])Charge\s+x\d+/gi, suffix);
+  }
+  return `${trimmed} ${suffix}`;
+}
+
 function applyExperiencedChargeToFrequency(
   frequency: string | null,
   experiencedChargeSuffix: ExperiencedChargeSuffix
 ): string {
-  const suffix = experiencedChargeSuffix;
-  if (!frequency || !frequency.trim()) return suffix;
-  const trimmed = frequency.trim();
-  // Avoid matching "Charge" inside e.g. "Recharge"
-  const chargeFragment = /(?<![a-zA-Z])Charge\s+x\d+/gi;
-  const replaced = trimmed.replace(chargeFragment, suffix);
-  if (replaced !== trimmed) return replaced;
-  return `${trimmed} ${suffix}`;
+  return applyChargeSuffixToFrequency(frequency, experiencedChargeSuffix);
 }
 
 function hasArchetype(selected: Set<string>, name: string) {
@@ -299,7 +306,7 @@ export function computeDisplayRuleOverrides(
     frequency = multiplyLeadingSlashFrequency(frequency, 2);
   }
 
-  // School / type charge suffixes (Priest replaces Meta-Magic before Medium appends to Spirit non-MM).
+  // School / type charge suffixes (Priest replaces Meta-Magic before Medium replaces Spirit non-MM Charge).
   if (hasArchetype(selectedSpellNames, "Necromancer") && spell.school === "Death") {
     frequency = `${frequency ?? ""} Charge x3`.trim();
   }
@@ -313,7 +320,7 @@ export function computeDisplayRuleOverrides(
     frequency &&
     !frequency.includes("Unlimited")
   ) {
-    frequency = `${frequency} Charge x3`.trim();
+    frequency = applyChargeSuffixToFrequency(frequency, "Charge x3");
   }
 
   if (hasArchetype(selectedSpellNames, "Battlemage") && spell.name === "Ambulant") {
@@ -336,11 +343,15 @@ export function computeDisplayRuleOverrides(
     frequency = "Unlimited (ex) (Ambulant)";
   }
   if (hasArchetype(selectedSpellNames, "Spy") && ["Shadow Step", "Blink"].includes(spell.name)) {
-    frequency = `${frequency ?? ""} Charge x3`.trim();
+    frequency = `${frequency ?? ""} Charge x3 (ex)`.trim();
   }
 
   if (hasArchetype(selectedSpellNames, "Evoker") && spell.name === "Elemental Barrage") {
     frequency = `${frequency ?? ""} Charge x10`.trim();
+  }
+
+  if (cls === "Assassin" && hasArchetype(selectedSpellNames, "Rogue") && spell.name === "Coup de Grace") {
+    tag = ROGUE_COUP_DE_GRACE_TAG;
   }
 
   if (cls === "Archer" && hasArchetype(selectedSpellNames, "Artificer")) {
