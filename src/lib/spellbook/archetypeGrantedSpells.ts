@@ -126,6 +126,20 @@ const ARCHETYPE_GRANTED_SPELLS: Record<string, ArchetypeGrantedSpellDescriptor[]
       selectionGroup: ARTIFICER_LTP_PINNING_SELECTION_GROUP,
     },
   ],
+  Mystic: [
+    { spellId: 61, spellLevel: 6, purchased: 4, displayFrequency: "Unlimited (m)" },
+    { spellId: 158, spellLevel: 6, purchased: 2, displayFrequency: "Unlimited (m)" },
+  ],
+  Medium: [
+    {
+      spellId: 26,
+      spellLevel: 6,
+      displayFrequency: "1/Life (ex)",
+      displayRange: "Touch",
+    },
+    { spellId: 130, spellLevel: 6, displayFrequency: "1/Life Charge x3 (ex)" },
+    { spellId: 159, spellLevel: 6, displayFrequency: "2/Life (ex)" },
+  ],
 };
 
 export function getArchetypeGrantedSpellDescriptors(archetypeName: string): ArchetypeGrantedSpellDescriptor[] {
