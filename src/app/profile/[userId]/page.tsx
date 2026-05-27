@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import BuildTableBodyRow from "@/components/BuildTableBodyRow";
 import ProfileFavoritesForm from "@/components/ProfileFavoritesForm";
 import ProfileFavoritesReadOnly from "@/components/ProfileFavoritesReadOnly";
+import ProfileBadgesSection from "@/components/ProfileBadgesSection";
 import { getProfile } from "@/lib/queries/getProfile";
 import {
   getAllSpellsList,
@@ -16,6 +17,7 @@ import {
   isProfileUserIdParam,
 } from "@/lib/queries/publicProfiles";
 import CreatorAttribution from "@/components/CreatorAttribution";
+import { publicImageMeta } from "@/lib/publicImageSrc";
 import { createClient } from "@/lib/server/supabaseServer";
 import type { BuildRow } from "@/lib/spellbook/types";
 
@@ -90,6 +92,18 @@ export default async function UserProfilePage({ params }: Params) {
     ...savedBuilds.map((b) => b.owner_id),
   ]);
 
+  const badges =
+    ownedBuilds.length >= 10
+      ? [
+          {
+            ...publicImageMeta("images/profile-badges/TheoryCrafter_1.png"),
+            alt: "Theory Crafter 1 badge",
+            label: "Theory Crafter 1",
+            requirement: "Created 10 or more builds",
+          },
+        ]
+      : [];
+
   return (
     <main className="min-h-screen bg-neutral-950 text-white px-4 py-4 sm:px-6 lg:px-10 space-y-8 sm:space-y-10 max-w-6xl">
       <div>
@@ -104,6 +118,8 @@ export default async function UserProfilePage({ params }: Params) {
           </p>
         )}
       </div>
+
+      <ProfileBadgesSection badges={badges} />
 
       {isOwnProfile ? (
         <ProfileFavoritesForm

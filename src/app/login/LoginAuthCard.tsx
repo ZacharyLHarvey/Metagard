@@ -158,13 +158,12 @@ export default function LoginAuthCard({ initialTheme }: LoginAuthCardProps) {
     setSignUpSubmitting(true);
     const supabase = supabaseBrowser();
 
-    const siteBase =
-      (typeof process !== "undefined" &&
-        process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "")) ||
-      (typeof window !== "undefined" ? window.location.origin : "");
-    const emailRedirectTo = siteBase
-      ? `${siteBase.replace(/\/$/, "")}/auth/callback`
-      : undefined;
+    // Always use the live origin so a build-time NEXT_PUBLIC_SITE_URL (e.g. localhost)
+    // cannot override the host the user is actually on.
+    const emailRedirectTo =
+      typeof window !== "undefined"
+        ? `${window.location.origin}/auth/callback`
+        : undefined;
 
     const trimmedEmail = signUpEmail.trim();
     const trimmedName = signUpDisplayName.trim();
