@@ -66,6 +66,10 @@ type Props = {
   initialSelections: BuildSpellSelectionRow[];
   /** Synthetic archetype-grant rows (view-only); not persisted from this editor. */
   extraSelections?: BuildSpellSelectionRow[];
+  initialShowTypeSchool?: boolean;
+  initialShowIncantation?: boolean;
+  initialShowMaterials?: boolean;
+  initialShowRange?: boolean;
 };
 
 type Selection = {
@@ -143,14 +147,19 @@ export default function BuildSpellEditor({
   spells,
   initialSelections,
   extraSelections = [],
+  initialShowTypeSchool = false,
+  initialShowIncantation = false,
+  initialShowMaterials = false,
+  initialShowRange = false,
 }: Props) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [selectedSpell, setSelectedSpell] = useState<SpellRow | null>(null);
-  const [showTypeSchool, setShowTypeSchool] = useState(false);
-  const [showIncantation, setShowIncantation] = useState(false);
-  const [showMaterials, setShowMaterials] = useState(false);
+  const [showTypeSchool, setShowTypeSchool] = useState(initialShowTypeSchool);
+  const [showIncantation, setShowIncantation] = useState(initialShowIncantation);
+  const [showMaterials, setShowMaterials] = useState(initialShowMaterials);
+  const [showRange, setShowRange] = useState(initialShowRange);
   const [ruleWarning, setRuleWarning] = useState<string>("");
   const [collapsedLevels, setCollapsedLevels] = useState<Set<number>>(() => new Set());
   /** Collapsed section keys (e.g. "ltp"); empty set = all expanded — matches view-build spell details. */
@@ -701,6 +710,24 @@ export default function BuildSpellEditor({
 
   return (
     <div className="space-y-5 sm:space-y-6">
+      {caster ? (
+        <div
+          className={
+            pointsRemaining === 0
+              ? "sticky top-[var(--metagard-top-nav-offset)] z-30 flex justify-center border-b border-green-700 bg-green-600/95 py-2 px-4 backdrop-blur"
+              : "sticky top-[var(--metagard-top-nav-offset)] z-30 flex justify-center border-b border-neutral-800 bg-neutral-900/95 py-2 px-4 backdrop-blur"
+          }
+          aria-live="polite"
+        >
+          {pointsRemaining === 0 ? (
+            <p className="text-sm font-semibold text-white">All Points Spent</p>
+          ) : (
+            <p className="text-sm text-neutral-200 tabular-nums">
+              Points Remaining: <span className="font-semibold text-white">{pointsRemaining}</span>
+            </p>
+          )}
+        </div>
+      ) : null}
       <TipsAlert
         tipsEnabled={spellbookTipsEnabled}
         message="Long Press a Spell Row to View Detailed Spell Text, Restrictions, and Notes"
@@ -801,6 +828,10 @@ export default function BuildSpellEditor({
           <label className="flex items-center gap-2">
             <input type="checkbox" checked={showMaterials} onChange={(e) => setShowMaterials(e.target.checked)} />
             Show Materials
+          </label>
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={showRange} onChange={(e) => setShowRange(e.target.checked)} />
+            Show Range
           </label>
         </div>
       </div>
@@ -906,6 +937,7 @@ export default function BuildSpellEditor({
                         <p className="text-xs text-neutral-400">
                           {showTypeSchool && spell.type ? `${spell.type}` : ""}
                           {showTypeSchool && spell.school ? ` (${spell.school})` : ""}
+                          {showRange && display.range ? ` (${display.range})` : ""}
                         </p>
                       ) : null}
                       {display.frequency ? (
@@ -975,6 +1007,7 @@ export default function BuildSpellEditor({
                         <p className="text-xs text-neutral-400">
                           {showTypeSchool && spell.type ? `${spell.type}` : ""}
                           {showTypeSchool && spell.school ? ` (${spell.school})` : ""}
+                          {showRange && display.range ? ` (${display.range})` : ""}
                         </p>
                       ) : null}
                       {display.frequency ? (
@@ -1090,6 +1123,7 @@ export default function BuildSpellEditor({
                       <p className="text-xs text-neutral-400">
                         {showTypeSchool && spell.type ? `${spell.type}` : ""}
                         {showTypeSchool && spell.school ? ` (${spell.school})` : ""}
+                        {showRange && display.range ? ` (${display.range})` : ""}
                       </p>
                       {display.frequency ? (
                         <p className="text-xs text-neutral-500 mt-1">{display.frequency}</p>
@@ -1213,6 +1247,7 @@ export default function BuildSpellEditor({
                       {martial ? "" : `Cost ${evaluated.adjustedCost}`}
                       {showTypeSchool && spell.type ? ` - ${spell.type}` : ""}
                       {showTypeSchool && spell.school ? ` (${spell.school})` : ""}
+                      {showRange && display.range ? ` (${display.range})` : ""}
                     </p>
                     {display.frequency ? <p className="text-xs text-neutral-500 mt-1">{display.frequency}</p> : null}
                     {evaluated.restricted && evaluated.reason ? (
@@ -1388,6 +1423,7 @@ export default function BuildSpellEditor({
                       <p className="text-xs text-neutral-400">
                         {showTypeSchool && spell.type ? `${spell.type}` : ""}
                         {showTypeSchool && spell.school ? ` (${spell.school})` : ""}
+                        {showRange && display.range ? ` (${display.range})` : ""}
                       </p>
                     ) : null}
                     {display.frequency ? (

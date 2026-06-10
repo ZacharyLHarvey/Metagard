@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { parseBuildEditDefaults, parseBuildViewDefaults } from "@/lib/spellbook/buildDisplayDefaults";
 import { createClient } from "@/lib/server/supabaseServer";
 
 export async function PATCH(request: Request) {
@@ -15,6 +16,8 @@ export async function PATCH(request: Request) {
       favorite_spell?: string | null;
       theme_preference?: string | null;
       spellbook_tips_enabled?: boolean | null;
+      build_view_defaults?: Record<string, unknown> | null;
+      build_edit_defaults?: Record<string, unknown> | null;
     };
 
     const patch: Record<string, unknown> = {};
@@ -37,6 +40,12 @@ export async function PATCH(request: Request) {
     }
     if ("spellbook_tips_enabled" in body && typeof body.spellbook_tips_enabled === "boolean") {
       patch.spellbook_tips_enabled = body.spellbook_tips_enabled;
+    }
+    if ("build_view_defaults" in body && body.build_view_defaults != null) {
+      patch.build_view_defaults = parseBuildViewDefaults(body.build_view_defaults);
+    }
+    if ("build_edit_defaults" in body && body.build_edit_defaults != null) {
+      patch.build_edit_defaults = parseBuildEditDefaults(body.build_edit_defaults);
     }
 
     if (Object.keys(patch).length === 0) {

@@ -13,6 +13,7 @@ import type {
 import { isCasterClass } from "@/lib/spellbook/casterBudget";
 import { buildMartialAutoSelections, isMartialClass } from "@/lib/spellbook/martial";
 import { validateExperiencedState } from "@/lib/spellbook/experienced";
+import { findSpellForSelection } from "@/lib/spellbook/selection";
 
 function toNumberOrNull(value: unknown): number | null {
   if (typeof value === "number" && Number.isFinite(value)) return value;
@@ -411,6 +412,47 @@ export async function pruneBuildSideboardToCatalog(buildId: number) {
     .update({ sideboard_spell_ids: filtered })
     .eq("id", buildId)
     .eq("owner_id", userId);
+  if (error) throw error;
+}
+
+/**
+ * Drop caster spell selections that no longer resolve in the class catalog at the build's current level.
+ * No-op for martial builds.
+ */
+export async function pruneCasterBuildSelectionsToCatalog(buildId: number) {
+  const userId = await getCurrentUserId();
+  if (!userId) throw new Error("Unauthorized");
+
+  const supabase = await createClient();
+  const { data: build } = await supabase
+    .from("builds")
+    .select("id,class,level,owner_id")
+    .eq("id", buildId)
+    .single();
+
+  if (!build || String((build as { owner_id?: unknown }).owner_id ?? "") !== userId) {
+    throw new Error("Forbidden");
+  }
+
+  const className = String((build as { class?: unknown }).class ?? "");
+  if (!isCasterClass(className)) return;
+
+  const maxLevel = Number((build as { level?: unknown }).level ?? 1);
+  const catalog = await getCatalogSpellsForClass(className, maxLevel);
+
+  const { data: selections, error: selFetchErr } = await supabase
+    .from("build_spell_selections")
+    .select("id,spell_id,spell_level,selection_group")
+    .eq("build_id", buildId);
+  if (selFetchErr) throw selFetchErr;
+
+  const toDelete = (selections ?? []).filter((sel) => !findSpellForSelection(catalog, sel));
+  if (toDelete.length === 0) return;
+
+  const ids = toDelete.map((sel) => Number((sel as { id?: unknown }).id)).filter((id) => Number.isFinite(id));
+  if (ids.length === 0) return;
+
+  const { error } = await supabase.from("build_spell_selections").delete().in("id", ids);
   if (error) throw error;
 }
 
