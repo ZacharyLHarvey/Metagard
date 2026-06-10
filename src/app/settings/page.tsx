@@ -1,6 +1,11 @@
 import Link from "next/link";
+import BuildDisplayDefaultsSettingsCard from "@/components/BuildDisplayDefaultsSettingsCard";
 import SpellbookTipsSettingsCard from "@/components/SpellbookTipsSettingsCard";
 import ThemeSettingsCard from "@/components/ThemeSettingsCard";
+import {
+  parseBuildEditDefaults,
+  parseBuildViewDefaults,
+} from "@/lib/spellbook/buildDisplayDefaults";
 import { getProfile } from "@/lib/queries/getProfile";
 
 export default async function SettingsPage() {
@@ -27,6 +32,12 @@ export default async function SettingsPage() {
     "spellbook_tips_enabled" in profile && typeof profile.spellbook_tips_enabled === "boolean"
       ? profile.spellbook_tips_enabled
       : true;
+  const initialViewDefaults = parseBuildViewDefaults(
+    "build_view_defaults" in profile ? profile.build_view_defaults : undefined
+  );
+  const initialEditDefaults = parseBuildEditDefaults(
+    "build_edit_defaults" in profile ? profile.build_edit_defaults : undefined
+  );
 
   return (
     <main className="min-h-screen p-10 space-y-8">
@@ -41,6 +52,10 @@ export default async function SettingsPage() {
       <section className="max-w-2xl space-y-4">
         <ThemeSettingsCard initialTheme={initialTheme} />
         <SpellbookTipsSettingsCard initialTipsEnabled={initialTipsEnabled} />
+        <BuildDisplayDefaultsSettingsCard
+          initialViewDefaults={initialViewDefaults}
+          initialEditDefaults={initialEditDefaults}
+        />
       </section>
     </main>
   );

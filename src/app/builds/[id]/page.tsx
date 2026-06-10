@@ -45,6 +45,7 @@ import {
   mergeGrantSpellsIntoCatalog,
 } from "@/lib/spellbook/archetypeGrantedSpells";
 import type { BuildSpellDisplayMode } from "@/components/BuildSpellDetails";
+import { parseBuildViewDefaults } from "@/lib/spellbook/buildDisplayDefaults";
 import type { SpellRow } from "@/lib/spellbook/types";
 import type { ReactNode } from "react";
 
@@ -56,8 +57,6 @@ type Params = {
 export default async function BuildDetailsPage({ params, searchParams }: Params) {
   const { id } = await params;
   const { display: rawDisplay } = await searchParams;
-  const display: BuildSpellDisplayMode =
-    rawDisplay === "type" || rawDisplay === "school" ? rawDisplay : "level";
   const buildId = Number(id);
 
   const build = await getBuildById(buildId);
@@ -69,6 +68,14 @@ export default async function BuildDetailsPage({ params, searchParams }: Params)
     getProfile(),
     getBuildGroupsForBuild(buildId),
   ]);
+
+  const viewDefaults = parseBuildViewDefaults(
+    profile && "build_view_defaults" in profile ? profile.build_view_defaults : undefined
+  );
+  const display: BuildSpellDisplayMode =
+    rawDisplay === "type" || rawDisplay === "school" || rawDisplay === "level"
+      ? rawDisplay
+      : viewDefaults.display;
 
   const archetypes = selectedMartialArchetypeSpells(selections, spells);
   const archetypeNames = archetypes.map((a) => a.name);
@@ -255,6 +262,10 @@ export default async function BuildDetailsPage({ params, searchParams }: Params)
         display={display}
         spellbookTipsEnabled={profile?.spellbook_tips_enabled !== false}
         buildMaxLevel={build.level}
+        initialShowTypeSchool={viewDefaults.showTypeSchool}
+        initialShowIncantation={viewDefaults.showIncantation}
+        initialShowMaterials={viewDefaults.showMaterials}
+        initialShowRange={viewDefaults.showRange}
       />
       {build.class === "Archer" ? (
         <ArcherArrowTotalsSection

@@ -5,6 +5,8 @@
   --foreground: #ededed;
   /* Space for fixed bottom nav + iOS home indicator (see Navbar). */
   --metagard-bottom-nav-pad: max(5.25rem, calc(3.25rem + env(safe-area-inset-bottom, 0px)));
+  /* Space for sticky top nav (see Navbar: py-3 + icon h-10/sm:h-11 + border). */
+  --metagard-top-nav-offset: 4.75rem;
 }
 
 @theme inline {

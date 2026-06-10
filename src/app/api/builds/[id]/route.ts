@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/server/supabaseServer";
-import { pruneBuildSideboardToCatalog, refreshMartialBuildSelections } from "@/lib/queries/spellbook";
+import {
+  pruneBuildSideboardToCatalog,
+  pruneCasterBuildSelectionsToCatalog,
+  refreshMartialBuildSelections,
+} from "@/lib/queries/spellbook";
 
 type Params = {
   params: Promise<{ id: string }>;
@@ -51,6 +55,11 @@ export async function PATCH(request: Request, context: Params) {
       await pruneBuildSideboardToCatalog(buildId);
     } catch (pruneErr) {
       console.error("pruneBuildSideboardToCatalog:", pruneErr);
+    }
+    try {
+      await pruneCasterBuildSelectionsToCatalog(buildId);
+    } catch (pruneErr) {
+      console.error("pruneCasterBuildSelectionsToCatalog:", pruneErr);
     }
 
     return NextResponse.json({ ok: true });

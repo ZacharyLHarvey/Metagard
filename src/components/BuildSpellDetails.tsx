@@ -121,6 +121,10 @@ type Props = {
   spellbookTipsEnabled?: boolean;
   /** Build spell circle cap for unresolved pick-two warnings (same as build level). */
   buildMaxLevel?: number;
+  initialShowTypeSchool?: boolean;
+  initialShowIncantation?: boolean;
+  initialShowMaterials?: boolean;
+  initialShowRange?: boolean;
 };
 
 export default function BuildSpellDetails({
@@ -132,12 +136,16 @@ export default function BuildSpellDetails({
   display,
   spellbookTipsEnabled = true,
   buildMaxLevel = 6,
+  initialShowTypeSchool = false,
+  initialShowIncantation = false,
+  initialShowMaterials = false,
+  initialShowRange = false,
 }: Props) {
   const [selectedSpell, setSelectedSpell] = useState<SpellRow | null>(null);
-  const [showTypeSchool, setShowTypeSchool] = useState(false);
-  const [showIncantation, setShowIncantation] = useState(false);
-  const [showMaterials, setShowMaterials] = useState(false);
-  const [showRange, setShowRange] = useState(false);
+  const [showTypeSchool, setShowTypeSchool] = useState(initialShowTypeSchool);
+  const [showIncantation, setShowIncantation] = useState(initialShowIncantation);
+  const [showMaterials, setShowMaterials] = useState(initialShowMaterials);
+  const [showRange, setShowRange] = useState(initialShowRange);
   /** Keys in the set = section body is collapsed (matches edit-build: start expanded). */
   const [collapsedKeys, setCollapsedKeys] = useState(() => new Set<string>());
 
@@ -519,26 +527,25 @@ export default function BuildSpellDetails({
           <div className="flex flex-wrap gap-4 text-sm">
             <label className="flex items-center gap-2">
               <input type="checkbox" checked={showTypeSchool} onChange={(e) => setShowTypeSchool(e.target.checked)} />
-              show type/school
+              Show Type/School
             </label>
             <label className="flex items-center gap-2">
               <input type="checkbox" checked={showIncantation} onChange={(e) => setShowIncantation(e.target.checked)} />
-              show incantation
+              Show Incantation
             </label>
             <label className="flex items-center gap-2">
               <input type="checkbox" checked={showMaterials} onChange={(e) => setShowMaterials(e.target.checked)} />
-              show materials
+              Show Materials
             </label>
             <label className="flex items-center gap-2">
               <input type="checkbox" checked={showRange} onChange={(e) => setShowRange(e.target.checked)} />
-              show range
+              Show Range
             </label>
           </div>
           <AutoQuerySelect
             name="display"
             label="Display"
             value={display}
-            clearValue="level"
             options={[
               { value: "level", label: "Level" },
               { value: "type", label: "Type" },

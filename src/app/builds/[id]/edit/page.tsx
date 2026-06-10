@@ -10,6 +10,7 @@ import {
   normalizeSideboardSpellIds,
 } from "@/lib/queries/spellbook";
 import { isCasterClass } from "@/lib/spellbook/casterBudget";
+import { parseBuildEditDefaults } from "@/lib/spellbook/buildDisplayDefaults";
 import {
   buildArchetypeGrantExtraSelections,
   collectGrantedSpellIdsForArchetypes,
@@ -31,6 +32,9 @@ export default async function EditBuildPage({ params }: Params) {
 
   const profile = await getProfileCached();
   const spellbookTipsEnabled = profile?.spellbook_tips_enabled !== false;
+  const editDefaults = parseBuildEditDefaults(
+    profile && "build_edit_defaults" in profile ? profile.build_edit_defaults : undefined
+  );
 
   const [spells, selections] = await Promise.all([
     getCatalogSpellsForClass(build.class, build.level),
@@ -79,6 +83,10 @@ export default async function EditBuildPage({ params }: Params) {
         spells={spellsForEditor}
         initialSelections={selections}
         extraSelections={extraArchetypeSelections}
+        initialShowTypeSchool={editDefaults.showTypeSchool}
+        initialShowIncantation={editDefaults.showIncantation}
+        initialShowMaterials={editDefaults.showMaterials}
+        initialShowRange={editDefaults.showRange}
       />
       {showSideboard ? (
         <BuildSideboardEditor

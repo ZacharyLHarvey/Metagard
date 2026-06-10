@@ -15,6 +15,7 @@ export default async function Navbar() {
     { href: "/build-groups", label: "Build Groups" },
     { href: "/create-build", label: "Create Build" },
     { href: "/leaderboards", label: "Leaderboards" },
+    { href: "/activity", label: "Activity" },
     { href: "/battlegames", label: "Battlegames" },
     { href: "/spells", label: "Spells" },
     { href: "/classes", label: "Classes" },
