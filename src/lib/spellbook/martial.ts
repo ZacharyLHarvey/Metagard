@@ -18,6 +18,8 @@ const MARTIAL_CLASSES = new Set([
   "Warrior",
 ]);
 
+export const MARTIAL_CLASS_NAMES = [...MARTIAL_CLASSES] as const;
+
 export function isMartialClass(className: string): boolean {
   if (MARTIAL_CLASSES.has(className)) return true;
   return !isCasterClass(className);

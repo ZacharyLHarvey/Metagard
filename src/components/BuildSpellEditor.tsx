@@ -876,7 +876,9 @@ export default function BuildSpellEditor({
                       value={chosen?.catalog_rule_id != null ? String(chosen.catalog_rule_id) : ""}
                       onChange={(e) => choosePickOne(group.groupKey, Number(e.target.value))}
                     >
-                      <option value="">Select One</option>
+                      <option value="">
+                        {group.optionalMartialArchetype ? "No Archetype" : "Select One"}
+                      </option>
                       {group.options.map((opt) => (
                         <option key={opt.catalog_rule_id ?? `${opt.id}-${idx}`} value={opt.catalog_rule_id ?? ""}>
                           {opt.name}
@@ -1305,7 +1307,9 @@ export default function BuildSpellEditor({
                       value={chosenId}
                       onChange={(e) => choosePickOne(group.groupKey, Number(e.target.value))}
                     >
-                      <option value="">Select One</option>
+                      <option value="">
+                        {group.optionalMartialArchetype ? "No Archetype" : "Select One"}
+                      </option>
                       {group.options.map((opt) => (
                         <option key={opt.catalog_rule_id ?? `${opt.id}-${idx}`} value={opt.catalog_rule_id ?? ""}>
                           {opt.name}

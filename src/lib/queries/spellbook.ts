@@ -134,7 +134,7 @@ export async function getClassEquipment(className: string): Promise<ClassEquipme
     weapons: toStringOrNull((data as Record<string, unknown>).weapons),
   };
   if (isCasterClass(className) && !equipment.weapons) {
-    equipment.weapons = "Dagger";
+    equipment.weapons = "Dagger, Magic Staff";
   }
   return equipment;
 }
