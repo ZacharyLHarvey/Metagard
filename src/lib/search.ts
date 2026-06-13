@@ -98,6 +98,10 @@ export function isSearchQueryValid(query: string): boolean {
   return query.length >= SEARCH_MIN_QUERY_LENGTH;
 }
 
+export function isSearchBrowseMode(query: string): boolean {
+  return query.length === 0;
+}
+
 export function parseSearchFilter(raw: string | null | undefined): SearchFilter {
   const value = raw?.trim();
   if (

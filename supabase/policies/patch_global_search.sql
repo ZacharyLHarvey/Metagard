@@ -653,11 +653,62 @@ declare
   v_limit int;
 begin
   v_query := btrim(coalesce(p_query, ''));
+  v_limit := greatest(1, least(coalesce(p_limit, 20), 50));
+
+  if char_length(v_query) = 0 then
+    return query
+    with browse as (
+      select
+        sd.entity_type,
+        sd.entity_id,
+        sd.entity_uuid,
+        sd.title,
+        sd.owner_id,
+        sd.meta,
+        extract(epoch from sd.updated_at)::double precision as rank
+      from public.search_documents sd
+      where (
+        p_types is null
+        or cardinality(p_types) = 0
+        or sd.entity_type = any (p_types)
+      )
+    )
+    select
+      b.entity_type,
+      b.entity_id,
+      b.entity_uuid,
+      b.title,
+      b.owner_id,
+      b.meta,
+      b.rank
+    from browse b
+    where (
+      p_cursor_rank is null
+      or b.rank < p_cursor_rank
+      or (
+        b.rank = p_cursor_rank
+        and (
+          b.entity_type > p_cursor_type
+          or (
+            b.entity_type = p_cursor_type
+            and (
+              b.entity_id < p_cursor_id
+              or (
+                b.entity_id = p_cursor_id
+                and b.entity_uuid < coalesce(p_cursor_uuid, '00000000-0000-0000-0000-000000000000'::uuid)
+              )
+            )
+          )
+        )
+      )
+    )
+    order by b.rank desc, b.entity_type asc, b.entity_id desc, b.entity_uuid desc
+    limit v_limit;
+  end if;
+
   if char_length(v_query) < 2 then
     return;
   end if;
-
-  v_limit := greatest(1, least(coalesce(p_limit, 20), 50));
 
   begin
     v_tsquery := websearch_to_tsquery('english', v_query);

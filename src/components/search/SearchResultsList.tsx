@@ -52,7 +52,9 @@ export default function SearchResultsList({
   if (items.length === 0) {
     return (
       <div className="border border-neutral-800 rounded-lg px-4 py-8 text-center text-neutral-500">
-        No results for &ldquo;{query}&rdquo;.
+        {query.trim()
+          ? `No results for "${query}".`
+          : "Nothing to show."}
       </div>
     );
   }

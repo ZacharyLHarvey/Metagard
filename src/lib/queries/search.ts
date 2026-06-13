@@ -9,7 +9,6 @@ import {
   type SearchPage,
   type SearchRpcRow,
   SEARCH_DEFAULT_LIMIT,
-  isSearchQueryValid,
 } from "@/lib/search";
 import { getDisplayNamesForOwnerIds } from "@/lib/queries/publicProfiles";
 import { createClient } from "@/lib/server/supabaseServer";
@@ -21,9 +20,6 @@ export async function getSearchPage(options: {
   limit?: number;
 }): Promise<SearchPage> {
   const query = parseSearchQuery(options.q);
-  if (!isSearchQueryValid(query)) {
-    return { items: [], nextCursor: null };
-  }
 
   const limit = options.limit ?? SEARCH_DEFAULT_LIMIT;
   const parsedLimit = parseSearchLimit(String(limit));

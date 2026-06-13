@@ -19,17 +19,14 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
   const typeFilter = parseSearchFilter(rawType);
   const types = searchFilterToEntityTypes(typeFilter);
 
-  const page =
-    isSearchQueryValid(query)
-      ? await getSearchPage({ q: query, types })
-      : { items: [], nextCursor: null };
+  const page = await getSearchPage({ q: query, types });
 
   return (
     <main className="px-4 py-4 sm:px-6 lg:px-10 text-white space-y-6 sm:space-y-8 max-w-4xl">
       <div className="space-y-1">
         <h1 className="text-xl sm:text-2xl font-bold">Search</h1>
         <p className="text-sm text-neutral-400">
-          Find builds, spells, classes, battlegames, monsters, and players across Metagard.
+          Leave blank to browse all, or type to search builds, spells, classes, battlegames, monsters, and players.
         </p>
       </div>
 
@@ -44,11 +41,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
         options={SEARCH_TYPE_FILTER_OPTIONS}
       />
 
-      {!query ? (
-        <div className="border border-neutral-800 rounded-lg px-4 py-8 text-center text-neutral-500">
-          Enter at least {SEARCH_MIN_QUERY_LENGTH} characters to search.
-        </div>
-      ) : !isSearchQueryValid(query) ? (
+      {query && !isSearchQueryValid(query) ? (
         <div className="border border-neutral-800 rounded-lg px-4 py-8 text-center text-neutral-500">
           Search terms must be at least {SEARCH_MIN_QUERY_LENGTH} characters.
         </div>
