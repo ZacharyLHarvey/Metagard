@@ -1,7 +1,29 @@
 import { NextResponse } from "next/server";
+import {
+  getCustomClassById,
+  getCustomClassRules,
+  updateCustomClassWithRules,
+} from "@/lib/queries/customClassSpellbook";
+import { parseCustomClassPayload } from "@/lib/customClass/parsePayload";
 import { createClient } from "@/lib/server/supabaseServer";
 
 type Params = { params: Promise<{ id: string }> };
+
+function parsePayload(body: Record<string, unknown>) {
+  return parseCustomClassPayload(body);
+}
+
+export async function GET(request: Request, context: Params) {
+  const { id } = await context.params;
+  const classId = Number(id);
+  const { searchParams } = new URL(request.url);
+  const includeRules = searchParams.get("include") === "rules";
+
+  const row = await getCustomClassById(classId);
+  if (!row) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  const rules = includeRules ? await getCustomClassRules(classId) : undefined;
+  return NextResponse.json({ item: row, rules });
+}
 
 export async function PATCH(request: Request, context: Params) {
   try {
@@ -13,18 +35,9 @@ export async function PATCH(request: Request, context: Params) {
 
     const { id } = await context.params;
     const classId = Number(id);
-
-    const body = (await request.json()) as { name?: string; description?: string | null };
-    const name = typeof body.name === "string" ? body.name.trim() : "";
-    if (!name) return NextResponse.json({ error: "name required" }, { status: 400 });
-
-    const { error } = await supabase
-      .from("custom_classes")
-      .update({ name, description: body.description ?? null })
-      .eq("id", classId)
-      .eq("owner_id", user.id);
-    if (error) throw error;
-
+    const body = (await request.json()) as Record<string, unknown>;
+    const payload = parsePayload(body);
+    await updateCustomClassWithRules(user.id, classId, payload);
     return NextResponse.json({ ok: true });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Failed to update";

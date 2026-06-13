@@ -2,6 +2,7 @@
 -- Run in Supabase SQL Editor after build_groups and UGC tables exist.
 
 create index if not exists idx_builds_created_at on public.builds(created_at desc);
+create index if not exists idx_custom_builds_created_at on public.custom_builds(created_at desc);
 create index if not exists idx_build_groups_created_at on public.build_groups(created_at desc);
 create index if not exists idx_monsters_created_at on public.monsters(created_at desc);
 create index if not exists idx_custom_spells_created_at on public.custom_spells(created_at desc);
@@ -38,6 +39,22 @@ as $$
         'look_the_part', coalesce(b.look_the_part, false)
       ) as meta
     from public.builds b
+
+    union all
+
+    select
+      'custom_build'::text,
+      cb.id,
+      cb.name,
+      cb.owner_id,
+      cb.created_at,
+      jsonb_build_object(
+        'class', coalesce(cc.name, 'Custom class'),
+        'level', cb.level,
+        'look_the_part', coalesce(cb.look_the_part, false)
+      )
+    from public.custom_builds cb
+    join public.custom_classes cc on cc.id = cb.custom_class_id
 
     union all
 
@@ -117,4 +134,4 @@ $$;
 grant execute on function public.get_activity_feed(text, timestamptz, int) to anon, authenticated;
 
 comment on function public.get_activity_feed(text, timestamptz, int) is
-  'Paginated global activity feed across builds, build groups, monsters, custom spells/classes, and battlegames.';
+  'Paginated global activity feed across builds, custom builds, build groups, monsters, custom spells/classes, and battlegames.';

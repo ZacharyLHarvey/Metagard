@@ -1,5 +1,6 @@
 export type ActivityFeedEntityType =
   | "build"
+  | "custom_build"
   | "build_group"
   | "monster"
   | "custom_spell"
@@ -9,6 +10,7 @@ export type ActivityFeedEntityType =
 export type ActivityFeedFilter =
   | "all"
   | "builds"
+  | "custom-builds"
   | "build-groups"
   | "monsters"
   | "custom-spells"
@@ -18,6 +20,7 @@ export type ActivityFeedFilter =
 export const ACTIVITY_FEED_FILTER_OPTIONS: { value: ActivityFeedFilter; label: string }[] = [
   { value: "all", label: "All" },
   { value: "builds", label: "Builds" },
+  { value: "custom-builds", label: "Custom Builds" },
   { value: "build-groups", label: "Build Groups" },
   { value: "monsters", label: "Monsters" },
   { value: "custom-spells", label: "Custom Spells" },
@@ -40,6 +43,7 @@ export type ActivityFeedItem = {
 
 const FILTER_TO_RPC: Record<Exclude<ActivityFeedFilter, "all">, ActivityFeedEntityType> = {
   builds: "build",
+  "custom-builds": "custom_build",
   "build-groups": "build_group",
   monsters: "monster",
   "custom-spells": "custom_spell",
@@ -49,6 +53,7 @@ const FILTER_TO_RPC: Record<Exclude<ActivityFeedFilter, "all">, ActivityFeedEnti
 
 const ENTITY_TYPE_LABELS: Record<ActivityFeedEntityType, string> = {
   build: "Build",
+  custom_build: "Custom Build",
   build_group: "Build Group",
   monster: "Monster",
   custom_spell: "Custom Spell",
@@ -59,6 +64,7 @@ const ENTITY_TYPE_LABELS: Record<ActivityFeedEntityType, string> = {
 export function parseActivityFeedFilter(raw: string | undefined): ActivityFeedFilter {
   if (
     raw === "builds" ||
+    raw === "custom-builds" ||
     raw === "build-groups" ||
     raw === "monsters" ||
     raw === "custom-spells" ||
@@ -83,6 +89,8 @@ export function activityFeedHref(entityType: ActivityFeedEntityType, entityId: n
   switch (entityType) {
     case "build":
       return `/builds/${entityId}`;
+    case "custom_build":
+      return `/custom-builds/${entityId}`;
     case "build_group":
       return `/build-groups/${entityId}`;
     case "monster":
@@ -107,7 +115,8 @@ function truncateText(value: string, maxLen: number): string {
 export function formatActivityFeedSubtitle(item: Pick<ActivityFeedItem, "entityType" | "meta">): string | null {
   const meta = item.meta;
   switch (item.entityType) {
-    case "build": {
+    case "build":
+    case "custom_build": {
       const className = typeof meta.class === "string" ? meta.class : null;
       const level = typeof meta.level === "number" ? meta.level : null;
       const ltp = meta.look_the_part === true;
@@ -161,6 +170,7 @@ export type ActivityFeedRpcRow = {
 function isActivityFeedEntityType(value: string): value is ActivityFeedEntityType {
   return (
     value === "build" ||
+    value === "custom_build" ||
     value === "build_group" ||
     value === "monster" ||
     value === "custom_spell" ||

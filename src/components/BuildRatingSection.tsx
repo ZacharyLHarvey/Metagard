@@ -7,19 +7,26 @@ type Props = {
   buildId: number;
   canRate: boolean;
   initialMyRating: number | null;
+  ratingApiUrl?: string;
 };
 
-export default function BuildRatingSection({ buildId, canRate, initialMyRating }: Props) {
+export default function BuildRatingSection({
+  buildId,
+  canRate,
+  initialMyRating,
+  ratingApiUrl,
+}: Props) {
   const router = useRouter();
   const [myRating, setMyRating] = useState<number | null>(initialMyRating);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const resolvedRatingUrl = ratingApiUrl ?? `/api/builds/${buildId}/rating`;
 
   async function choose(stars: number) {
     if (!canRate) return;
     setBusy(true);
     setError("");
-    const res = await fetch(`/api/builds/${buildId}/rating`, {
+    const res = await fetch(resolvedRatingUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ rating: stars }),

@@ -10,15 +10,21 @@ const INTERACTIVE_SELECTOR =
 type Props = {
   buildId: number;
   className?: string;
+  hrefPrefix?: string;
   children: ReactNode;
 };
 
 /**
- * Table body row: clicking non-interactive areas navigates to `/builds/[id]`, same as the View link.
+ * Table body row: clicking non-interactive areas navigates to `{hrefPrefix}/[id]`.
  */
-export default function BuildTableBodyRow({ buildId, className, children }: Props) {
+export default function BuildTableBodyRow({
+  buildId,
+  className,
+  hrefPrefix = "/builds",
+  children,
+}: Props) {
   const router = useRouter();
-  const href = `/builds/${buildId}`;
+  const href = `${hrefPrefix}/${buildId}`;
 
   function handleClick(e: MouseEvent<HTMLTableRowElement>) {
     if ((e.target as HTMLElement).closest(INTERACTIVE_SELECTOR)) return;

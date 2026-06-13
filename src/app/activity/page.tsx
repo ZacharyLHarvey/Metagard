@@ -18,7 +18,7 @@ export default async function ActivityPage({ searchParams }: { searchParams: Pro
       <div className="flex flex-wrap gap-4 items-baseline justify-between">
         <div className="space-y-1">
           <h1 className="text-xl sm:text-2xl font-bold">Activity</h1>
-          <p className="text-sm text-neutral-400">Latest community builds and creations, newest first.</p>
+          <p className="text-sm text-neutral-400">Latest community builds, custom builds, and creations, newest first.</p>
         </div>
         <AutoQuerySelect
           name="feed"

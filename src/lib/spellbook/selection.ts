@@ -36,6 +36,13 @@ export function findSpellForSelection(spells: SpellRow[], row: SpellSelectionLoo
   if (rid !== null) {
     return spells.find((s) => s.catalog_rule_id === rid);
   }
+  const extended = row as SpellSelectionLookup & { custom_spell_id?: number | null };
+  if (extended.custom_spell_id != null) {
+    const byCustom = spells.find(
+      (s) => s.spell_kind === "custom" && (s.custom_spell_id ?? s.id) === extended.custom_spell_id
+    );
+    if (byCustom) return byCustom;
+  }
   const matches = spells.filter(
     (s) => s.id === row.spell_id && (s.level ?? 1) === row.spell_level
   );
@@ -43,4 +50,17 @@ export function findSpellForSelection(spells: SpellRow[], row: SpellSelectionLoo
   if (matches.length === 0) return undefined;
   const withoutRule = matches.find((s) => s.catalog_rule_id == null);
   return withoutRule ?? matches[0];
+}
+
+export function spellRefFieldsFromRow(
+  spell: SpellRow
+): Pick<BuildSpellSelectionRow, "spell_id"> & {
+  custom_spell_id?: number | null;
+  spell_kind?: "canonical" | "custom";
+} {
+  if (spell.spell_kind === "custom") {
+    const id = spell.custom_spell_id ?? spell.id;
+    return { spell_id: id, custom_spell_id: id, spell_kind: "custom" };
+  }
+  return { spell_id: spell.id, custom_spell_id: null, spell_kind: "canonical" };
 }

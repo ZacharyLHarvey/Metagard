@@ -24,6 +24,7 @@ import {
   findSpellForSelection,
   selectionKeyForCatalogSpell,
   selectionKeyFromRow,
+  spellRefFieldsFromRow,
 } from "@/lib/spellbook/selection";
 import {
   ARCHER_LTP_SPECIALTY_PICK_ONE_GROUP_KEY,
@@ -70,6 +71,10 @@ type Props = {
   initialShowIncantation?: boolean;
   initialShowMaterials?: boolean;
   initialShowRange?: boolean;
+  editorMode?: "official" | "custom";
+  classType?: "martial" | "caster";
+  saveSelectionsUrl?: string;
+  redirectAfterSave?: string;
 };
 
 type Selection = {
@@ -80,6 +85,8 @@ type Selection = {
   selection_group: string | null;
   chosen: boolean;
   metadata?: Record<string, unknown>;
+  custom_spell_id?: number | null;
+  spell_kind?: "canonical" | "custom";
 };
 
 function purchasedBySpellIdFromMap(map: Record<string, Selection>) {
@@ -151,8 +158,17 @@ export default function BuildSpellEditor({
   initialShowIncantation = false,
   initialShowMaterials = false,
   initialShowRange = false,
+  editorMode = "official",
+  classType,
+  saveSelectionsUrl,
+  redirectAfterSave,
 }: Props) {
   const router = useRouter();
+  const isCustomEditor = editorMode === "custom";
+  const martial =
+    isCustomEditor && classType != null ? classType === "martial" : isMartialClass(className);
+  const caster =
+    isCustomEditor && classType != null ? classType === "caster" : isCasterClass(className);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [selectedSpell, setSelectedSpell] = useState<SpellRow | null>(null);
@@ -166,25 +182,29 @@ export default function BuildSpellEditor({
   const [collapsedSectionKeys, setCollapsedSectionKeys] = useState<Set<string>>(() => new Set());
 
   const [selectionMap, setSelectionMap] = useState<Record<string, Selection>>(() => {
-    const martial = isMartialClass(className);
+    const selectionInput = initialSelections.map((s) => {
+      const ext = s as BuildSpellSelectionRow & {
+        custom_spell_id?: number | null;
+        spell_kind?: "canonical" | "custom";
+      };
+      return {
+        build_id: buildId,
+        spell_id: s.spell_id,
+        spell_level: s.spell_level,
+        purchased: s.purchased,
+        experienced: s.experienced,
+        selection_group: s.selection_group,
+        chosen: s.chosen,
+        custom_spell_id: ext.custom_spell_id ?? null,
+        spell_kind: ext.spell_kind ?? (ext.custom_spell_id != null ? "custom" : "canonical"),
+      };
+    });
     if (martial) {
-      const auto = buildMartialAutoSelections(
-        spells,
-        lookThePart,
-        className,
-        initialSelections.map((s) => ({
-          build_id: buildId,
-          spell_id: s.spell_id,
-          spell_level: s.spell_level,
-          purchased: s.purchased,
-          experienced: s.experienced,
-          selection_group: s.selection_group,
-          chosen: s.chosen,
-        }))
-      );
+      const auto = buildMartialAutoSelections(spells, lookThePart, className, selectionInput);
       const autoBase: Record<string, Selection> = {};
       for (const s of auto) {
         const key = s.selection_group ?? `${s.spell_level}:${s.spell_id}`;
+        const ext = s as typeof s & { custom_spell_id?: number | null; spell_kind?: "canonical" | "custom" };
         autoBase[key] = {
           spell_id: s.spell_id,
           spell_level: s.spell_level,
@@ -192,12 +212,18 @@ export default function BuildSpellEditor({
           experienced: 0,
           selection_group: s.selection_group,
           chosen: true,
+          custom_spell_id: ext.custom_spell_id ?? null,
+          spell_kind: ext.spell_kind,
         };
       }
       return autoBase;
     }
     const base: Record<string, Selection> = {};
     for (const s of initialSelections) {
+      const ext = s as BuildSpellSelectionRow & {
+        custom_spell_id?: number | null;
+        spell_kind?: "canonical" | "custom";
+      };
       base[selectionKeyFromRow(s)] = {
         spell_id: s.spell_id,
         spell_level: s.spell_level,
@@ -206,6 +232,8 @@ export default function BuildSpellEditor({
         selection_group: s.selection_group,
         chosen: s.chosen,
         metadata: s.metadata && typeof s.metadata === "object" ? { ...s.metadata } : {},
+        custom_spell_id: ext.custom_spell_id ?? null,
+        spell_kind: ext.spell_kind ?? (ext.custom_spell_id != null ? "custom" : "canonical"),
       };
     }
     return base;
@@ -223,8 +251,6 @@ export default function BuildSpellEditor({
     return byLevel;
   }, [maxLevel, spells]);
 
-  const caster = isCasterClass(className);
-  const martial = isMartialClass(className);
   const casterLtpBonus = caster && lookThePart ? 1 : 0;
   const totalBudget = useMemo(
     () => maxLevel * POINTS_PER_SPELL_LEVEL + casterLtpBonus,
@@ -385,7 +411,7 @@ export default function BuildSpellEditor({
   }, [lookThePartPickOneGroups]);
 
   const lookThePartRows = useMemo(() => {
-    if (!isMartialClass(className) || !lookThePart) return [];
+    if (!martial || !lookThePart) return [];
     const out: { mapKey: string; spell: SpellRow; purchased: number }[] = [];
     for (const [mapKey, sel] of Object.entries(selectionMap)) {
       if (sel.purchased <= 0) continue;
@@ -459,7 +485,7 @@ export default function BuildSpellEditor({
         picker.spell.catalog_rule_id != null ? catalogRuleKey(picker.spell.catalog_rule_id) : null;
       const prevKeys = readExperiencedTargetKeys(cur?.metadata);
       const nextRow: Selection = {
-        spell_id: picker.spell.id,
+        ...spellRefFieldsFromRow(picker.spell),
         spell_level: picker.level,
         purchased: picker.nextPurchased,
         experienced: cur?.experienced ?? 0,
@@ -501,7 +527,7 @@ export default function BuildSpellEditor({
       const nextMap: Record<string, Selection> = {
         ...selectionMap,
         [key]: {
-          spell_id: spell.id,
+          ...spellRefFieldsFromRow(spell),
           spell_level: level,
           purchased: nextPurchased,
           experienced: existing?.experienced ?? 0,
@@ -529,7 +555,7 @@ export default function BuildSpellEditor({
       const nextMap = {
         ...prev,
         [key]: {
-          spell_id: spell.id,
+          ...spellRefFieldsFromRow(spell),
           spell_level: level,
           purchased,
           experienced: ex?.experienced ?? 0,
@@ -614,7 +640,7 @@ export default function BuildSpellEditor({
       if (chosen?.catalog_rule_id != null) {
         const key = catalogRuleKey(chosen.catalog_rule_id);
         next[key] = {
-          spell_id: chosen.id,
+          ...spellRefFieldsFromRow(chosen),
           spell_level: chosen.level ?? 1,
           purchased: 1,
           experienced: 0,
@@ -651,7 +677,7 @@ export default function BuildSpellEditor({
       const opt = groupOptions.find((o) => o.catalog_rule_id === catalogRuleId);
       if (!opt) return prev;
       next[key] = {
-        spell_id: opt.id,
+        ...spellRefFieldsFromRow(opt),
         spell_level: opt.level ?? 1,
         purchased: 1,
         experienced: 0,
@@ -682,9 +708,12 @@ export default function BuildSpellEditor({
         selection_group: s.selection_group,
         chosen: s.chosen,
         metadata: s.metadata ?? {},
+        custom_spell_id: s.custom_spell_id ?? null,
+        spell_kind: s.spell_kind ?? (s.custom_spell_id != null ? "custom" : "canonical"),
       }));
 
-    const response = await fetch(`/api/builds/${buildId}/spells`, {
+    const url = saveSelectionsUrl ?? `/api/builds/${buildId}/spells`;
+    const response = await fetch(url, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ selections: payload }),
@@ -698,7 +727,7 @@ export default function BuildSpellEditor({
     }
 
     setSaving(false);
-    router.push(`/builds/${buildId}`);
+    router.push(redirectAfterSave ?? `/builds/${buildId}`);
     router.refresh();
   }
 

@@ -6,18 +6,27 @@ import { useState } from "react";
 type Props = {
   buildId: number;
   canClone: boolean;
+  cloneApiUrl?: string;
+  /** Base path for post-clone navigation, e.g. `/builds` or `/custom-builds`. */
+  redirectPathPrefix?: string;
 };
 
-export default function CloneBuildButton({ buildId, canClone }: Props) {
+export default function CloneBuildButton({
+  buildId,
+  canClone,
+  cloneApiUrl,
+  redirectPathPrefix = "/builds",
+}: Props) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const resolvedCloneUrl = cloneApiUrl ?? `/api/builds/${buildId}/clone`;
 
   async function clone() {
     if (!canClone) return;
     setBusy(true);
     setError("");
-    const res = await fetch(`/api/builds/${buildId}/clone`, { method: "POST" });
+    const res = await fetch(resolvedCloneUrl, { method: "POST" });
     setBusy(false);
     if (!res.ok) {
       const body = (await res.json().catch(() => ({}))) as { error?: string };
@@ -25,7 +34,7 @@ export default function CloneBuildButton({ buildId, canClone }: Props) {
       return;
     }
     const data = (await res.json()) as { id?: number };
-    if (data.id) router.push(`/builds/${data.id}`);
+    if (data.id) router.push(`${redirectPathPrefix}/${data.id}`);
     router.refresh();
   }
 

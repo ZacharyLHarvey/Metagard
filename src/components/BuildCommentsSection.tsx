@@ -5,12 +5,13 @@ import EntityCommentsSection from "@/components/EntityCommentsSection";
 type Props = {
   buildId: number;
   canComment: boolean;
+  commentsApiUrl?: string;
 };
 
-export default function BuildCommentsSection({ buildId, canComment }: Props) {
+export default function BuildCommentsSection({ buildId, canComment, commentsApiUrl }: Props) {
   return (
     <EntityCommentsSection
-      commentsApiUrl={`/api/builds/${buildId}/comments`}
+      commentsApiUrl={commentsApiUrl ?? `/api/builds/${buildId}/comments`}
       canComment={canComment}
     />
   );

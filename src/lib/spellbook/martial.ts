@@ -5,7 +5,7 @@ import {
   buildSelectedSpellNameSet,
   evaluateSpellRules,
 } from "@/lib/spellbook/rules";
-import { catalogRuleKey, findSpellForSelection } from "@/lib/spellbook/selection";
+import { catalogRuleKey, findSpellForSelection, spellRefFieldsFromRow } from "@/lib/spellbook/selection";
 
 const MARTIAL_CLASSES = new Set([
   "Anti-Paladin",
@@ -234,7 +234,7 @@ export function buildMartialAutoSelections(
     .filter((spell) => includeMartialSpell(spell, lookThePart))
     .map((spell) => ({
       build_id: 0,
-      spell_id: spell.id,
+      ...spellRefFieldsFromRow(spell),
       spell_level: spell.level ?? 1,
       purchased: 1,
       experienced: 0,
@@ -259,7 +259,7 @@ export function buildMartialAutoSelections(
     if (!chosen) continue;
     pickOneSelections.push({
       build_id: 0,
-      spell_id: chosen.id,
+      ...spellRefFieldsFromRow(chosen),
       spell_level: chosen.level ?? 1,
       purchased: 1,
       experienced: 0,
@@ -280,7 +280,7 @@ export function buildMartialAutoSelections(
       if (opt.catalog_rule_id == null) continue;
       pickTwoSelections.push({
         build_id: 0,
-        spell_id: opt.id,
+        ...spellRefFieldsFromRow(opt),
         spell_level: opt.level ?? 1,
         purchased: 1,
         experienced: 0,
