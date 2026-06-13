@@ -11,6 +11,7 @@ export default async function Navbar() {
     : undefined;
   const links = [
     { href: "/", label: "Home" },
+    { href: "/search", label: "Search" },
     { href: "/builds", label: "Builds" },
     { href: "/build-groups", label: "Build Groups" },
     { href: "/create-build", label: "Create Build" },
