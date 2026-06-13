@@ -134,41 +134,65 @@ export default function CreateCustomBuildForm({ classes, initialClassId }: Props
         </p>
       )}
 
-      <details className="text-sm text-neutral-400">
-        <summary className="cursor-pointer text-neutral-300">Optional build notes</summary>
-        <div className="mt-3 space-y-3">
-          <input
-            className="w-full px-3 py-2 bg-neutral-800 border border-neutral-700 rounded"
-            placeholder="Play style"
-            value={playStyle}
-            onChange={(e) => setPlayStyle(e.target.value)}
-          />
-          <input
-            className="w-full px-3 py-2 bg-neutral-800 border border-neutral-700 rounded"
-            placeholder="Priority"
-            value={priority}
-            onChange={(e) => setPriority(e.target.value)}
-          />
-          <input
-            className="w-full px-3 py-2 bg-neutral-800 border border-neutral-700 rounded"
-            placeholder="Synergy"
-            value={synergy}
-            onChange={(e) => setSynergy(e.target.value)}
-          />
-          <input
-            className="w-full px-3 py-2 bg-neutral-800 border border-neutral-700 rounded"
-            placeholder="Enemies"
-            value={enemies}
-            onChange={(e) => setEnemies(e.target.value)}
-          />
-          <input
-            className="w-full px-3 py-2 bg-neutral-800 border border-neutral-700 rounded"
-            placeholder="Recommended gear"
-            value={recommendedGear}
-            onChange={(e) => setRecommendedGear(e.target.value)}
-          />
-        </div>
-      </details>
+      <div>
+        <label className="block mb-2 text-neutral-300">Play Style</label>
+        <p className="text-xs text-neutral-400 mb-2">
+          How this build is meant to approach fights, objectives, and battlefield movement.
+        </p>
+        <textarea
+          className="w-full px-3 py-2.5 bg-neutral-800 border border-neutral-700 rounded min-h-32 sm:min-h-40"
+          value={playStyle}
+          onChange={(e) => setPlayStyle(e.target.value)}
+        />
+      </div>
+
+      <div>
+        <label className="block mb-2 text-neutral-300">Priority</label>
+        <p className="text-xs text-neutral-400 mb-2">
+          What you should focus on first when playing this build in a Battlegame.
+        </p>
+        <textarea
+          className="w-full px-3 py-2.5 bg-neutral-800 border border-neutral-700 rounded min-h-32 sm:min-h-40"
+          value={priority}
+          onChange={(e) => setPriority(e.target.value)}
+        />
+      </div>
+
+      <div>
+        <label className="block mb-2 text-neutral-300">Synergy</label>
+        <p className="text-xs text-neutral-400 mb-2">
+          Which classes, teammates, or abilities enhance this build’s effectiveness.
+        </p>
+        <textarea
+          className="w-full px-3 py-2.5 bg-neutral-800 border border-neutral-700 rounded min-h-32 sm:min-h-40"
+          value={synergy}
+          onChange={(e) => setSynergy(e.target.value)}
+        />
+      </div>
+
+      <div>
+        <label className="block mb-2 text-neutral-300">Enemies</label>
+        <p className="text-xs text-neutral-400 mb-2">
+          The classes or tactics that most threaten this build during Battlegames.
+        </p>
+        <textarea
+          className="w-full px-3 py-2.5 bg-neutral-800 border border-neutral-700 rounded min-h-32 sm:min-h-40"
+          value={enemies}
+          onChange={(e) => setEnemies(e.target.value)}
+        />
+      </div>
+
+      <div>
+        <label className="block mb-2 text-neutral-300">Recommended Gear</label>
+        <p className="text-xs text-neutral-400 mb-2">
+          The weapons, shields, and equipment that best support this build’s playstyle.
+        </p>
+        <textarea
+          className="w-full px-3 py-2.5 bg-neutral-800 border border-neutral-700 rounded min-h-32 sm:min-h-40"
+          value={recommendedGear}
+          onChange={(e) => setRecommendedGear(e.target.value)}
+        />
+      </div>
 
       <button
         type="submit"
