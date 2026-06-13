@@ -26,7 +26,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
       <div className="space-y-1">
         <h1 className="text-xl sm:text-2xl font-bold">Search</h1>
         <p className="text-sm text-neutral-400">
-          Leave blank to browse all, or type to search builds, spells, classes, battlegames, monsters, and players.
+          Leave blank to browse all, or type to search builds, custom builds, spells, classes, battlegames, monsters, and players.
         </p>
       </div>
 

@@ -8,6 +8,10 @@ export type CustomClassRow = {
   owner_id: string;
   name: string;
   description: string | null;
+  class_type?: "martial" | "caster";
+  armor?: string | null;
+  shields?: string | null;
+  weapons?: string | null;
 };
 
 type Props = {

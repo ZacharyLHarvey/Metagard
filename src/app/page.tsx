@@ -2,6 +2,8 @@ import BuildTableBodyRow from "@/components/BuildTableBodyRow";
 import CreateBuildHomeLink from "@/components/CreateBuildHomeLink";
 import CreatorAttribution from "@/components/CreatorAttribution";
 import ThemedWordmark from "@/components/ThemedWordmark";
+import { getMyCustomBuilds } from "@/lib/queries/customClassSpellbook";
+import { getSavedCustomBuilds } from "@/lib/queries/customBuildSocial";
 import { getDisplayNamesForOwnerIds } from "@/lib/queries/publicProfiles";
 import { getProfileCached } from "@/lib/queries/getProfileCached";
 import { getMyBuilds, getSavedBuilds } from "@/lib/queries/spellbook";
@@ -9,8 +11,16 @@ import { getMyBuilds, getSavedBuilds } from "@/lib/queries/spellbook";
 export default async function Home() {
   const profile = await getProfileCached();
   const initialTheme = profile?.theme_preference === "light" ? "light" : "dark";
-  const [myBuilds, savedBuilds] = await Promise.all([getMyBuilds(), getSavedBuilds()]);
-  const creatorByOwnerId = await getDisplayNamesForOwnerIds(savedBuilds.map((b) => b.owner_id));
+  const [myBuilds, savedBuilds, myCustomBuilds, savedCustomBuilds] = await Promise.all([
+    getMyBuilds(),
+    getSavedBuilds(),
+    getMyCustomBuilds(),
+    getSavedCustomBuilds(),
+  ]);
+  const creatorByOwnerId = await getDisplayNamesForOwnerIds([
+    ...savedBuilds.map((b) => b.owner_id),
+    ...savedCustomBuilds.map((b) => b.owner_id),
+  ]);
 
   return (
     <main className="p-10 text-white">
@@ -29,6 +39,13 @@ export default async function Home() {
           .home-saved-builds .col-class { width: 20%; }
           .home-saved-builds .col-level { width: 15%; }
           .home-saved-builds .col-creator { width: 27%; }
+          .home-my-custom-builds .col-name { width: 45%; }
+          .home-my-custom-builds .col-class { width: 30%; }
+          .home-my-custom-builds .col-level { width: 25%; }
+          .home-saved-custom-builds .col-name { width: 38%; }
+          .home-saved-custom-builds .col-class { width: 20%; }
+          .home-saved-custom-builds .col-level { width: 15%; }
+          .home-saved-custom-builds .col-creator { width: 27%; }
         `}
       </style>
 
@@ -124,6 +141,111 @@ export default async function Home() {
           </div>
         </div>
       </section>
+
+      {myCustomBuilds.length > 0 && (
+        <section className="mt-12">
+          <h2 className="text-xl font-semibold mb-4">My Custom Builds</h2>
+
+          <div className="border border-neutral-800 rounded-lg overflow-hidden">
+            <div className="overflow-x-auto">
+            <table className="home-my-custom-builds w-full text-left border-collapse">
+              <thead className="bg-neutral-900">
+                <tr>
+                  <th className="col-name px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
+                    Name
+                  </th>
+                  <th className="col-class px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
+                    Class
+                  </th>
+                  <th className="col-level px-4 py-1.5 leading-snug border-b border-neutral-800 border-r border-neutral-800">
+                    Level
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {myCustomBuilds.map((b) => (
+                  <BuildTableBodyRow
+                    key={b.id}
+                    buildId={b.id}
+                    hrefPrefix="/custom-builds"
+                    className="hover:bg-neutral-900/40 transition"
+                  >
+                    <td className="col-name px-4 py-2 border-b border-neutral-800 border-r border-neutral-800 break-words">
+                      {b.name}
+                    </td>
+                    <td className="col-class px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
+                      {b.class_name}
+                    </td>
+                    <td className="col-level px-4 py-1.5 leading-snug border-b border-neutral-800 border-r border-neutral-800">
+                      {b.level}
+                    </td>
+                  </BuildTableBodyRow>
+                ))}
+              </tbody>
+            </table>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {savedCustomBuilds.length > 0 && (
+        <section className="mt-12">
+          <h2 className="text-xl font-semibold mb-4">Saved Custom Builds</h2>
+
+          <div className="border border-neutral-800 rounded-lg overflow-hidden">
+            <div className="overflow-x-auto">
+            <table className="home-saved-custom-builds w-full text-left border-collapse">
+              <thead className="bg-neutral-900">
+                <tr>
+                  <th className="col-name px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
+                    Name
+                  </th>
+                  <th className="col-class px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
+                    Class
+                  </th>
+                  <th className="col-level px-4 py-1.5 leading-snug border-b border-neutral-800 border-r border-neutral-800">
+                    Level
+                  </th>
+                  <th className="col-creator px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
+                    Creator
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {savedCustomBuilds.map((b) => (
+                  <BuildTableBodyRow
+                    key={b.id}
+                    buildId={b.id}
+                    hrefPrefix="/custom-builds"
+                    className="hover:bg-neutral-900/40 transition"
+                  >
+                    <td className="col-name px-4 py-2 border-b border-neutral-800 border-r border-neutral-800 break-words">
+                      {b.name}
+                    </td>
+                    <td className="col-class px-4 py-2 border-b border-neutral-800 border-r border-neutral-800">
+                      {b.class_name}
+                    </td>
+                    <td className="col-level px-4 py-1.5 leading-snug border-b border-neutral-800 border-r border-neutral-800">
+                      {b.level}
+                    </td>
+                    <td className="col-creator px-4 py-2 border-b border-neutral-800 border-r border-neutral-800 align-top">
+                      <CreatorAttribution
+                        ownerId={b.owner_id}
+                        displayName={
+                          b.owner_id ? (creatorByOwnerId.get(b.owner_id) ?? "Player") : "Player"
+                        }
+                      />
+                    </td>
+                  </BuildTableBodyRow>
+                ))}
+              </tbody>
+            </table>
+            </div>
+          </div>
+        </section>
+      )}
 
       <div className="mt-10 flex justify-center pb-4">
         <CreateBuildHomeLink initialTheme={initialTheme} />

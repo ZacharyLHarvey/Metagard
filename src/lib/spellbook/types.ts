@@ -33,6 +33,8 @@ export type ClassRow = {
   name: string;
 };
 
+export type SpellRefKind = "canonical" | "custom";
+
 export type SpellRow = {
   id: number;
   name: string;
@@ -54,6 +56,8 @@ export type SpellRow = {
   source_type?: string | null;
   option_group?: string | null;
   is_look_the_part?: boolean | null;
+  spell_kind?: SpellRefKind;
+  custom_spell_id?: number | null;
 };
 
 export type BuildSpellSelectionRow = {
@@ -70,4 +74,6 @@ export type BuildSpellSelectionRow = {
 
 export type BuildSpellSelectionInput = Omit<BuildSpellSelectionRow, "id" | "metadata"> & {
   metadata?: Record<string, unknown>;
+  spell_kind?: SpellRefKind;
+  custom_spell_id?: number | null;
 };

@@ -359,7 +359,7 @@ export default function BuildSpellDetails({
       : { frequency: null, range: null, tag: null };
     const detailSpell = spell ? applyDisplayRuleToSpell(spell, ruleDisplay) : null;
     return (
-      <tr key={selection.id}>
+      <tr key={rowKey}>
         <SpellRowTouchCell
           spell={detailSpell ?? spell}
           className="pl-8 pr-4 py-2 border-b border-neutral-800"
@@ -405,7 +405,7 @@ export default function BuildSpellDetails({
           )
         : { frequency: null, range: null, tag: null };
       return (
-        <tr key={selection.id}>
+        <tr key={rowKey}>
           <SpellRowTouchCell
             spell={spell}
             className="pl-8 pr-4 py-2 border-b border-neutral-800"

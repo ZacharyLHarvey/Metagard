@@ -2,6 +2,12 @@ import BuildTableBodyRow from "@/components/BuildTableBodyRow";
 import CreatorAttribution from "@/components/CreatorAttribution";
 import TierBadge from "@/components/TierBadge";
 import AutoQuerySelect from "@/components/AutoQuerySelect";
+import {
+  includeOfficialClassGroup,
+  normalizeClassKey,
+  normalizeClassLabel,
+  officialBuildsPageTitle,
+} from "@/lib/buildListGrouping";
 import { getDisplayNamesForOwnerIds } from "@/lib/queries/publicProfiles";
 import { getGlobalAverageRating, getNumericEntityVoteStats } from "@/lib/queries/ratingStats";
 import { createClient } from "@/lib/server/supabaseServer";
@@ -17,33 +23,6 @@ type Build = {
   owner_id: string | null;
   created_at: string;
 };
-
-function normalizeClassKey(value: string | null | undefined): string {
-  const raw = (value ?? "").normalize("NFKC");
-  const unifiedDashes = raw.replace(/[‐‑‒–—―−]/g, "-");
-  const collapsedWhitespace = unifiedDashes.replace(/\s+/g, " ").trim();
-  return collapsedWhitespace ? collapsedWhitespace.toLocaleLowerCase() : "—";
-}
-
-function normalizeClassLabel(value: string | null | undefined): string {
-  const raw = (value ?? "").normalize("NFKC");
-  const unifiedDashes = raw.replace(/[‐‑‒–—―−]/g, "-");
-  const collapsedWhitespace = unifiedDashes.replace(/\s+/g, " ").trim();
-  return collapsedWhitespace || "—";
-}
-
-const MARTIAL_CLASSES = new Set([
-  "warrior",
-  "paladin",
-  "anti-paladin",
-  "monk",
-  "scout",
-  "assassin",
-  "barbarian",
-  "archer",
-]);
-
-const CASTER_CLASSES = new Set(["bard", "druid", "healer", "wizard"]);
 
 type Search = { group?: string };
 
@@ -100,22 +79,11 @@ export default async function BuildsPage({ searchParams }: { searchParams: Promi
   ];
 
   function includeClass(classKey: string) {
-    if (group === "all") return true;
-    if (group === "caster") return CASTER_CLASSES.has(classKey);
-    if (group === "martial") return MARTIAL_CLASSES.has(classKey);
-    if (group.startsWith("class:")) return classKey === group.slice("class:".length);
-    return true;
+    return includeOfficialClassGroup(classKey, group);
   }
 
   const visibleClassKeys = classKeys.filter(includeClass);
-  const pageTitle =
-    group === "caster"
-      ? "Caster Builds"
-      : group === "martial"
-        ? "Martial Builds"
-        : group.startsWith("class:")
-          ? `${labelByClassKey.get(group.slice("class:".length)) ?? "Class"} Builds`
-          : "All Builds";
+  const pageTitle = officialBuildsPageTitle(group, labelByClassKey);
 
   return (
     <main className="px-4 py-4 sm:px-6 lg:px-10 text-white space-y-6 sm:space-y-8">

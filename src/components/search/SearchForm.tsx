@@ -34,7 +34,7 @@ export default function SearchForm({ initialQuery, typeFilter }: Props) {
         type="search"
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        placeholder="Search builds, spells, players…"
+        placeholder="Search builds, custom builds, spells, players…"
         autoFocus
         className="flex-1 px-4 py-3 bg-neutral-900 border border-neutral-700 rounded text-base"
       />

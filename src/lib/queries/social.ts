@@ -15,7 +15,8 @@ export type EntityCommentTable =
   | "battle_game_comments"
   | "monster_comments"
   | "custom_spell_comments"
-  | "custom_class_comments";
+  | "custom_class_comments"
+  | "custom_build_comments";
 
 export async function getEntityCommentsWithAuthors(
   table: EntityCommentTable,
@@ -55,6 +56,12 @@ export async function getEntityCommentsWithAuthors(
         .select("id, custom_class_id, user_id, body, created_at")
         .eq("custom_class_id", entityId);
       break;
+    case "custom_build_comments":
+      query = supabase
+        .from("custom_build_comments")
+        .select("id, custom_build_id, user_id, body, created_at")
+        .eq("custom_build_id", entityId);
+      break;
     default:
       return [];
   }
@@ -84,6 +91,18 @@ export async function getMyBuildRating(buildId: number, userId: string): Promise
     .from("build_ratings")
     .select("rating")
     .eq("build_id", buildId)
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (!data || typeof data.rating !== "number") return null;
+  return data.rating;
+}
+
+export async function getMyCustomBuildRating(buildId: number, userId: string): Promise<number | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("custom_build_ratings")
+    .select("rating")
+    .eq("custom_build_id", buildId)
     .eq("user_id", userId)
     .maybeSingle();
   if (!data || typeof data.rating !== "number") return null;

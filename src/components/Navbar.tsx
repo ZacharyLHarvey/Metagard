@@ -22,6 +22,8 @@ export default async function Navbar() {
     { href: "/classes", label: "Classes" },
     { href: "/monsters", label: "Monsters" },
     { href: "/custom-classes", label: "Custom Classes" },
+    { href: "/custom-builds", label: "Custom Builds" },
+    { href: "/create-custom-build", label: "Create Custom Build" },
     { href: "/custom-spells", label: "Custom Spells" },
     { href: "/park-champion-tools", label: "Tools" },
     { href: "/favorites", label: "Favorites" },

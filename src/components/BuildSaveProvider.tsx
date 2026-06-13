@@ -21,18 +21,26 @@ type BuildSaveProviderProps = {
   buildId: number;
   initialSaved: boolean;
   initialSaveCount: number;
+  saveApiUrl?: string;
   children: ReactNode;
 };
 
-export function BuildSaveProvider({ buildId, initialSaved, initialSaveCount, children }: BuildSaveProviderProps) {
+export function BuildSaveProvider({
+  buildId,
+  initialSaved,
+  initialSaveCount,
+  saveApiUrl,
+  children,
+}: BuildSaveProviderProps) {
   const [saved, setSaved] = useState(initialSaved);
   const [saveCount, setSaveCount] = useState(initialSaveCount);
   const [busy, setBusy] = useState(false);
+  const resolvedSaveUrl = saveApiUrl ?? `/api/builds/${buildId}/save`;
 
   const toggle = useCallback(async () => {
     setBusy(true);
     try {
-      const res = await fetch(`/api/builds/${buildId}/save`, { method: "POST" });
+      const res = await fetch(resolvedSaveUrl, { method: "POST" });
       if (!res.ok) {
         window.alert("Could not update saved builds");
         return;
@@ -43,7 +51,7 @@ export function BuildSaveProvider({ buildId, initialSaved, initialSaveCount, chi
     } finally {
       setBusy(false);
     }
-  }, [buildId]);
+  }, [resolvedSaveUrl]);
 
   const value = useMemo(
     () => ({ saved, saveCount, busy, toggle }),

@@ -173,6 +173,54 @@ create trigger trg_search_builds_sync
 after insert or update or delete on public.builds
 for each row execute function public.trg_search_builds_sync();
 
+create or replace function public.trg_search_custom_builds_sync()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_body text;
+  v_meta jsonb;
+  v_class_name text;
+begin
+  if tg_op = 'DELETE' then
+    perform public.search_delete_document('custom_build', old.id);
+    return old;
+  end if;
+
+  select cc.name into v_class_name
+  from public.custom_classes cc
+  where cc.id = new.custom_class_id;
+
+  v_body := concat_ws(' ',
+    v_class_name,
+    new.notes,
+    new.play_style,
+    new.build_priority,
+    new.synergy,
+    new.enemies,
+    new.recommended_gear
+  );
+  v_meta := jsonb_build_object(
+    'class', coalesce(v_class_name, 'Custom class'),
+    'level', new.level,
+    'look_the_part', coalesce(new.look_the_part, false)
+  );
+
+  perform public.search_upsert_document(
+    'custom_build', new.id, '00000000-0000-0000-0000-000000000000'::uuid,
+    new.name, v_body, new.owner_id, v_meta
+  );
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_search_custom_builds_sync on public.custom_builds;
+create trigger trg_search_custom_builds_sync
+after insert or update or delete on public.custom_builds
+for each row execute function public.trg_search_custom_builds_sync();
+
 create or replace function public.trg_search_build_groups_sync()
 returns trigger
 language plpgsql
@@ -477,6 +525,30 @@ insert into public.search_documents (
   entity_type, entity_id, entity_uuid, title, body, search_vector, owner_id, meta, updated_at
 )
 select
+  'custom_build',
+  cb.id,
+  '00000000-0000-0000-0000-000000000000'::uuid,
+  cb.name,
+  concat_ws(' ', cc.name, cb.notes, cb.play_style, cb.build_priority, cb.synergy, cb.enemies, cb.recommended_gear),
+  public.search_make_vector(
+    cb.name,
+    concat_ws(' ', cc.name, cb.notes, cb.play_style, cb.build_priority, cb.synergy, cb.enemies, cb.recommended_gear)
+  ),
+  cb.owner_id,
+  jsonb_build_object(
+    'class', coalesce(cc.name, 'Custom class'),
+    'level', cb.level,
+    'look_the_part', coalesce(cb.look_the_part, false)
+  ),
+  now()
+from public.custom_builds cb
+join public.custom_classes cc on cc.id = cb.custom_class_id
+on conflict (entity_type, entity_id, entity_uuid) do nothing;
+
+insert into public.search_documents (
+  entity_type, entity_id, entity_uuid, title, body, search_vector, owner_id, meta, updated_at
+)
+select
   'build_group',
   bg.id,
   '00000000-0000-0000-0000-000000000000'::uuid,
@@ -735,7 +807,7 @@ begin
         + case when lower(sd.title) = lower(v_query) then 10.0 else 0.0 end
         + case when sd.title ilike v_query || '%' then 5.0 else 0.0 end
         + case
-            when sd.entity_type in ('spell', 'build') then 0.5
+            when sd.entity_type in ('spell', 'build', 'custom_build') then 0.5
             when sd.entity_type = 'profile' then 0.0
             else 0.25
           end
@@ -788,4 +860,4 @@ $$;
 grant execute on function public.search_global(text, text[], double precision, text, bigint, uuid, int) to anon, authenticated;
 
 comment on function public.search_global(text, text[], double precision, text, bigint, uuid, int) is
-  'Paginated global search across builds, UGC, catalog spells/classes, and profiles.';
+  'Paginated global search across builds, custom builds, UGC, catalog spells/classes, and profiles.';

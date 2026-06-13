@@ -68,6 +68,13 @@ export function createEntityCommentsRouteHandlers(config: EntityCommentsConfig) 
             body: text,
           }));
           break;
+        case "custom_build_comments":
+          ({ error } = await supabase.from("custom_build_comments").insert({
+            custom_build_id: entityId,
+            user_id: user.id,
+            body: text,
+          }));
+          break;
       }
       if (error) throw error;
 

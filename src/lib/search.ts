@@ -1,5 +1,6 @@
 export type SearchEntityType =
   | "build"
+  | "custom_build"
   | "build_group"
   | "monster"
   | "custom_spell"
@@ -12,6 +13,7 @@ export type SearchEntityType =
 export type SearchFilter =
   | "all"
   | "builds"
+  | "custom-builds"
   | "build-groups"
   | "monsters"
   | "custom-spells"
@@ -54,6 +56,7 @@ export const SEARCH_MAX_LIMIT = 50;
 export const SEARCH_TYPE_FILTER_OPTIONS: { value: SearchFilter; label: string }[] = [
   { value: "all", label: "All" },
   { value: "builds", label: "Builds" },
+  { value: "custom-builds", label: "Custom Builds" },
   { value: "spells", label: "Spells" },
   { value: "classes", label: "Classes" },
   { value: "profiles", label: "Users" },
@@ -66,6 +69,7 @@ export const SEARCH_TYPE_FILTER_OPTIONS: { value: SearchFilter; label: string }[
 
 const FILTER_TO_ENTITY_TYPES: Record<Exclude<SearchFilter, "all">, SearchEntityType[]> = {
   builds: ["build"],
+  "custom-builds": ["custom_build"],
   "build-groups": ["build_group"],
   monsters: ["monster"],
   "custom-spells": ["custom_spell"],
@@ -78,6 +82,7 @@ const FILTER_TO_ENTITY_TYPES: Record<Exclude<SearchFilter, "all">, SearchEntityT
 
 const ENTITY_TYPE_LABELS: Record<SearchEntityType, string> = {
   build: "Build",
+  custom_build: "Custom Build",
   build_group: "Build Group",
   monster: "Monster",
   custom_spell: "Custom Spell",
@@ -106,6 +111,7 @@ export function parseSearchFilter(raw: string | null | undefined): SearchFilter 
   const value = raw?.trim();
   if (
     value === "builds" ||
+    value === "custom-builds" ||
     value === "build-groups" ||
     value === "monsters" ||
     value === "custom-spells" ||
@@ -162,6 +168,8 @@ export function searchResultHref(
   switch (entityType) {
     case "build":
       return `/builds/${entityId}`;
+    case "custom_build":
+      return `/custom-builds/${entityId}`;
     case "build_group":
       return `/build-groups/${entityId}`;
     case "monster":
@@ -192,7 +200,8 @@ function truncateText(value: string, maxLen: number): string {
 export function formatSearchSubtitle(item: Pick<SearchResultItem, "entityType" | "meta">): string | null {
   const meta = item.meta;
   switch (item.entityType) {
-    case "build": {
+    case "build":
+    case "custom_build": {
       const className = typeof meta.class === "string" ? meta.class : null;
       const level = typeof meta.level === "number" ? meta.level : null;
       const ltp = meta.look_the_part === true;
@@ -247,6 +256,7 @@ export type SearchRpcRow = {
 function isSearchEntityType(value: string): value is SearchEntityType {
   return (
     value === "build" ||
+    value === "custom_build" ||
     value === "build_group" ||
     value === "monster" ||
     value === "custom_spell" ||
