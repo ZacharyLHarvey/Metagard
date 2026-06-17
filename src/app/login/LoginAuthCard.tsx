@@ -80,9 +80,15 @@ const wordmarkOnCardClass =
 
 type LoginAuthCardProps = {
   initialTheme: AppTheme;
+  showConfirmedBanner?: boolean;
+  isSignedIn?: boolean;
 };
 
-export default function LoginAuthCard({ initialTheme }: LoginAuthCardProps) {
+export default function LoginAuthCard({
+  initialTheme,
+  showConfirmedBanner = false,
+  isSignedIn = false,
+}: LoginAuthCardProps) {
   const [mode, setMode] = useState<AuthMode>("login");
 
   const [email, setEmail] = useState("");
@@ -229,6 +235,24 @@ export default function LoginAuthCard({ initialTheme }: LoginAuthCardProps) {
         />
       </div>
 
+      {showConfirmedBanner ? (
+        <div className={`${alertInfoClass} mb-6`} role="status" aria-live="polite">
+          <p>
+            {isSignedIn
+              ? "Email Confirmed."
+              : "Email Confirmed. You Can Now Sign In."}
+          </p>
+          {isSignedIn ? (
+            <Link
+              href="/"
+              className="mt-2 inline-block text-sm font-medium text-blue-400 hover:text-blue-300"
+            >
+              Go to Home
+            </Link>
+          ) : null}
+        </div>
+      ) : null}
+
       <div
         className="flex rounded-lg bg-neutral-950/80 p-1 border border-neutral-800 mb-6"
         role="tablist"
@@ -305,6 +329,12 @@ export default function LoginAuthCard({ initialTheme }: LoginAuthCardProps) {
               aria-invalid={!!loginError}
               aria-describedby={loginError ? "login-error" : undefined}
             />
+            <Link
+              href="/forgot-password"
+              className="text-sm text-blue-400 hover:text-blue-300 self-end"
+            >
+              Forgot your password?
+            </Link>
           </div>
 
           {loginError ? (

@@ -15,6 +15,9 @@ function displayNameFromUserMetadata(meta: Record<string, unknown> | undefined):
 }
 
 export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const next = searchParams.get("next");
+
   const supabase = await createClient();
   const { data, error } = await supabase.auth.exchangeCodeForSession(request.url);
 
@@ -27,5 +30,11 @@ export async function GET(request: Request) {
     );
   }
 
-  return NextResponse.redirect(new URL("/", request.url));
+  if (error) {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  const safeNext = next?.startsWith("/") && !next.startsWith("//") ? next : null;
+  const destination = safeNext ?? "/login?confirmed=1";
+  return NextResponse.redirect(new URL(destination, request.url));
 }
