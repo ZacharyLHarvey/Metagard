@@ -61,7 +61,7 @@ export default function ForgotPasswordCard({ initialTheme }: ForgotPasswordCardP
 
     const redirectTo =
       typeof window !== "undefined"
-        ? `${window.location.origin}/auth/callback?next=/reset-password`
+        ? `${window.location.origin}/auth/callback/recovery`
         : undefined;
 
     const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {

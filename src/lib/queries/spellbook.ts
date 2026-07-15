@@ -589,14 +589,19 @@ export async function createBuild(input: {
   const buildId = data.id as number;
   if (isMartialClass(input.className)) {
     const spells = await getCatalogSpellsForClass(input.className, input.level);
-    const selections = buildMartialAutoSelections(spells, input.lookThePart, input.className).map((s) => ({
-      ...s,
-      build_id: buildId,
-    }));
+    const selections = buildMartialAutoSelections(spells, input.lookThePart, input.className);
     if (selections.length > 0) {
-      const { error: selErr } = await supabase.from("build_spell_selections").insert(
-        selections.map((s) => ({ ...s, metadata: {} }))
-      );
+      const payload = selections.map((s) => ({
+        build_id: buildId,
+        spell_id: s.spell_id,
+        spell_level: s.spell_level,
+        purchased: s.purchased,
+        experienced: s.experienced,
+        selection_group: s.selection_group,
+        chosen: s.chosen,
+        metadata: s.metadata ?? {},
+      }));
+      const { error: selErr } = await supabase.from("build_spell_selections").insert(payload);
       if (selErr) throw selErr;
     }
   }
@@ -694,14 +699,20 @@ export async function refreshMartialBuildSelections(buildId: number) {
     Boolean(build.look_the_part),
     String(build.class ?? ""),
     (existingSelections ?? []) as BuildSpellSelectionInput[]
-  ).map((s) => ({
-    ...s,
-    build_id: buildId,
-    metadata: {},
-  }));
+  );
   await supabase.from("build_spell_selections").delete().eq("build_id", buildId);
   if (selections.length === 0) return;
-  const { error } = await supabase.from("build_spell_selections").insert(selections);
+  const payload = selections.map((s) => ({
+    build_id: buildId,
+    spell_id: s.spell_id,
+    spell_level: s.spell_level,
+    purchased: s.purchased,
+    experienced: s.experienced,
+    selection_group: s.selection_group,
+    chosen: s.chosen,
+    metadata: s.metadata ?? {},
+  }));
+  const { error } = await supabase.from("build_spell_selections").insert(payload);
   if (error) throw error;
 }
 

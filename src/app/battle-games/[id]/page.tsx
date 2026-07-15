@@ -69,7 +69,9 @@ export default async function BattleGameDetailPage({ params }: Params) {
         {m.teams ? <p><span className="text-neutral-400">Teams:</span> {String(m.teams)}</p> : null}
         {m.objectives ? <p><span className="text-neutral-400">Objectives:</span> {String(m.objectives)}</p> : null}
         {m.refresh ? <p><span className="text-neutral-400">Refresh:</span> {String(m.refresh)}</p> : null}
+        {m.time_limit ? <p><span className="text-neutral-400">Time Limit:</span> {String(m.time_limit)}</p> : null}
       </div>
+      {m.equipment_needed ? <p className="text-sm whitespace-pre-wrap text-neutral-300"><span className="text-neutral-400">Equipment Needed: </span>{String(m.equipment_needed)}</p> : null}
       {m.scenario_rules ? <p className="text-sm whitespace-pre-wrap text-neutral-300"><span className="text-neutral-400">Scenario Rules: </span>{String(m.scenario_rules)}</p> : null}
       {m.description ? <p className="text-sm whitespace-pre-wrap text-neutral-300">{String(m.description)}</p> : null}
 
