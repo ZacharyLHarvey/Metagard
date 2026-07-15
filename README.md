@@ -35,6 +35,6 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Set **`NEXT_PUBLIC_SITE_URL`** in production to your canonical public HTTPS URL (for example `https://metagard.vercel.app`). This ensures Discord and other platforms can fetch Open Graph preview images when links are shared. See [`.env.example`](.env.example).
 
-**Supabase auth:** In Authentication → URL Configuration, set Site URL to your app origin and add each environment’s callback to Redirect URLs, e.g. `https://metagard.vercel.app/auth/callback` and `http://localhost:3000/auth/callback` for local dev. Sign-up confirmation links use the browser origin at submit time, not `NEXT_PUBLIC_SITE_URL`. Password reset emails use the same callback path with `?next=/reset-password` (no extra Redirect URL entry needed).
+**Supabase auth:** In Authentication → URL Configuration, set Site URL to your app origin and add each environment’s auth callbacks to Redirect URLs, e.g. `https://metagard.vercel.app/auth/callback`, `https://metagard.vercel.app/auth/callback/recovery`, and the same paths on `http://localhost:3000` for local dev. A wildcard such as `https://metagard.vercel.app/**` also works. Sign-up confirmation uses `/auth/callback`; password reset uses `/auth/callback/recovery`. Both use the browser origin at submit time, not `NEXT_PUBLIC_SITE_URL`.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
