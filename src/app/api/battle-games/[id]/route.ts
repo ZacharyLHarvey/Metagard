@@ -24,6 +24,8 @@ export async function PATCH(request: Request, context: Params) {
       teams?: string | null;
       objectives?: string | null;
       refresh?: string | null;
+      equipment_needed?: string | null;
+      time_limit?: string | null;
       scenario_rules?: string | null;
       image_url?: string | null;
       min_players?: number | null;
@@ -46,6 +48,8 @@ export async function PATCH(request: Request, context: Params) {
         teams: body.teams ?? null,
         objectives: body.objectives ?? null,
         refresh: body.refresh ?? null,
+        equipment_needed: body.equipment_needed ?? null,
+        time_limit: body.time_limit ?? null,
         scenario_rules: body.scenario_rules ?? null,
         image_url: body.image_url ?? null,
         min_players: typeof body.min_players === "number" ? body.min_players : null,

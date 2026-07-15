@@ -31,6 +31,8 @@ export default async function EditBattleGamePage({ params }: Params) {
     teams: row.teams != null ? String(row.teams) : null,
     objectives: row.objectives != null ? String(row.objectives) : null,
     refresh: row.refresh != null ? String(row.refresh) : null,
+    equipment_needed: row.equipment_needed != null ? String(row.equipment_needed) : null,
+    time_limit: row.time_limit != null ? String(row.time_limit) : null,
     scenario_rules: row.scenario_rules != null ? String(row.scenario_rules) : null,
     image_url: row.image_url != null ? String(row.image_url) : null,
     min_players: typeof row.min_players === "number" ? row.min_players : null,

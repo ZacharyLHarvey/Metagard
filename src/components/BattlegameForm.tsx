@@ -33,6 +33,8 @@ export default function BattlegameForm({ mode, battlegameId, initial }: Props) {
   const [maxTeams, setMaxTeams] = useState(numStr(initial?.max_teams));
   const [objectives, setObjectives] = useState(str(initial?.objectives));
   const [refresh, setRefresh] = useState(str(initial?.refresh));
+  const [equipmentNeeded, setEquipmentNeeded] = useState(str(initial?.equipment_needed));
+  const [timeLimit, setTimeLimit] = useState(str(initial?.time_limit));
   const [scenarioRules, setScenarioRules] = useState(str(initial?.scenario_rules));
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState("");
@@ -51,6 +53,8 @@ export default function BattlegameForm({ mode, battlegameId, initial }: Props) {
       teams: teams || null,
       objectives: objectives || null,
       refresh: refresh || null,
+      equipment_needed: equipmentNeeded || null,
+      time_limit: timeLimit || null,
       scenario_rules: scenarioRules || null,
       min_players: minPlayers ? Number(minPlayers) : null,
       max_players: maxPlayers ? Number(maxPlayers) : null,
@@ -172,6 +176,14 @@ export default function BattlegameForm({ mode, battlegameId, initial }: Props) {
       <div>
         <label className="block text-sm text-neutral-400 mb-1">Refresh</label>
         <input className="w-full px-3 py-2.5 bg-neutral-800 border border-neutral-700 rounded" value={refresh} onChange={(e) => setRefresh(e.target.value)} />
+      </div>
+      <div>
+        <label className="block text-sm text-neutral-400 mb-1">Time Limit</label>
+        <input className="w-full px-3 py-2.5 bg-neutral-800 border border-neutral-700 rounded" value={timeLimit} onChange={(e) => setTimeLimit(e.target.value)} />
+      </div>
+      <div>
+        <label className="block text-sm text-neutral-400 mb-1">Equipment Needed</label>
+        <textarea className="w-full px-3 py-2.5 bg-neutral-800 border border-neutral-700 rounded min-h-24" value={equipmentNeeded} onChange={(e) => setEquipmentNeeded(e.target.value)} />
       </div>
       <div>
         <label className="block text-sm text-neutral-400 mb-1">Scenario Rules</label>

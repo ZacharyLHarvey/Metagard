@@ -24,6 +24,8 @@ export type BattlegameRow = {
   teams: string | null;
   objectives: string | null;
   refresh: string | null;
+  equipment_needed: string | null;
+  time_limit: string | null;
   scenario_rules: string | null;
   image_url: string | null;
   min_players: number | null;
