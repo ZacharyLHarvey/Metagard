@@ -16,6 +16,7 @@ export async function PATCH(request: Request) {
       favorite_spell?: string | null;
       theme_preference?: string | null;
       spellbook_tips_enabled?: boolean | null;
+      spell_detail_long_press_enabled?: boolean | null;
       build_view_defaults?: Record<string, unknown> | null;
       build_edit_defaults?: Record<string, unknown> | null;
     };
@@ -40,6 +41,12 @@ export async function PATCH(request: Request) {
     }
     if ("spellbook_tips_enabled" in body && typeof body.spellbook_tips_enabled === "boolean") {
       patch.spellbook_tips_enabled = body.spellbook_tips_enabled;
+    }
+    if (
+      "spell_detail_long_press_enabled" in body &&
+      typeof body.spell_detail_long_press_enabled === "boolean"
+    ) {
+      patch.spell_detail_long_press_enabled = body.spell_detail_long_press_enabled;
     }
     if ("build_view_defaults" in body && body.build_view_defaults != null) {
       patch.build_view_defaults = parseBuildViewDefaults(body.build_view_defaults);

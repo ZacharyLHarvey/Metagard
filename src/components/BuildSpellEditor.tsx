@@ -63,6 +63,8 @@ type Props = {
   lookThePart: boolean;
   /** From profile: whether to show spellbook tips (e.g. long-press hint). */
   spellbookTipsEnabled: boolean;
+  /** From profile: whether long-press opens spell details. */
+  spellDetailLongPressEnabled?: boolean;
   spells: SpellRow[];
   initialSelections: BuildSpellSelectionRow[];
   /** Synthetic archetype-grant rows (view-only); not persisted from this editor. */
@@ -151,6 +153,7 @@ export default function BuildSpellEditor({
   maxLevel,
   lookThePart,
   spellbookTipsEnabled,
+  spellDetailLongPressEnabled = true,
   spells,
   initialSelections,
   extraSelections = [],
@@ -732,6 +735,7 @@ export default function BuildSpellEditor({
   }
 
   function startLongPress(spell: SpellRow, display?: DisplayRuleResult) {
+    if (!spellDetailLongPressEnabled) return null;
     const detailSpell = display ? applyDisplayRuleToSpell(spell, display) : spell;
     const timeout = setTimeout(() => setSelectedSpell(detailSpell), LONG_PRESS_MS);
     return timeout;

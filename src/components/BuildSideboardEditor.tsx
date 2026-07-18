@@ -10,6 +10,7 @@ type Props = {
   initialSideboardIds: number[];
   selections: BuildSpellSelectionRow[];
   spellbookTipsEnabled: boolean;
+  spellDetailLongPressEnabled?: boolean;
 };
 
 export default function BuildSideboardEditor({
@@ -18,6 +19,7 @@ export default function BuildSideboardEditor({
   initialSideboardIds,
   selections,
   spellbookTipsEnabled,
+  spellDetailLongPressEnabled = true,
 }: Props) {
   const [ids, setIds] = useState<number[]>(() => [...initialSideboardIds]);
   const [error, setError] = useState("");
@@ -125,6 +127,7 @@ export default function BuildSideboardEditor({
       <SideboardSpellList
         spells={orderedSpells}
         spellbookTipsEnabled={spellbookTipsEnabled}
+        spellDetailLongPressEnabled={spellDetailLongPressEnabled}
         onRemove={(id) => void removeSpell(id)}
         removingSpellId={removingSpellId}
       />

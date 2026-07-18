@@ -59,6 +59,8 @@ function SideboardLongPressWrap({
 type Props = {
   spells: SpellRow[];
   spellbookTipsEnabled?: boolean;
+  /** When false, disables long-press and click-to-open spell details. */
+  spellDetailLongPressEnabled?: boolean;
   /** When set, show remove control per row (edit mode). */
   onRemove?: (spellId: number) => void;
   removingSpellId?: number | null;
@@ -67,6 +69,7 @@ type Props = {
 export default function SideboardSpellList({
   spells,
   spellbookTipsEnabled = true,
+  spellDetailLongPressEnabled = true,
   onRemove,
   removingSpellId,
 }: Props) {
@@ -98,25 +101,34 @@ export default function SideboardSpellList({
             </>
           );
 
+          let detailTrigger: ReactNode;
+          if (!spellDetailLongPressEnabled) {
+            detailTrigger = <div className="min-w-0 flex-1">{rowInner}</div>;
+          } else if (spellbookTipsEnabled) {
+            detailTrigger = (
+              <SideboardLongPressWrap spell={spell} onOpenDetail={setDetailSpell}>
+                {rowInner}
+              </SideboardLongPressWrap>
+            );
+          } else {
+            detailTrigger = (
+              <button
+                type="button"
+                className="min-w-0 flex-1 text-left cursor-pointer"
+                onClick={() => setDetailSpell(spell)}
+              >
+                {rowInner}
+              </button>
+            );
+          }
+
           return (
             <li
               key={spell.id}
               className="px-4 py-2 flex justify-between gap-4 items-start hover:bg-neutral-900/40"
               title={spellTitleSummary(spell)}
             >
-              {spellbookTipsEnabled ? (
-                <SideboardLongPressWrap spell={spell} onOpenDetail={setDetailSpell}>
-                  {rowInner}
-                </SideboardLongPressWrap>
-              ) : (
-                <button
-                  type="button"
-                  className="min-w-0 flex-1 text-left cursor-pointer"
-                  onClick={() => setDetailSpell(spell)}
-                >
-                  {rowInner}
-                </button>
-              )}
+              {detailTrigger}
               {onRemove ? (
                 <button
                   type="button"
