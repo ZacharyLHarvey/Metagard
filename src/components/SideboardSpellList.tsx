@@ -59,7 +59,7 @@ function SideboardLongPressWrap({
 type Props = {
   spells: SpellRow[];
   spellbookTipsEnabled?: boolean;
-  /** When false, disables long-press and click-to-open spell details. */
+  /** When false, disables long-press only; tips-off click-to-open still works. */
   spellDetailLongPressEnabled?: boolean;
   /** When set, show remove control per row (edit mode). */
   onRemove?: (spellId: number) => void;
@@ -102,15 +102,13 @@ export default function SideboardSpellList({
           );
 
           let detailTrigger: ReactNode;
-          if (!spellDetailLongPressEnabled) {
-            detailTrigger = <div className="min-w-0 flex-1">{rowInner}</div>;
-          } else if (spellbookTipsEnabled) {
+          if (spellbookTipsEnabled && spellDetailLongPressEnabled) {
             detailTrigger = (
               <SideboardLongPressWrap spell={spell} onOpenDetail={setDetailSpell}>
                 {rowInner}
               </SideboardLongPressWrap>
             );
-          } else {
+          } else if (!spellbookTipsEnabled) {
             detailTrigger = (
               <button
                 type="button"
@@ -120,6 +118,8 @@ export default function SideboardSpellList({
                 {rowInner}
               </button>
             );
+          } else {
+            detailTrigger = <div className="min-w-0 flex-1">{rowInner}</div>;
           }
 
           return (
