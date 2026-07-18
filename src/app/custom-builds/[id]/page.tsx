@@ -218,6 +218,7 @@ export default async function CustomBuildDetailPage({ params, searchParams }: Pa
         selections={buildRows}
         display={display}
         spellbookTipsEnabled={profile?.spellbook_tips_enabled !== false}
+        spellDetailLongPressEnabled={profile?.spell_detail_long_press_enabled !== false}
         initialShowTypeSchool={viewDefaults.showTypeSchool}
         initialShowIncantation={viewDefaults.showIncantation}
         initialShowMaterials={viewDefaults.showMaterials}
@@ -261,6 +262,7 @@ export default async function CustomBuildDetailPage({ params, searchParams }: Pa
         <BuildSideboardSection
           spells={sideboardSpellsOrdered}
           spellbookTipsEnabled={profile?.spellbook_tips_enabled !== false}
+          spellDetailLongPressEnabled={profile?.spell_detail_long_press_enabled !== false}
         />
       ) : null}
 

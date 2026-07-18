@@ -261,6 +261,7 @@ export default async function BuildDetailsPage({ params, searchParams }: Params)
         lookThePart={build.look_the_part}
         display={display}
         spellbookTipsEnabled={profile?.spellbook_tips_enabled !== false}
+        spellDetailLongPressEnabled={profile?.spell_detail_long_press_enabled !== false}
         buildMaxLevel={build.level}
         initialShowTypeSchool={viewDefaults.showTypeSchool}
         initialShowIncantation={viewDefaults.showIncantation}
@@ -302,6 +303,7 @@ export default async function BuildDetailsPage({ params, searchParams }: Params)
         <BuildSideboardSection
           spells={sideboardSpellsOrdered}
           spellbookTipsEnabled={profile?.spellbook_tips_enabled !== false}
+          spellDetailLongPressEnabled={profile?.spell_detail_long_press_enabled !== false}
         />
       ) : null}
 

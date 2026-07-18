@@ -1,6 +1,7 @@
 import Link from "next/link";
 import BuildDisplayDefaultsSettingsCard from "@/components/BuildDisplayDefaultsSettingsCard";
 import SpellbookTipsSettingsCard from "@/components/SpellbookTipsSettingsCard";
+import SpellDetailLongPressSettingsCard from "@/components/SpellDetailLongPressSettingsCard";
 import ThemeSettingsCard from "@/components/ThemeSettingsCard";
 import {
   parseBuildEditDefaults,
@@ -32,6 +33,11 @@ export default async function SettingsPage() {
     "spellbook_tips_enabled" in profile && typeof profile.spellbook_tips_enabled === "boolean"
       ? profile.spellbook_tips_enabled
       : true;
+  const initialLongPressEnabled =
+    "spell_detail_long_press_enabled" in profile &&
+    typeof profile.spell_detail_long_press_enabled === "boolean"
+      ? profile.spell_detail_long_press_enabled
+      : true;
   const initialViewDefaults = parseBuildViewDefaults(
     "build_view_defaults" in profile ? profile.build_view_defaults : undefined
   );
@@ -52,6 +58,7 @@ export default async function SettingsPage() {
       <section className="max-w-2xl space-y-4">
         <ThemeSettingsCard initialTheme={initialTheme} />
         <SpellbookTipsSettingsCard initialTipsEnabled={initialTipsEnabled} />
+        <SpellDetailLongPressSettingsCard initialLongPressEnabled={initialLongPressEnabled} />
         <BuildDisplayDefaultsSettingsCard
           initialViewDefaults={initialViewDefaults}
           initialEditDefaults={initialEditDefaults}

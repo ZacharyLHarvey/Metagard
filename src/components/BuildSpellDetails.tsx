@@ -32,11 +32,13 @@ function SpellRowTouchCell({
   spell,
   className,
   onOpenDetail,
+  enabled = true,
   children,
 }: {
   spell: SpellRow | undefined;
   className?: string;
   onOpenDetail: (s: SpellRow) => void;
+  enabled?: boolean;
   children: ReactNode;
 }) {
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -47,7 +49,7 @@ function SpellRowTouchCell({
     }
   };
 
-  if (!spell) {
+  if (!spell || !enabled) {
     return <td className={className}>{children}</td>;
   }
 
@@ -75,10 +77,12 @@ function SpellRowTouchCell({
 function SpellRowLongPressWrap({
   spell,
   onOpenDetail,
+  enabled = true,
   children,
 }: {
   spell: SpellRow;
   onOpenDetail: (s: SpellRow) => void;
+  enabled?: boolean;
   children: ReactNode;
 }) {
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -88,6 +92,10 @@ function SpellRowLongPressWrap({
       timeoutRef.current = null;
     }
   };
+
+  if (!enabled) {
+    return <div className="mt-1">{children}</div>;
+  }
 
   return (
     <div
@@ -119,6 +127,8 @@ type Props = {
   display: BuildSpellDisplayMode;
   /** When false, hides the long-press hint banner (modal still works). Matches edit-build. */
   spellbookTipsEnabled?: boolean;
+  /** When false, disables long-press (and all detail opening) on spell rows. */
+  spellDetailLongPressEnabled?: boolean;
   /** Build spell circle cap for unresolved pick-two warnings (same as build level). */
   buildMaxLevel?: number;
   initialShowTypeSchool?: boolean;
@@ -135,6 +145,7 @@ export default function BuildSpellDetails({
   lookThePart,
   display,
   spellbookTipsEnabled = true,
+  spellDetailLongPressEnabled = true,
   buildMaxLevel = 6,
   initialShowTypeSchool = false,
   initialShowIncantation = false,
@@ -364,6 +375,7 @@ export default function BuildSpellDetails({
           spell={detailSpell ?? spell}
           className="pl-8 pr-4 py-2 border-b border-neutral-800"
           onOpenDetail={setSelectedSpell}
+          enabled={spellDetailLongPressEnabled}
         >
           <p className="font-medium">
             {displayNameWithTypeTag(spell, `Spell #${selection.spell_id}`, selection.purchased, {
@@ -410,6 +422,7 @@ export default function BuildSpellDetails({
             spell={spell}
             className="pl-8 pr-4 py-2 border-b border-neutral-800"
             onOpenDetail={setSelectedSpell}
+            enabled={spellDetailLongPressEnabled}
           >
             <p className="font-medium">
               {displayNameWithTypeTag(spell, `Spell #${selection.spell_id}`, selection.purchased, {
@@ -443,7 +456,12 @@ export default function BuildSpellDetails({
         <td className="pl-8 pr-4 py-2 border-b border-neutral-800">
           <p className="font-medium text-amber-300">⚠️ Pick one in edit mode</p>
           {group.options.map((opt) => (
-            <SpellRowLongPressWrap key={opt.catalog_rule_id ?? opt.name} spell={opt} onOpenDetail={setSelectedSpell}>
+            <SpellRowLongPressWrap
+              key={opt.catalog_rule_id ?? opt.name}
+              spell={opt}
+              onOpenDetail={setSelectedSpell}
+              enabled={spellDetailLongPressEnabled}
+            >
               <p className="text-sm text-neutral-300">{displayNameWithTypeTag(opt, opt.name, 1)}</p>
             </SpellRowLongPressWrap>
           ))}
@@ -458,7 +476,12 @@ export default function BuildSpellDetails({
         <td className="pl-8 pr-4 py-2 border-b border-neutral-800">
           <p className="font-medium text-amber-300">⚠️ Pick two of three in edit mode</p>
           {group.options.map((opt) => (
-            <SpellRowLongPressWrap key={opt.catalog_rule_id ?? opt.name} spell={opt} onOpenDetail={setSelectedSpell}>
+            <SpellRowLongPressWrap
+              key={opt.catalog_rule_id ?? opt.name}
+              spell={opt}
+              onOpenDetail={setSelectedSpell}
+              enabled={spellDetailLongPressEnabled}
+            >
               <p className="text-sm text-neutral-300">{displayNameWithTypeTag(opt, opt.name, 1)}</p>
             </SpellRowLongPressWrap>
           ))}
@@ -479,7 +502,12 @@ export default function BuildSpellDetails({
                 ⚠️ Pick one in edit mode (level {level})
               </p>
               {group.options.map((opt) => (
-                <SpellRowLongPressWrap key={opt.catalog_rule_id ?? opt.name} spell={opt} onOpenDetail={setSelectedSpell}>
+                <SpellRowLongPressWrap
+                  key={opt.catalog_rule_id ?? opt.name}
+                  spell={opt}
+                  onOpenDetail={setSelectedSpell}
+                  enabled={spellDetailLongPressEnabled}
+                >
                   <p className="text-sm text-neutral-300">{displayNameWithTypeTag(opt, opt.name, 1)}</p>
                 </SpellRowLongPressWrap>
               ))}
@@ -503,7 +531,12 @@ export default function BuildSpellDetails({
                 ⚠️ Pick two of three in edit mode (level {level})
               </p>
               {group.options.map((opt) => (
-                <SpellRowLongPressWrap key={opt.catalog_rule_id ?? opt.name} spell={opt} onOpenDetail={setSelectedSpell}>
+                <SpellRowLongPressWrap
+                  key={opt.catalog_rule_id ?? opt.name}
+                  spell={opt}
+                  onOpenDetail={setSelectedSpell}
+                  enabled={spellDetailLongPressEnabled}
+                >
                   <p className="text-sm text-neutral-300">{displayNameWithTypeTag(opt, opt.name, 1)}</p>
                 </SpellRowLongPressWrap>
               ))}

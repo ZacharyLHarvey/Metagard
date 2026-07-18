@@ -21,6 +21,7 @@ export default async function EditCustomBuildPage({ params }: Params) {
   const customClass = build.custom_class;
   const profile = await getProfileCached();
   const spellbookTipsEnabled = profile?.spellbook_tips_enabled !== false;
+  const spellDetailLongPressEnabled = profile?.spell_detail_long_press_enabled !== false;
   const editDefaults = parseBuildEditDefaults(
     profile && "build_edit_defaults" in profile ? profile.build_edit_defaults : undefined
   );
@@ -45,6 +46,7 @@ export default async function EditCustomBuildPage({ params }: Params) {
         maxLevel={build.level}
         lookThePart={build.look_the_part}
         spellbookTipsEnabled={spellbookTipsEnabled}
+        spellDetailLongPressEnabled={spellDetailLongPressEnabled}
         spells={spells}
         initialSelections={initialSelections}
         initialShowTypeSchool={editDefaults.showTypeSchool}
